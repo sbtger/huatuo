@@ -47,6 +47,7 @@ type OOMTracingData struct {
 	Trigger        OOMActor           `json:"trigger"`
 	Victim         OOMActor           `json:"victim"`
 	MemorySnapshot *OOMMemorySnapshot `json:"memory_snapshot,omitempty"`
+	LanguageInfo   *OOMLanguageInfo   `json:"language_info,omitempty"`
 }
 
 type oomMetric struct {
@@ -184,6 +185,7 @@ func buildTracingData(data abi.OOMEvent, containers map[string]*pod.Container, c
 			Comm:                bytesutil.ToStr(data.VictimComm[:]),
 		},
 	}
+	oomData.LanguageInfo = detectLanguageInfo(oomData.Victim)
 
 	if container, ok := containers[triggerID]; ok {
 		oomData.Trigger.ContainerHostname = container.Hostname
