@@ -17,6 +17,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -40,6 +41,10 @@ type OOMActor struct {
 	ContainerHostname   string                   `json:"container_hostname,omitempty"`
 	Pid                 int32                    `json:"pid"`
 	Comm                string                   `json:"comm"`
+	RssAnonBytes        uint64                   `json:"rss_anon_bytes,omitempty"`
+	RssFileBytes        uint64                   `json:"rss_file_bytes,omitempty"`
+	RssShmemBytes       uint64                   `json:"rss_shmem_bytes,omitempty"`
+	TotalVmBytes        uint64                   `json:"total_vm_bytes,omitempty"`
 	Cgroup              *OOMCgroupMemorySnapshot `json:"cgroup,omitempty"`
 }
 
@@ -65,7 +70,10 @@ var (
 	mutex                       sync.Mutex
 )
 
+var pageSize uint64
+
 func init() {
+	pageSize = uint64(os.Getpagesize())
 	tracing.RegisterEventTracing("oom", newOOMCollector)
 }
 
@@ -183,6 +191,10 @@ func buildTracingData(data abi.OOMEvent, containers map[string]*pod.Container, c
 			ContainerID:         victimID,
 			Pid:                 int32(data.VictimPID),
 			Comm:                bytesutil.ToStr(data.VictimComm[:]),
+			RssAnonBytes:        data.VictimRssAnonPages * pageSize,
+			RssFileBytes:        data.VictimRssFilePages * pageSize,
+			RssShmemBytes:       data.VictimRssShmemPages * pageSize,
+			TotalVmBytes:        data.VictimTotalVmPages * pageSize,
 		},
 	}
 	oomData.LanguageInfo = detectLanguageInfo(oomData.Victim)
