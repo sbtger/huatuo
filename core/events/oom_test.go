@@ -29,7 +29,7 @@ func TestOOMPageCountsToBytes(t *testing.T) {
 		VictimRssShmemPages: 4,
 		VictimTotalVmPages:  5,
 	}
-	actor := buildTracingData(event, nil, nil).Victim
+	actor := buildTracingData(event, nil, nil, nil).Victim
 
 	if actor.RssAnonBytes != 2*pageSize ||
 		actor.RssFileBytes != 3*pageSize ||

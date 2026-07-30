@@ -41,6 +41,10 @@ type OOMActor struct {
 	ContainerHostname   string                   `json:"container_hostname,omitempty"`
 	Pid                 int32                    `json:"pid"`
 	Comm                string                   `json:"comm"`
+	Cmdline             string                   `json:"cmdline,omitempty"`
+	CmdlineTruncated    bool                     `json:"cmdline_truncated,omitempty"`
+	Environ             []string                 `json:"environ,omitempty"`
+	EnvironTruncated    bool                     `json:"environ_truncated,omitempty"`
 	RssAnonBytes        uint64                   `json:"rss_anon_bytes,omitempty"`
 	RssFileBytes        uint64                   `json:"rss_file_bytes,omitempty"`
 	RssShmemBytes       uint64                   `json:"rss_shmem_bytes,omitempty"`
@@ -116,6 +120,11 @@ func (c *oomCollector) Update() ([]*metric.Data, error) {
 	return metrics, nil
 }
 
+/*
+ * Start reads base OOM events continuously while separate workers correlate
+ * exit context. It keeps kernel perf draining independent from the bounded
+ * exit wait and returns the first reader or processing failure.
+ */
 func (c *oomCollector) Start(ctx context.Context) error {
 	b, err := bpf.LoadBpf(bpf.ThisBpfOBJ(), nil)
 	if err != nil {
@@ -124,60 +133,184 @@ func (c *oomCollector) Start(ctx context.Context) error {
 	defer b.Close()
 
 	childCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	var workers sync.WaitGroup
+	var processMu sync.Mutex
+	runErr := make(chan error, 1)
+
+	/*
+	 * reportError preserves the first asynchronous failure and wakes the base
+	 * reader so Start can return that original error instead of a cancel error.
+	 */
+	reportError := func(err error) {
+		select {
+		case runErr <- err:
+			cancel()
+		default:
+		}
+	}
+
+	exitReader, err := b.EventPipeByName(childCtx, "oom_exit_events", 8192)
+	if err != nil {
+		cancel()
+		return fmt.Errorf("open oom exit context reader: %w", err)
+	}
 
 	reader, err := b.AttachAndEventPipe(childCtx, "oom_perf_events", 8192)
 	if err != nil {
+		cancel()
+		exitReader.Close()
 		return err
 	}
-	defer reader.Close()
+	defer func() {
+		cancel()
+		reader.Close()
+		exitReader.Close()
+		workers.Wait()
+	}()
+
+	workers.Add(1)
+	go func() {
+		defer workers.Done()
+		if err := startOOMExitReader(childCtx, exitReader); err != nil {
+			reportError(fmt.Errorf("read oom exit context: %w", err))
+		}
+	}()
 
 	b.WaitDetachByBreaker(childCtx, cancel)
 
 	for {
 		select {
+		case err := <-runErr:
+			return err
 		case <-childCtx.Done():
-			return nil
+			return asynchronousOOMError(runErr)
 		default:
 			var data abi.OOMEvent
 			if err := reader.ReadInto(&data); err != nil {
+				if asyncErr := asynchronousOOMError(runErr); asyncErr != nil {
+					return asyncErr
+				}
+				if childCtx.Err() != nil {
+					return nil
+				}
 				return fmt.Errorf("failed to read perf event: %w", err)
 			}
+			eventTime := time.Now()
 
-			containers, err := pod.Containers()
-			if err != nil {
-				return fmt.Errorf("failed to fetch containers: %w", err)
-			}
+			/*
+			 * Base enrichment starts immediately outside this reader loop.
+			 * processMu serializes enrichment and storage without being held
+			 * while workers wait for independently delivered exit context.
+			 */
+			workers.Add(1)
+			go func(data abi.OOMEvent, eventTime time.Time) {
+				defer workers.Done()
 
-			oomData := buildTracingData(data, containers, c.cgroup)
+				processMu.Lock()
+				oomData, err := c.prepareOOMEvent(data)
+				processMu.Unlock()
+				if err != nil {
+					reportError(err)
+					return
+				}
 
-			mutex.Lock()
+				exitContext := oomExitEvents.wait(
+					childCtx, data.VictimPID, data.Timestamp)
+				if childCtx.Err() != nil {
+					return
+				}
+				mergeOOMExitContext(oomData, exitContext)
 
-			if container, ok := containers[oomData.Victim.ContainerID]; ok {
-				containerCounterUpdate(container.ID, oomData.Victim.Comm)
-			} else {
-				outOfMemoryCounterHost++
-			}
-
-			mutex.Unlock()
-
-			if err := tracing.Save(&tracing.WriteRequest{
-				TracerName:  "oom",
-				TracerTime:  time.Now(),
-				TracerData:  oomData,
-				ContainerID: oomData.Victim.ContainerID,
-			}); err != nil {
-				log.Warnf("failed to save tracing data: %v", err)
-			}
+				processMu.Lock()
+				defer processMu.Unlock()
+				if childCtx.Err() != nil {
+					return
+				}
+				saveOOMEvent(oomData, eventTime)
+			}(data, eventTime)
 		}
 	}
 }
 
-func buildTracingData(data abi.OOMEvent, containers map[string]*pod.Container, cgroup cgroups.Cgroup) *OOMTracingData {
+/*
+ * asynchronousOOMError returns a queued worker or exit-reader failure without
+ * blocking. A nil result means cancellation came from the parent context.
+ */
+func asynchronousOOMError(errs <-chan error) error {
+	select {
+	case err := <-errs:
+		return err
+	default:
+		return nil
+	}
+}
+
+/*
+ * prepareOOMEvent captures container association, resource snapshots, language,
+ * and accounting before waiting for the victim exit event.
+ */
+func (c *oomCollector) prepareOOMEvent(
+	data abi.OOMEvent,
+) (*OOMTracingData, error) {
+	containers, err := pod.Containers()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch containers: %w", err)
+	}
+
+	oomData := buildTracingData(data, nil, containers, c.cgroup)
+
+	mutex.Lock()
+	if container, ok := containers[oomData.Victim.ContainerID]; ok {
+		containerCounterUpdate(container.ID, oomData.Victim.Comm)
+	} else {
+		outOfMemoryCounterHost++
+	}
+	mutex.Unlock()
+
+	return oomData, nil
+}
+
+/*
+ * mergeOOMExitContext adds best-effort data captured immediately before the
+ * victim address space is torn down.
+ */
+func mergeOOMExitContext(
+	oomData *OOMTracingData, exitContext *oomExitContext,
+) {
+	if exitContext == nil {
+		return
+	}
+
+	oomData.Victim.Cmdline = exitContext.cmdline
+	oomData.Victim.CmdlineTruncated = exitContext.cmdlineTruncated
+	oomData.Victim.Environ = exitContext.environ
+	oomData.Victim.EnvironTruncated = exitContext.environTruncated
+}
+
+/*
+ * saveOOMEvent writes the enriched base event and any correlated exit context
+ * as one tracing record.
+ */
+func saveOOMEvent(oomData *OOMTracingData, eventTime time.Time) {
+	if err := tracing.Save(&tracing.WriteRequest{
+		TracerName:  "oom",
+		TracerTime:  eventTime,
+		TracerData:  oomData,
+		ContainerID: oomData.Victim.ContainerID,
+	}); err != nil {
+		log.Warnf("failed to save tracing data: %v", err)
+	}
+}
+
+func buildTracingData(data abi.OOMEvent, exitContext *oomExitContext,
+	containers map[string]*pod.Container, cgroup cgroups.Cgroup) *OOMTracingData {
 	cssContainers := pod.BuildCssContainersID(containers, subsystem.SubsystemMemory)
 
 	triggerID := cssContainers[data.TriggerMemcgCSS]
 	victimID := cssContainers[data.VictimMemcgCSS]
+	if exitContext == nil {
+		exitContext = &oomExitContext{}
+	}
 
 	oomData := &OOMTracingData{
 		Trigger: OOMActor{
@@ -191,6 +324,10 @@ func buildTracingData(data abi.OOMEvent, containers map[string]*pod.Container, c
 			ContainerID:         victimID,
 			Pid:                 int32(data.VictimPID),
 			Comm:                bytesutil.ToStr(data.VictimComm[:]),
+			Cmdline:             exitContext.cmdline,
+			CmdlineTruncated:    exitContext.cmdlineTruncated,
+			Environ:             exitContext.environ,
+			EnvironTruncated:    exitContext.environTruncated,
 			RssAnonBytes:        data.VictimRssAnonPages * pageSize,
 			RssFileBytes:        data.VictimRssFilePages * pageSize,
 			RssShmemBytes:       data.VictimRssShmemPages * pageSize,
