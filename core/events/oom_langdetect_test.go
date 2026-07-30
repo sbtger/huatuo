@@ -42,3 +42,18 @@ func TestDetectLanguageInfoReadsRunningGoExecutable(t *testing.T) {
 			info.Victim, procdiscovery.LanguageGo)
 	}
 }
+
+func TestCompleteLanguageInfoUsesExitCmdline(t *testing.T) {
+	oomData := &OOMTracingData{
+		Victim: OOMActor{Cmdline: "/usr/bin/python3 worker.py"},
+		LanguageInfo: &OOMLanguageInfo{
+			Victim: procdiscovery.LanguageUnknown,
+		},
+	}
+
+	completeLanguageInfo(oomData)
+	if oomData.LanguageInfo.Victim != procdiscovery.LanguagePython {
+		t.Fatalf("exit cmdline language = %q, want %q",
+			oomData.LanguageInfo.Victim, procdiscovery.LanguagePython)
+	}
+}

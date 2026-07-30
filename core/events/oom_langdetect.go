@@ -38,8 +38,23 @@ func detectLanguageInfo(victim OOMActor) *OOMLanguageInfo {
 	if detected == procdiscovery.LanguageUnknown {
 		detected = procdiscovery.DetectLanguage(procdiscovery.ProcessDetails{
 			ExePath: victim.Comm,
+			Cmdline: victim.Cmdline,
 		})
 	}
 
 	return &OOMLanguageInfo{Victim: detected}
+}
+
+/*
+ * completeLanguageInfo retries only an unknown result after do_exit metadata
+ * has been merged. A successful live procfs result is preserved.
+ */
+func completeLanguageInfo(oomData *OOMTracingData) {
+	if oomData == nil ||
+		(oomData.LanguageInfo != nil &&
+			oomData.LanguageInfo.Victim != procdiscovery.LanguageUnknown) {
+		return
+	}
+
+	oomData.LanguageInfo = detectLanguageInfo(oomData.Victim)
 }
