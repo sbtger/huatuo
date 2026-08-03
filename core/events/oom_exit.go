@@ -40,6 +40,7 @@ type oomExitContext struct {
 	cmdlineTruncated bool
 	environ          []string
 	environTruncated bool
+	goBuildInfo      bool
 }
 
 type oomExitKey struct {
@@ -93,7 +94,7 @@ func (c *oomExitEventCache) store(evt *abi.OOMExitEvent) {
 		timestamp:  evt.Timestamp,
 	}
 	capturedAt := time.Now()
-	context := &oomExitContext{}
+	context := &oomExitContext{goBuildInfo: evt.GoBuildInfo != 0}
 	if evt.CmdlineLen > 0 {
 		context.cmdline = strings.Join(
 			decodeExitNUL(evt.VictimCmdline[:], evt.CmdlineLen), " ")
