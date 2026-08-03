@@ -121,9 +121,15 @@ func newBaseDocument(options DocumentOptions, req *WriteRequest) (*Document, err
 
 	container, err := pod.ContainerByID(req.ContainerID)
 	if err != nil {
+		if req.AllowMissingContainer {
+			return &document, nil
+		}
 		return nil, fmt.Errorf("get container %s: %w", req.ContainerID, err)
 	}
 	if container == nil {
+		if req.AllowMissingContainer {
+			return &document, nil
+		}
 		return nil, fmt.Errorf("container %s not found", req.ContainerID)
 	}
 
