@@ -38,12 +38,13 @@ type DocumentOptions struct {
 
 // WriteRequest carries the parameters for a single document write operation.
 type WriteRequest struct {
-	TracerName    string
-	TracerID      string
-	ContainerID   string
-	TracerTime    time.Time
-	TracerData    any
-	TracerRunType string
+	TracerName            string
+	TracerID              string
+	ContainerID           string
+	TracerTime            time.Time
+	TracerData            any
+	TracerRunType         string
+	AllowMissingContainer bool
 }
 
 var (
