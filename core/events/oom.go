@@ -20,12 +20,14 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"huatuo-bamai/internal/bpf"
 	"huatuo-bamai/internal/bpf/abi"
 	"huatuo-bamai/internal/cgroups"
 	"huatuo-bamai/internal/cgroups/subsystem"
+	"huatuo-bamai/internal/goheap"
 	"huatuo-bamai/internal/log"
 	"huatuo-bamai/internal/pod"
 	"huatuo-bamai/internal/utils/bytesutil"
@@ -33,6 +35,8 @@ import (
 	"huatuo-bamai/pkg/metric"
 	"huatuo-bamai/pkg/processlang"
 	"huatuo-bamai/pkg/tracing"
+
+	"github.com/rs/xid"
 )
 
 //go:generate $BPF_COMPILE $BPF_INCLUDE -s $BPF_DIR/oom.c -o $BPF_DIR/oom.o
@@ -67,7 +71,9 @@ type oomMetric struct {
 }
 
 type oomCollector struct {
-	cgroup cgroups.Cgroup
+	cgroup         cgroups.Cgroup
+	goHeapCaptures atomic.Uint64
+	goHeapErrors   atomic.Uint64
 }
 
 const oomExitWorkerLimit = 8
@@ -109,6 +115,12 @@ func (c *oomCollector) Update() ([]*metric.Data, error) {
 	mutex.Lock()
 
 	metrics = append(metrics, metric.NewCounterData("host_total", outOfMemoryCounterHost, "host oom counter", nil))
+	metrics = append(metrics,
+		metric.NewCounterData("go_heap_capture_total", float64(c.goHeapCaptures.Load()),
+			"OOM Go heap captures received", nil),
+		metric.NewCounterData("go_heap_error_total", float64(c.goHeapErrors.Load()),
+			"OOM Go heap optional-path errors", nil),
+	)
 	for _, container := range containers {
 		if val, exists := outOfMemoryCounterContainer[container.ID]; exists {
 			metrics = append(
@@ -182,13 +194,36 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		cancelExitWait()
 	}
 
+	var heapController *goheap.Controller
+	var heapProfiler *oomGoHeapProfiler
+	var heapActive atomic.Bool
+	if cfg.OOMGoHeap.Enabled {
+		registry := goheap.NewRegistry(goheap.NewProcDiscoverer("/proc"),
+			cfg.OOMGoHeap.MaxTargets)
+		heapController, err = goheap.OpenController(childCtx, b, registry,
+			goheap.ControllerOptions{
+				CaptureBudget: time.Duration(
+					cfg.OOMGoHeap.CaptureBudgetMicroseconds) * time.Microsecond,
+				ReconcilePeriod: time.Duration(
+					cfg.OOMGoHeap.ReconcileIntervalSeconds) * time.Second,
+			})
+		if err != nil {
+			c.goHeapErrors.Add(1)
+			log.Warnf("OOM Go heap capture disabled: %v", err)
+			heapController = nil
+		} else {
+			heapProfiler = newOOMGoHeapProfiler()
+			heapActive.Store(true)
+		}
+	}
+
 	/*
 	 * processEvent preserves the original serialized enrichment and storage.
 	 * Only workers with a slot wait for exit context; overflow events retain
 	 * their base data instead of creating unbounded goroutines.
 	 */
 	processEvent := func(data *abi.OOMEvent, eventTime time.Time,
-		executable *os.File, waitForExit bool,
+		executable *os.File, waitForExit bool, tracerID string,
 	) {
 		if childCtx.Err() != nil {
 			if executable != nil {
@@ -200,6 +235,13 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		processMu.Lock()
 		oomData := c.prepareOOMEvent(data)
 		processMu.Unlock()
+		if tracerID != "" {
+			if err := heapProfiler.ObserveOOM(data.VictimPID, data.Timestamp,
+				tracerID, oomData.Victim.ContainerID, eventTime); err != nil {
+				c.goHeapErrors.Add(1)
+				log.Warnf("OOM Go heap event correlation failed: %v", err)
+			}
+		}
 
 		/* The retained executable remains readable after snapshot collection. */
 		oomData.LanguageInfo = detectLanguageInfo(data.VictimPID, executable)
@@ -223,7 +265,7 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		if childCtx.Err() != nil {
 			return
 		}
-		saveOOMEvent(oomData, eventTime)
+		saveOOMEvent(oomData, eventTime, tracerID)
 	}
 
 	defer func() {
@@ -232,6 +274,9 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		reader.Close()
 		if exitReader != nil {
 			exitReader.Close()
+		}
+		if heapController != nil {
+			_ = heapController.Close()
 		}
 		workers.Wait()
 	}()
@@ -249,6 +294,27 @@ func (c *oomCollector) Start(ctx context.Context) error {
 				log.Warnf(
 					"oom exit context disabled after reader failure: %v",
 					err)
+			}
+		}()
+	}
+
+	if heapController != nil {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			defer heapActive.Store(false)
+			err := heapController.Run(func(capture *goheap.Capture) error {
+				c.goHeapCaptures.Add(1)
+				if err := heapProfiler.HandleCapture(capture); err != nil {
+					c.goHeapErrors.Add(1)
+					log.Warnf("OOM Go heap capture processing failed: %v", err)
+				}
+				return nil
+			})
+			if err != nil && childCtx.Err() == nil {
+				c.goHeapErrors.Add(1)
+				log.Warnf("OOM Go heap capture disabled after reader failure: %v", err)
+				_ = heapController.Close()
 			}
 		}()
 	}
@@ -273,6 +339,10 @@ func (c *oomCollector) Start(ctx context.Context) error {
 			}
 			executable := processlang.OpenExecutable(int(data.VictimPID))
 			eventTime := time.Now()
+			tracerID := ""
+			if heapActive.Load() {
+				tracerID = xid.New().String()
+			}
 
 			/*
 			 * Bound asynchronous exit waits to the kernel pending-map
@@ -280,7 +350,7 @@ func (c *oomCollector) Start(ctx context.Context) error {
 			 * collection synchronously.
 			 */
 			if exitWaitCtx.Err() != nil || data.Timestamp == 0 {
-				processEvent(data, eventTime, executable, false)
+				processEvent(data, eventTime, executable, false, tracerID)
 				continue
 			}
 
@@ -292,14 +362,14 @@ func (c *oomCollector) Start(ctx context.Context) error {
 			case asyncWorkerSlots <- struct{}{}:
 				workers.Add(1)
 				go func(data *abi.OOMEvent, eventTime time.Time,
-					executable *os.File,
+					executable *os.File, tracerID string,
 				) {
 					defer workers.Done()
 					defer func() { <-asyncWorkerSlots }()
-					processEvent(data, eventTime, executable, true)
-				}(data, eventTime, executable)
+					processEvent(data, eventTime, executable, true, tracerID)
+				}(data, eventTime, executable, tracerID)
 			default:
-				processEvent(data, eventTime, executable, false)
+				processEvent(data, eventTime, executable, false, tracerID)
 			}
 		}
 	}
@@ -335,10 +405,11 @@ func (c *oomCollector) prepareOOMEvent(data *abi.OOMEvent) *OOMTracingData {
  * saveOOMEvent writes the enriched base event and any correlated exit context
  * as one tracing record.
  */
-func saveOOMEvent(oomData *OOMTracingData, eventTime time.Time) {
+func saveOOMEvent(oomData *OOMTracingData, eventTime time.Time, tracerID string) {
 	oomData.Victim.Environ = redactOOMEnviron(oomData.Victim.Environ)
 	if err := tracing.Save(&tracing.WriteRequest{
 		TracerName:  "oom",
+		TracerID:    tracerID,
 		TracerTime:  eventTime,
 		TracerData:  oomData,
 		ContainerID: oomData.Victim.ContainerID,

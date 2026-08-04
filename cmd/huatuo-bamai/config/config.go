@@ -131,6 +131,9 @@ func (c *BamaiConfig) Validate() error {
 	if err := c.Pod.Validate(); err != nil {
 		return fmt.Errorf("validating pod config: %w", err)
 	}
+	if err := c.EventTracing.Validate(); err != nil {
+		return fmt.Errorf("validating event tracing config: %w", err)
+	}
 	return nil
 }
 

@@ -72,6 +72,12 @@ Filter = "dst port 443"
 EnableTLP = true
 MaxEventsPerSecond = 42
 
+[EventTracing.OOMGoHeap]
+Enabled = true
+CaptureBudgetMicroseconds = 1500
+ReconcileIntervalSeconds = 7
+MaxTargets = 512
+
 [MetricCollector.Vmstat]
 IncludedOnHost = "pgscan_direct"
 ExcludedOnHost = "total"
@@ -144,8 +150,24 @@ ExcludedOnContainer = "writeback"
 	if Get().EventTracing.TCPRetransmit.MaxEventsPerSecond != 42 {
 		t.Errorf("unexpected TCPRetransmit.MaxEventsPerSecond: %d", Get().EventTracing.TCPRetransmit.MaxEventsPerSecond)
 	}
+	if got := Get().EventTracing.OOMGoHeap; !got.Enabled ||
+		got.CaptureBudgetMicroseconds != 1500 ||
+		got.ReconcileIntervalSeconds != 7 || got.MaxTargets != 512 {
+		t.Errorf("EventTracing.OOMGoHeap = %+v, want explicit overrides", got)
+	}
 	if Get().Storage.Elasticsearch.Enabled() {
 		t.Error("Elasticsearch is enabled without connection settings")
+	}
+}
+
+func TestOOMGoHeapDefaultsDisabled(t *testing.T) {
+	got := loadConfigDefaults(t).EventTracing.OOMGoHeap
+	if got.Enabled {
+		t.Fatal("OOM Go heap capture is enabled by default")
+	}
+	if got.CaptureBudgetMicroseconds != 2000 ||
+		got.ReconcileIntervalSeconds != 10 || got.MaxTargets != 4096 {
+		t.Fatalf("EventTracing.OOMGoHeap defaults = %+v", got)
 	}
 }
 
@@ -270,6 +292,30 @@ func TestBamaiConfigValidate(t *testing.T) {
 				cfg.Pod.KubeletReadOnlyPort = 65536
 			},
 			wantErr: "kubelet read-only port",
+		},
+		{
+			name: "invalid OOM Go heap capture budget",
+			mutate: func(cfg *BamaiConfig) {
+				cfg.EventTracing.OOMGoHeap.Enabled = true
+				cfg.EventTracing.OOMGoHeap.CaptureBudgetMicroseconds = 10001
+			},
+			wantErr: "capture budget",
+		},
+		{
+			name: "invalid OOM Go heap reconcile interval",
+			mutate: func(cfg *BamaiConfig) {
+				cfg.EventTracing.OOMGoHeap.Enabled = true
+				cfg.EventTracing.OOMGoHeap.ReconcileIntervalSeconds = 0
+			},
+			wantErr: "reconcile interval",
+		},
+		{
+			name: "invalid OOM Go heap target limit",
+			mutate: func(cfg *BamaiConfig) {
+				cfg.EventTracing.OOMGoHeap.Enabled = true
+				cfg.EventTracing.OOMGoHeap.MaxTargets = 4097
+			},
+			wantErr: "maximum targets",
 		},
 	}
 
