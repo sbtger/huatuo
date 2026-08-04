@@ -16,6 +16,20 @@ package bpf
 
 import "context"
 
+// MapReplacement describes a map from an already loaded BPF object that
+// should replace a map in the object being loaded. SourceMapName defaults to
+// the replacement's target name when left empty.
+type MapReplacement struct {
+	Source        BPF
+	SourceMapName string
+}
+
+// LoadOptions controls how a BPF collection is loaded.
+type LoadOptions struct {
+	Constants       map[string]any
+	MapReplacements map[string]MapReplacement
+}
+
 // BPF is safe for concurrent use. Close waits for in-flight operations.
 // Resource access and attach methods started after Close return ErrClosed;
 // Close and Detach remain idempotent.
