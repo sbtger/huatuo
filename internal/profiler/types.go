@@ -25,6 +25,8 @@ const (
 	ProfileTypeCpuSample       = "process_cpu:cpu:nanoseconds:cpu:nanoseconds"
 	ProfileTypeOffCpuSample    = "process_offcpu:offcpu:nanoseconds:offcpu:nanoseconds"
 	ProfileTypeMemSample       = "memory:alloc_space:bytes:space:bytes"
+	ProfileTypeMemInuseSpace   = "memory:inuse_space:bytes:space:bytes"
+	ProfileTypeMemInuseObjects = "memory:inuse_objects:count:objects:count"
 	ProfileTypeLockCountSample = "process_lock:lock:count:lock:count"
 	ProfileTypeLockTimeSample  = "process_lock:lock:nanoseconds:lock:nanoseconds"
 )
