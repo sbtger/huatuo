@@ -78,6 +78,7 @@ struct go_heap_event {
 	u64 oom_timestamp;
 	u64 capture_started_ns;
 	u64 capture_duration_ns;
+	u64 start_time_ticks;
 	u32 victim_tgid;
 	u32 capture_id;
 	u32 bucket_count;

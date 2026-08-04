@@ -88,6 +88,7 @@ struct runtime_bucket_header {
 struct go_heap_capture_state {
 	u64 bucket_address;
 	u64 oom_timestamp;
+	u64 start_time_ticks;
 	u64 started_ns;
 	u64 deadline_ns;
 	u32 victim_tgid;
@@ -135,6 +136,7 @@ finish_capture(void *ctx, struct go_heap_capture_state *state,
 	event->oom_timestamp = state->oom_timestamp;
 	event->capture_started_ns = state->started_ns;
 	event->capture_duration_ns = control->completed_ns - state->started_ns;
+	event->start_time_ticks = state->start_time_ticks;
 	event->victim_tgid = state->victim_tgid;
 	event->capture_id = state->capture_id;
 	event->bucket_count = state->bucket_count;
@@ -268,6 +270,7 @@ int go_heap_signal_deliver(struct trace_event_raw_signal_deliver *ctx)
 	}
 
 	state->oom_timestamp = *oom_timestamp;
+	state->start_time_ticks = target->start_time_ticks;
 	state->victim_tgid = tgid;
 	state->capture_id = initial_control.capture_id;
 	state->bucket_count = 0;
