@@ -141,8 +141,11 @@ clean:
 		$(FIND_EXCLUDE_PATHS) \
 		-delete
 
-gen-build: bpf-build
+## Generate and validate the Go ABI independently from mock and Cap'n Proto code.
+bpf-abi: bpf-build
 	@go run ./build/bpfabi-tool
+
+gen-build: bpf-abi
 	@go generate -run "mockery.*" -x ./...
 	@go generate -run "capnp.*" ./...
 
@@ -158,4 +161,4 @@ integration: all
 e2e: all
 	@bash e2e/run.sh
 
-.PHONY: all build-nostatic bpf-build gen-build sync build check import-fmt golangci-lint vendor clean test unit integration e2e docker-build docker-clean compose-dev-up compose-dev-down
+.PHONY: all build-nostatic bpf-build bpf-abi gen-build sync build check import-fmt golangci-lint vendor clean test unit integration e2e docker-build docker-clean compose-dev-up compose-dev-down
