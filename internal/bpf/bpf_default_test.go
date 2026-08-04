@@ -185,6 +185,49 @@ func TestLoadBPF_LoadsFromDir(t *testing.T) {
 	t.Cleanup(func() { b.Close() })
 }
 
+func TestLoadBPFFromBytesWithOptions_MapReplacement(t *testing.T) {
+	source := loadMinimalBpfFromBytes(t)
+	objBytes := loadMinimalObjBytes(t)
+
+	target, err := LoadBPFFromBytesWithOptions("test_replacement.elf", objBytes, &LoadOptions{
+		MapReplacements: map[string]MapReplacement{
+			"counter_map": {Source: source},
+		},
+	})
+	if errors.Is(err, ebpf.ErrNotSupported) {
+		t.Skipf("skipping: ebpf not supported: %v", err)
+	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, target.Close()) })
+
+	require.Equal(t, source.MapIDByName("counter_map"), target.MapIDByName("counter_map"))
+
+	key := make([]byte, 4)
+	want := make([]byte, 8)
+	binary.NativeEndian.PutUint64(want, 42)
+	require.NoError(t, source.WriteMapItems(source.MapIDByName("counter_map"), []MapItem{{Key: key, Value: want}}))
+	got, err := target.ReadMap(target.MapIDByName("counter_map"), key)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestLoadBPFFromBytesWithOptions_MapReplacementErrors(t *testing.T) {
+	objBytes := loadMinimalObjBytes(t)
+
+	_, err := LoadBPFFromBytesWithOptions("nil_source.elf", objBytes, &LoadOptions{
+		MapReplacements: map[string]MapReplacement{"counter_map": {}},
+	})
+	require.EqualError(t, err, `map replacement "counter_map" has nil source`)
+
+	source := loadMinimalBpfFromBytes(t)
+	_, err = LoadBPFFromBytesWithOptions("missing_map.elf", objBytes, &LoadOptions{
+		MapReplacements: map[string]MapReplacement{
+			"counter_map": {Source: source, SourceMapName: "missing"},
+		},
+	})
+	require.ErrorIs(t, err, ErrMapNotFound)
+}
+
 // TestDefaultBPF_Lifecycle_And_Accessors tests the basic lifecycle and accessor methods of defaultBPF.
 //
 // Covered functions:

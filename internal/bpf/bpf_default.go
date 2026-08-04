@@ -80,26 +80,41 @@ var _ BPF = (*defaultBPF)(nil)
 
 // LoadBPFFromBytes loads the BPF object from bytes.
 func LoadBPFFromBytes(bpfName string, bpfBytes []byte, consts map[string]any) (BPF, error) {
+	return LoadBPFFromBytesWithOptions(bpfName, bpfBytes, &LoadOptions{Constants: consts})
+}
+
+// LoadBPFFromBytesWithOptions loads the BPF object from bytes with options.
+func LoadBPFFromBytesWithOptions(bpfName string, bpfBytes []byte, opts *LoadOptions) (BPF, error) {
 	if err := validateName(bpfName); err != nil {
 		return nil, err
 	}
-	return loadBPFFromReader(bpfName, bytes.NewReader(bpfBytes), consts)
+	return loadBPFFromReader(bpfName, bytes.NewReader(bpfBytes), opts)
 }
 
 // LoadBPFFromCollectionSpec loads the BPF object from a prepared collection spec.
 // This allows callers to modify the spec (e.g., inject pcap filters) before loading.
 func LoadBPFFromCollectionSpec(bpfName string, spec *ebpf.CollectionSpec, consts map[string]any) (BPF, error) {
+	return LoadBPFFromCollectionSpecWithOptions(bpfName, spec, &LoadOptions{Constants: consts})
+}
+
+// LoadBPFFromCollectionSpecWithOptions loads a prepared collection spec with options.
+func LoadBPFFromCollectionSpecWithOptions(bpfName string, spec *ebpf.CollectionSpec, opts *LoadOptions) (BPF, error) {
 	if spec == nil {
 		return nil, errors.New("nil collection spec")
 	}
 	if err := validateName(bpfName); err != nil {
 		return nil, err
 	}
-	return loadBPFFromCollectionSpec(bpfName, spec, consts)
+	return loadBPFFromCollectionSpec(bpfName, spec, opts)
 }
 
 // LoadBPF loads the BPF object from the default directory and returns it.
 func LoadBPF(bpfName string, consts map[string]any) (BPF, error) {
+	return LoadBPFWithOptions(bpfName, &LoadOptions{Constants: consts})
+}
+
+// LoadBPFWithOptions loads the BPF object from the default directory with options.
+func LoadBPFWithOptions(bpfName string, opts *LoadOptions) (BPF, error) {
 	if err := validateName(bpfName); err != nil {
 		return nil, err
 	}
@@ -109,29 +124,35 @@ func LoadBPF(bpfName string, consts map[string]any) (BPF, error) {
 	}
 	defer f.Close()
 
-	return loadBPFFromReader(bpfName, f, consts)
+	return loadBPFFromReader(bpfName, f, opts)
 }
 
 // loadBPFFromReader loads the BPF object from reader.
-func loadBPFFromReader(bpfName string, rd io.ReaderAt, consts map[string]any) (BPF, error) {
+func loadBPFFromReader(bpfName string, rd io.ReaderAt, opts *LoadOptions) (BPF, error) {
 	specs, err := ebpf.LoadCollectionSpecFromReader(rd)
 	if err != nil {
 		return nil, fmt.Errorf("parse BPF object %q: %w", bpfName, err)
 	}
 
-	return loadBPFFromCollectionSpec(bpfName, specs, consts)
+	return loadBPFFromCollectionSpec(bpfName, specs, opts)
 }
 
-func loadBPFFromCollectionSpec(bpfName string, specs *ebpf.CollectionSpec, consts map[string]any) (BPF, error) {
+func loadBPFFromCollectionSpec(bpfName string, specs *ebpf.CollectionSpec, opts *LoadOptions) (BPF, error) {
 	// RewriteConstants
-	if consts != nil {
-		if err := specs.RewriteConstants(consts); err != nil {
+	if opts != nil && opts.Constants != nil {
+		if err := specs.RewriteConstants(opts.Constants); err != nil {
 			return nil, fmt.Errorf("rewrite constants: %w", err)
 		}
 	}
 
+	collectionOpts, closeReplacements, err := collectionOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+	defer closeReplacements()
+
 	// loads Maps and Programs into the kernel.
-	coll, err := ebpf.NewCollection(specs)
+	coll, err := ebpf.NewCollectionWithOptions(specs, collectionOpts)
 	if err != nil {
 		return nil, fmt.Errorf("create BPF collection: %w", err)
 	}
@@ -223,6 +244,46 @@ func loadBPFFromCollectionSpec(bpfName string, specs *ebpf.CollectionSpec, const
 	return b, nil
 }
 
+func collectionOptions(opts *LoadOptions) (ebpf.CollectionOptions, func(), error) {
+	var collectionOpts ebpf.CollectionOptions
+	if opts == nil || len(opts.MapReplacements) == 0 {
+		return collectionOpts, func() {}, nil
+	}
+
+	collectionOpts.MapReplacements = make(map[string]*ebpf.Map, len(opts.MapReplacements))
+	closeReplacements := func() {
+		for _, replacement := range collectionOpts.MapReplacements {
+			_ = replacement.Close()
+		}
+	}
+
+	for targetName, replacement := range opts.MapReplacements {
+		if replacement.Source == nil {
+			closeReplacements()
+			return ebpf.CollectionOptions{}, func() {}, fmt.Errorf("map replacement %q has nil source", targetName)
+		}
+
+		source, ok := replacement.Source.(*defaultBPF)
+		if !ok {
+			closeReplacements()
+			return ebpf.CollectionOptions{}, func() {}, fmt.Errorf("map replacement %q has unsupported source type %T", targetName, replacement.Source)
+		}
+
+		sourceName := replacement.SourceMapName
+		if sourceName == "" {
+			sourceName = targetName
+		}
+		cloned, err := source.cloneMapByName(sourceName)
+		if err != nil {
+			closeReplacements()
+			return ebpf.CollectionOptions{}, func() {}, fmt.Errorf("clone source map %q for replacement %q: %w", sourceName, targetName, err)
+		}
+		collectionOpts.MapReplacements[targetName] = cloned
+	}
+
+	return collectionOpts, closeReplacements, nil
+}
+
 // Name returns the name of the bpf.
 func (b *defaultBPF) Name() string {
 	return b.name
@@ -240,6 +301,19 @@ func (b *defaultBPF) mapByName(name string) (*ebpf.Map, error) {
 	}
 
 	return b.mapByID(mapID)
+}
+
+func (b *defaultBPF) cloneMapByName(name string) (*ebpf.Map, error) {
+	if err := b.acquireReadLock(); err != nil {
+		return nil, err
+	}
+	defer b.mu.RUnlock()
+
+	m, err := b.mapByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return m.Clone()
 }
 
 func (b *defaultBPF) mapByID(mapID uint32) (*ebpf.Map, error) {
