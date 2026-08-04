@@ -111,8 +111,8 @@ func (s *Service) SelectMergeStacktraces(ctx context.Context, req *querierv1.Sel
 		}
 	}
 
-	if filter.ID == "" && filter.Hostname == "" && filter.ContainerID == "" && filter.ContainerHostname == "" {
-		return nil, fmt.Errorf("%w: id, hostname, or container must be specified", ErrInvalidQuery)
+	if filter.ID == "" && filter.TracerID == "" && filter.Hostname == "" && filter.ContainerID == "" && filter.ContainerHostname == "" {
+		return nil, fmt.Errorf("%w: id, tracer_id, hostname, or container must be specified", ErrInvalidQuery)
 	}
 
 	// search
@@ -241,6 +241,8 @@ func applyProfileMatcher(filter *SearchFilter, matcher *labels.Matcher) error {
 		filter.ContainerID = matcher.Value
 	case "container_hostname":
 		filter.ContainerHostname = matcher.Value
+	case "tracer_id":
+		filter.TracerID = matcher.Value
 	case "__profile_type__":
 		filter.ProfileType = matcher.Value
 	default:
@@ -303,7 +305,7 @@ func (s *Service) ProfileTypes(ctx context.Context, req *querierv1.ProfileTypesR
 //	response: typesv1.LabelNamesResponse
 func (s *Service) LabelNames(context.Context, *typesv1.LabelNamesRequest) (*typesv1.LabelNamesResponse, error) {
 	response := &typesv1.LabelNamesResponse{
-		Names: []string{"region", "hostname", "container_id", "container_hostname", "container_host_namespace"},
+		Names: []string{"region", "hostname", "container_id", "container_hostname", "container_host_namespace", "tracer_id"},
 	}
 	return response, nil
 }
