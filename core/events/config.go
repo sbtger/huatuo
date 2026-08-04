@@ -14,6 +14,38 @@
 
 package events
 
+import (
+	"errors"
+	"fmt"
+
+	"huatuo-bamai/internal/goheap"
+)
+
+// OOMGoHeapConfig controls the optional pre-exit Go heap snapshot path.
+type OOMGoHeapConfig struct {
+	Enabled                   bool   `default:"false"`
+	CaptureBudgetMicroseconds uint64 `default:"2000"`
+	ReconcileIntervalSeconds  uint64 `default:"10"`
+	MaxTargets                int    `default:"4096"`
+}
+
+// Validate rejects settings that could make the optional exit hook unbounded.
+func (c OOMGoHeapConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+	if c.CaptureBudgetMicroseconds == 0 || c.CaptureBudgetMicroseconds > 10000 {
+		return errors.New("capture budget must be between 1 and 10000 microseconds")
+	}
+	if c.ReconcileIntervalSeconds == 0 {
+		return errors.New("reconcile interval must be greater than zero seconds")
+	}
+	if c.MaxTargets <= 0 || c.MaxTargets > goheap.DefaultMaxTargets {
+		return fmt.Errorf("maximum targets must be between 1 and %d", goheap.DefaultMaxTargets)
+	}
+	return nil
+}
+
 // Config holds event tracing configuration.
 type Config struct {
 	Softirq struct {
@@ -48,7 +80,17 @@ type Config struct {
 		MceThrBackoff int64 `default:"1800"`
 	}
 
+	OOMGoHeap OOMGoHeapConfig
+
 	IssuesList [][]string
+}
+
+// Validate checks event-tracing settings that have operational bounds.
+func (c Config) Validate() error {
+	if err := c.OOMGoHeap.Validate(); err != nil {
+		return fmt.Errorf("validating OOM Go heap config: %w", err)
+	}
+	return nil
 }
 
 var cfg = &Config{}

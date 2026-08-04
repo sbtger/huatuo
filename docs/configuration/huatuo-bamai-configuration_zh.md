@@ -814,6 +814,25 @@ BlackList = ["netdev_hw", "metax_gpu", "ascend_npu", "diskio"]
 
   **说明**：THR 事件由 CPU 本地 APIC 阈值中断触发，在硬件出现纠正性错误时可能以极高频率产生。该冷却时间用于防止存储系统被大量重复记录淹没，同时保证关键事件仍能被捕获。调低该值可获得更实时的事件记录，但需注意存储压力；在错误频发的环境中建议适当调高。
 
+#### 8.7 OOM Go 堆剖析（EventTracing.OOMGoHeap）
+
+该可选旁路在内核向 OOM 被杀进程投递 `SIGKILL` 前抓取 Go runtime 堆快照，生成在用内存空间和在用对象数两种 profile，并与基础 OOM 事件使用同一个 `tracer_id`。加载、转换或存储失败只会关闭或跳过堆剖析，不影响基础 OOM 事件采集。
+
+```bash
+[EventTracing.OOMGoHeap]
+    Enabled = false
+    CaptureBudgetMicroseconds = 2000
+    ReconcileIntervalSeconds = 10
+    MaxTargets = 4096
+```
+
+- **Enabled**：是否启用可选堆剖析旁路，默认 `false`。
+- **CaptureBudgetMicroseconds**：单次退出前 BPF 抓取的最大执行时间，有效范围 1–10000 μs，默认 2000 μs。
+- **ReconcileIntervalSeconds**：发现可剖析 Go 进程的间隔，必须大于 0，默认 10 秒。
+- **MaxTargets**：最多注册的 Go 进程数，有效范围 1–4096，默认 4096。
+
+该功能要求内核和 Go runtime 布局受支持；不支持时仅记录告警，并继续采集普通 OOM 事件。
+
 #### 8.8 已知问题过滤（IssuesList）
 
 ```bash
