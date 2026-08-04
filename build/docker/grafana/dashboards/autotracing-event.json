@@ -5827,6 +5827,32 @@
               {
                 "matcher": {
                   "id": "byName",
+                  "options": "_id"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "go_heap_profile"
+                  },
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "targetBlank": true,
+                        "title": "View OOM Go heap flame graphs",
+                        "url": "/d/oom-go-heap/oom-go-heap?var-tracer_id=${__data.fields._id}&from=${__from}&to=${__to}"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 180
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
                   "options": "_source"
                 },
                 "properties": [
@@ -5892,7 +5918,7 @@
               "id": "organize",
               "options": {
                 "excludeByName": {
-                  "_id": true,
+                  "_id": false,
                   "_index": true,
                   "_type": true,
                   "es_index_time": true,

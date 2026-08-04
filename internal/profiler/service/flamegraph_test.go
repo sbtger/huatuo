@@ -15,9 +15,11 @@
 package service
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	querierv1 "github.com/grafana/pyroscope/api/gen/proto/go/querier/v1"
 	"github.com/prometheus/prometheus/model/labels"
 )
 
@@ -37,6 +39,33 @@ func TestApplyProfileMatcherRegion(t *testing.T) {
 	}
 	if filter.Region != "cn-beijing" {
 		t.Errorf("filter.Region = %q, want %q", filter.Region, "cn-beijing")
+	}
+}
+
+func TestApplyProfileMatcherTracerID(t *testing.T) {
+	filter := &SearchFilter{}
+	matcher := &labels.Matcher{Name: "tracer_id", Value: "oom-event-2026", Type: labels.MatchEqual}
+
+	if err := applyProfileMatcher(filter, matcher); err != nil {
+		t.Fatalf("applyProfileMatcher() error = %v", err)
+	}
+	if filter.TracerID != "oom-event-2026" {
+		t.Errorf("filter.TracerID = %q, want %q", filter.TracerID, "oom-event-2026")
+	}
+}
+
+func TestSelectMergeStacktracesAcceptsTracerIDScope(t *testing.T) {
+	_, err := (&Service{}).SelectMergeStacktraces(t.Context(), &querierv1.SelectMergeStacktracesRequest{
+		Start:         1,
+		End:           2,
+		ProfileTypeID: "memory:inuse_space:bytes:space:bytes",
+		LabelSelector: `{tracer_id="oom-event-2026"}`,
+	})
+	if err == nil {
+		t.Fatal("SelectMergeStacktraces() error = nil, want uninitialized storage error")
+	}
+	if errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("SelectMergeStacktraces() error = %v, tracer_id scope was rejected", err)
 	}
 }
 
