@@ -21,6 +21,7 @@ import (
 	"huatuo-bamai/cmd/huatuo-bamai/config"
 	"huatuo-bamai/cmd/huatuo-bamai/handlers"
 	"huatuo-bamai/internal/bpf"
+	cgroupV2 "huatuo-bamai/internal/cgroups/v2"
 	"huatuo-bamai/internal/toolstream"
 	"huatuo-bamai/pkg/tracing"
 )
@@ -31,7 +32,11 @@ func setupBPF(_ *Daemon) (func(context.Context) error, error) {
 	}
 
 	return func(context.Context) error {
+		closeErr := cgroupV2.CloseLoadStats()
 		bpf.Shutdown()
+		if closeErr != nil {
+			return fmt.Errorf("close cgroup v2 load stats: %w", closeErr)
+		}
 		return nil
 	}, nil
 }
