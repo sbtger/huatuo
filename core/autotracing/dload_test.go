@@ -213,14 +213,31 @@ func TestDloadTracingShouldTrace(t *testing.T) {
 func TestUpdateLoad(t *testing.T) {
 	info := &containerDloadInfo{}
 
-	updateLoad(info, 1, 0)
+	updateLoad(info, 1, 0, loadDecayFactors(10*time.Second))
 
-	expectedRunnableAvg := [2]uint64{164, 34}
+	expectedRunnableAvg := [2]uint64{314, 67}
 	if info.runnableAvg != expectedRunnableAvg {
 		t.Fatalf("runnableAvg = %v, want %v", info.runnableAvg, expectedRunnableAvg)
 	}
-	expectedLoadAvg := [2]float64{0.08, 0.02}
+	expectedLoadAvg := [2]float64{0.15, 0.03}
 	if info.loadAvg != expectedLoadAvg {
 		t.Fatalf("loadAvg = %v, want %v", info.loadAvg, expectedLoadAvg)
+	}
+}
+
+func TestLoadDecayFactorsFollowSamplingInterval(t *testing.T) {
+	tests := []struct {
+		interval time.Duration
+		want     [2]uint64
+	}{
+		{interval: 5 * time.Second, want: [2]uint64{1884, 2014}},
+		{interval: 10 * time.Second, want: [2]uint64{1734, 1981}},
+		{interval: 20 * time.Second, want: [2]uint64{1467, 1916}},
+	}
+
+	for _, test := range tests {
+		if got := loadDecayFactors(test.interval); got != test.want {
+			t.Errorf("loadDecayFactors(%s) = %v, want %v", test.interval, got, test.want)
+		}
 	}
 }
