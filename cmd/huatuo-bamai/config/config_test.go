@@ -66,6 +66,9 @@ MaxRotatedFiles = 4
 [AutoTracing]
 IssuesList = [["dload", "jbd2"]]
 
+[AutoTracing.Dload]
+EnableCgroupV2 = true
+
 [EventTracing]
 IssuesList = [["net_rx_latency", "kernel_sched_tick"]]
 
@@ -85,6 +88,9 @@ IncludedOnHost = "pgscan_direct"
 ExcludedOnHost = "total"
 IncludedOnContainer = "inactive_file"
 ExcludedOnContainer = "writeback"
+
+[MetricCollector.Loadavg]
+EnableCgroupV2 = true
 `)
 	if path == "" {
 		return
@@ -125,6 +131,9 @@ ExcludedOnContainer = "writeback"
 	if len(Get().AutoTracing.IssuesList) != 1 {
 		t.Errorf("unexpected AutoTracing.IssuesList length: %d", len(Get().AutoTracing.IssuesList))
 	}
+	if !Get().AutoTracing.Dload.EnableCgroupV2 {
+		t.Error("AutoTracing.Dload.EnableCgroupV2 should be true")
+	}
 	if Get().EventTracing.SchedTick.IntervalThreshold != 20000000 {
 		t.Errorf(
 			"EventTracing.SchedTick.IntervalThreshold = %d, want 20000000",
@@ -145,6 +154,9 @@ ExcludedOnContainer = "writeback"
 	}
 	if Get().MetricCollector.Vmstat.IncludedOnContainer != "inactive_file" {
 		t.Errorf("unexpected Vmstat.IncludedOnContainer: %q", Get().MetricCollector.Vmstat.IncludedOnContainer)
+	}
+	if !Get().MetricCollector.Loadavg.EnableCgroupV2 {
+		t.Error("MetricCollector.Loadavg.EnableCgroupV2 should be true")
 	}
 	if len(Get().EventTracing.NetRxLatency.ExcludedContainerQos) != 1 {
 		t.Errorf("unexpected ExcludedContainerQos length: %d", len(Get().EventTracing.NetRxLatency.ExcludedContainerQos))

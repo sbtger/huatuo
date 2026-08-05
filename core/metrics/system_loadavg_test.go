@@ -22,8 +22,12 @@ import (
 	"testing"
 
 	"huatuo-bamai/internal/cgroups"
+	cgroupV2 "huatuo-bamai/internal/cgroups/v2"
+	"huatuo-bamai/internal/pod"
 	"huatuo-bamai/internal/procfs"
 	"huatuo-bamai/pkg/metric"
+
+	cadvisorV1 "github.com/google/cadvisor/info/v1"
 )
 
 func TestParseHostRunnable(t *testing.T) {
@@ -116,7 +120,7 @@ func TestLoadavgFailureIsolation(t *testing.T) {
 					return nil, tt.containerErr
 				}
 				return []*metric.Data{metric.NewContainerGaugeData(vmstatTestContainer(""), "nr_running", 2, "test", nil)}, nil
-			})
+			}, nil)
 			if called != (tt.mode == cgroups.Legacy) {
 				t.Fatalf("container called = %v", called)
 			}
@@ -141,6 +145,77 @@ func TestHostRunnableLive(t *testing.T) {
 	}
 }
 
+func TestLoadavgMergedHostContainerCoverage(t *testing.T) {
+	originalRoot := filepath.Dir(procfs.DefaultPath())
+	t.Cleanup(func() { procfs.RootPrefix(originalRoot) })
+	readErr := errors.New("container sampling failed")
+	for _, tt := range []struct {
+		name       string
+		mode       cgroups.Mode
+		enabled    bool
+		readErr    error
+		missing    string
+		wantReader string
+		wantErr    bool
+	}{
+		{"legacy", cgroups.Legacy, true, nil, "", "v1", false},
+		{"hybrid", cgroups.Hybrid, false, nil, "", "v1", false},
+		{"hybrid failure", cgroups.Hybrid, true, readErr, "", "v1", true},
+		{"v2 disabled", cgroups.Unified, false, nil, "", "", false},
+		{"v2 enabled", cgroups.Unified, true, nil, "", "v2", false},
+		{"v2 unsupported", cgroups.Unified, true, cgroupV2.ErrTaskIteratorNotSupported, "", "v2", false},
+		{"v2 partial failure", cgroups.Unified, true, readErr, "", "v2", true},
+		{"v2 missing stat", cgroups.Unified, true, nil, "stat", "v2", true},
+		{"v2 missing average", cgroups.Unified, true, nil, "loadavg", "v2", true},
+		{"unavailable", cgroups.Unavailable, true, nil, "", "", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			procfs.RootPrefix(t.TempDir())
+			if err := os.MkdirAll(procfs.DefaultPath(), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			want := map[string]float64{}
+			for name, raw := range map[string]string{"stat": "procs_running 4\n", "loadavg": "1 2 3 4/5 6\n"} {
+				if name == tt.missing {
+					continue
+				}
+				if err := os.WriteFile(procfs.Path(name), []byte(raw), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tt.missing != "stat" {
+				want["nr_running"] = 4
+			}
+			if tt.missing != "loadavg" {
+				want["load1"], want["load5"], want["load15"] = 1, 2, 3
+			}
+			called := ""
+			read := func(reader string) ([]*metric.Data, error) {
+				if called != "" {
+					t.Fatal("container reader called more than once")
+				}
+				called = reader
+				return containerLoadMetrics(vmstatTestContainer(""), 2, 3), tt.readErr
+			}
+			c := loadavgCollector{enableCgroupV2: tt.enabled}
+			data, err := c.update(tt.mode,
+				func() ([]*metric.Data, error) { return read("v1") },
+				func() ([]*metric.Data, error) { return read("v2") },
+			)
+			if called != tt.wantReader || (err != nil) != tt.wantErr {
+				t.Fatalf("reader = %q, error = %v; want reader %q, error %v", called, err, tt.wantReader, tt.wantErr)
+			}
+			if tt.wantErr && tt.readErr != nil && !errors.Is(err, tt.readErr) {
+				t.Fatalf("lost container error: %v", err)
+			}
+			if tt.wantReader != "" && !errors.Is(tt.readErr, cgroupV2.ErrTaskIteratorNotSupported) {
+				want["container_nr_running"], want["container_nr_uninterruptible"] = 2, 3
+			}
+			assertVMStatMetrics(t, data, want)
+		})
+	}
+}
+
 func BenchmarkParseHostRunnable(b *testing.B) {
 	raw := []byte("cpu 1 2 3 4 5 6 7 8 9 10\n" + strings.Repeat("cpu0 1 2 3 4 5 6 7 8 9 10\n", 256) + "intr " + strings.Repeat("0 ", 4096) + "\nprocs_running 4\n")
 	b.ReportAllocs()
@@ -149,5 +224,134 @@ func BenchmarkParseHostRunnable(b *testing.B) {
 		if _, err := parseHostRunnable(raw); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestContainerLoadMetrics(t *testing.T) {
+	container := &pod.Container{
+		Type:   pod.ContainerTypeNormal,
+		Labels: map[string]any{"HostNamespace": "namespace"},
+	}
+	metrics := containerLoadMetrics(container, 2, 3)
+	if len(metrics) != 2 {
+		t.Fatalf("metric count = %d, want 2", len(metrics))
+	}
+
+	if metrics[0].Name() != "container_nr_running" || metrics[0].Value != 2 {
+		t.Fatalf("running metric = %s %v, want container_nr_running 2",
+			metrics[0].Name(), metrics[0].Value)
+	}
+	if metrics[1].Name() != "container_nr_uninterruptible" || metrics[1].Value != 3 {
+		t.Fatalf("uninterruptible metric = %s %v, want container_nr_uninterruptible 3",
+			metrics[1].Name(), metrics[1].Value)
+	}
+}
+
+func TestCollectLoadavgReturnsHostAndPartialContainerMetrics(t *testing.T) {
+	wantErr := errors.New("one container failed")
+	containerMetric := metric.NewGaugeData(
+		"container_load", 1, "container load", nil)
+	hostMetric := metric.NewGaugeData("load1", 2, "host load", nil)
+
+	got, err := collectLoadavg(
+		func() ([]*metric.Data, error) {
+			return []*metric.Data{containerMetric}, wantErr
+		},
+		func() ([]*metric.Data, error) {
+			return []*metric.Data{hostMetric}, nil
+		},
+	)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("collectLoadavg error = %v, want %v", err, wantErr)
+	}
+	if len(got) != 2 || got[0] != containerMetric || got[1] != hostMetric {
+		t.Fatalf("collectLoadavg metrics = %v, want container and host metrics", got)
+	}
+}
+
+func TestCollectContainerV2IgnoresUnsupportedIterator(t *testing.T) {
+	collector := &loadavgCollector{enableCgroupV2: true}
+	got, err := collector.collectContainerV2(func() ([]*metric.Data, error) {
+		return nil, cgroupV2.ErrTaskIteratorNotSupported
+	})
+	if err != nil {
+		t.Fatalf("collectContainerV2() error = %v, want nil", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("collectContainerV2() metrics = %v, want none", got)
+	}
+}
+
+func TestCollectContainerV2PreservesRuntimeErrorAndPartialMetrics(t *testing.T) {
+	wantErr := errors.New("iterator read failed")
+	wantMetric := metric.NewGaugeData("container_load", 1, "container load", nil)
+	collector := &loadavgCollector{enableCgroupV2: true}
+
+	got, err := collector.collectContainerV2(func() ([]*metric.Data, error) {
+		return []*metric.Data{wantMetric}, wantErr
+	})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("collectContainerV2() error = %v, want %v", err, wantErr)
+	}
+	if len(got) != 1 || got[0] != wantMetric {
+		t.Fatalf("collectContainerV2() metrics = %v, want partial metric", got)
+	}
+}
+
+func TestNewLoadavgBindsCgroupV2Config(t *testing.T) {
+	original := configSnapshot()
+	t.Cleanup(func() { Set(original) })
+
+	cfg := &Config{}
+	cfg.Loadavg.EnableCgroupV2 = true
+	Set(cfg)
+	attr, err := newLoadavg()
+	if err != nil {
+		t.Fatalf("newLoadavg() error = %v", err)
+	}
+	collector, ok := attr.TracingData.(*loadavgCollector)
+	if !ok || !collector.enableCgroupV2 {
+		t.Fatalf("newLoadavg() collector = %#v, want cgroup v2 enabled", attr.TracingData)
+	}
+}
+
+func TestCollectContainerLoadavgV1SilentlySkipsFailures(t *testing.T) {
+	wantErr := errors.New("netlink failed")
+	containers := map[string]*pod.Container{
+		"good": {
+			ID: "good", Hostname: "good-host", CgroupPath: "good",
+			Labels: map[string]any{"HostNamespace": "namespace"},
+		},
+		"failed": {
+			ID: "failed", Hostname: "failed-host", CgroupPath: "failed",
+			Labels: map[string]any{"HostNamespace": "namespace"},
+		},
+		"gone": {
+			ID: "gone", Hostname: "gone-host", CgroupPath: "gone",
+			Labels: map[string]any{"HostNamespace": "namespace"},
+		},
+	}
+
+	got, err := collectContainerLoadavgV1(
+		containers,
+		func(name, _ string) (cadvisorV1.LoadStats, error) {
+			switch name {
+			case "good-host":
+				return cadvisorV1.LoadStats{NrRunning: 2, NrUninterruptible: 3}, nil
+			case "failed-host":
+				return cadvisorV1.LoadStats{}, wantErr
+			default:
+				return cadvisorV1.LoadStats{}, errors.New("cgroup disappeared")
+			}
+		},
+	)
+	if err != nil {
+		t.Fatalf("collectContainerLoadavgV1 error = %v, want nil", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("metric count = %d, want 2", len(got))
+	}
+	if got[0].Value != 2 || got[1].Value != 3 {
+		t.Fatalf("metrics = %v, want running 2 and uninterruptible 3", got)
 	}
 }

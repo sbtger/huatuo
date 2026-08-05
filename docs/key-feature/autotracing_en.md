@@ -56,6 +56,7 @@ All events provide default values and work without configuration:
 | `dload.threshold_load` | `5` | Container D-state process load EMA trigger threshold |
 | `dload.interval` | `10` (s) | Detection interval |
 | `dload.interval_tracing` | `1800` (s) | Per-container cooldown period between triggers |
+| `dload.enable_cgroup_v2` | `false` | Opt in to BPF task-iterator sampling on cgroup v2 |
 | `iotracing.rbps_threshold` | `2000` (MB/s) | Disk read throughput trigger threshold |
 | `iotracing.wbps_threshold` | `1500` (MB/s) | Disk write throughput trigger threshold |
 | `iotracing.util_threshold` | `90` (%) | Disk IO utilization trigger threshold |
@@ -178,7 +179,7 @@ All event records include the following common fields:
 
 ### 3. dload
 
-**Description** Reads container process states via netlink and cgroup, then computes an exponential weighted moving average (EMA) of the load contribution from uninterruptible (D-state) processes per container. When the EMA exceeds the threshold (default 5), kernel call stacks are collected for all D-state processes inside the container and on the host. Known-issue filtering (`issues_list`) reduces false positives. A 30-minute per-container cooldown applies.
+**Description** Reads container process states through netlink on cgroup v1 and, when `AutoTracing.Dload.EnableCgroupV2=true`, through a batched BPF task iterator on cgroup v2. It computes an exponential weighted moving average (EMA) of the load contribution from uninterruptible (D-state) processes per container. When the EMA exceeds the threshold (default 5), kernel call stacks are collected for all D-state processes inside the container and on the host. Known-issue filtering (`issues_list`) reduces false positives. A 30-minute per-container cooldown applies. The cgroup v2 path is opt-in because every sample walks all host tasks; it requires readable kernel BTF and the BPF `task` iterator. Counts are non-hierarchical and include only tasks directly attached to each target cgroup. On unsupported or verifier-incompatible kernels, the first sample marks `dload` as unsupported and stops this detector without periodically retrying the BPF load.
 
 Kubernetes deployments must run Huatuo with `hostPID: true`. Without host PID namespace visibility, cgroup v2 dload is reported as unsupported instead of returning misleading zero counts.
 

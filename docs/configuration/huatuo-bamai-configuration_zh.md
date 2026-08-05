@@ -456,10 +456,17 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 # damage to the system.
 # Default: 1800s
 #
+# - EnableCgroupV2
+# 通过 BPF task iterator 开启 cgroup v2 dload 采样。每次采样会遍历一次
+# 宿主机全部任务，因此默认不启用。
+# Kubernetes 部署必须设置 hostPID: true。
+# Default: false
+#
 [AutoTracing.Dload]
 	# ThresholdLoad = 5
 	# Interval = 10
 	# IntervalTracing = 1800
+	# EnableCgroupV2 = false
 ```
 
 - **ThresholdLoad**：容器不可中断睡眠（D 状态）任务数量的一分钟 EMA 阈值。
@@ -475,6 +482,10 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 - **IntervalTracing**：连续运行间隔（秒）。
 
   默认 1800s（30 分钟）。 两次自动追踪之间的最小间隔，防止频繁执行对系统造成压力。
+
+- **EnableCgroupV2**：在 unified cgroup v2 上启用 dload，默认 `false`，不影响
+  cgroup v1。v2 实现要求内核 BTF 可读并支持 BPF `task` iterator；统计仅包含
+  直接挂在目标 cgroup 下的任务，不递归包含子 cgroup。
 
 #### 7.4 IOTracing 自动追踪 — 容器 IO 性能剖析
 
@@ -892,6 +903,12 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 ```bash
 # Metric Collector
 [MetricCollector]
+	# 开启 cgroup v2 容器负载指标。BPF task iterator 每次抓取会遍历一次
+	# 宿主机全部任务。关闭时仍保留宿主机 loadavg 和 cgroup v1 容器指标。
+	# Kubernetes 部署必须设置 hostPID: true。
+	[MetricCollector.Loadavg]
+		# EnableCgroupV2 = false
+
 	# Netdev statistic
 	#
 	# - EnableNetlink

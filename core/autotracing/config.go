@@ -75,6 +75,7 @@ type Config struct {
 		Interval        int64 `default:"10"`
 		IntervalTracing int64 `default:"1800"`
 		EnableDebug     bool  `default:"false"`
+		EnableCgroupV2  bool  `default:"false"`
 	}
 
 	IOTracing struct {

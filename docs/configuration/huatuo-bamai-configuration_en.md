@@ -464,10 +464,17 @@ The automatic tracing module is one of HUATUO’s intelligent features. It trigg
 # performance impact.
 # Default: 1800s
 #
+# - EnableCgroupV2
+# Enable cgroup v2 dload sampling through a BPF task iterator. The iterator
+# walks all host tasks once per sample, so this path is opt-in.
+# Kubernetes deployments must run with hostPID: true.
+# Default: false
+#
 [AutoTracing.Dload]
 	# ThresholdLoad = 5
 	# Interval = 10
 	# IntervalTracing = 1800
+	# EnableCgroupV2 = false
 ```
 
 - **ThresholdLoad**: One-minute EMA threshold for the number of uninterruptible
@@ -482,6 +489,11 @@ The automatic tracing module is one of HUATUO’s intelligent features. It trigg
 - **IntervalTracing**: Minimum time between consecutive tracings.
 
   Default: 1800s (30 minutes).
+
+- **EnableCgroupV2**: Enables dload on a unified cgroup v2 hierarchy. Default:
+  `false`. Cgroup v1 behavior is unchanged. The v2 implementation requires
+  readable kernel BTF and the BPF `task` iterator and counts only tasks directly
+  attached to each requested cgroup, not tasks in descendant cgroups.
 
 #### 7.4 IOTracing AutoTracing — Container IO Performance Profiling
 
@@ -899,6 +911,13 @@ This section defines collection rules for various system and network metrics. Al
 ```bash
 # Metric Collector
 [MetricCollector]
+	# Opt in to container load metrics on cgroup v2. The BPF task iterator
+	# walks all host tasks once per scrape. Host loadavg and cgroup v1 container
+	# metrics remain available when this is false.
+	# Kubernetes deployments must run with hostPID: true.
+	[MetricCollector.Loadavg]
+		# EnableCgroupV2 = false
+
 	# Netdev statistic
 	#
 	# - EnableNetlink
