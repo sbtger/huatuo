@@ -1,4 +1,4 @@
-// Copyright 2025 The HuaTuo Authors
+// Copyright 2025, 2026 The HuaTuo Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,18 +15,27 @@
 package collector
 
 import (
+	"errors"
+	"sync"
+
 	"huatuo-bamai/internal/cgroups"
 	"huatuo-bamai/internal/cgroups/paths"
 	"huatuo-bamai/internal/cgroups/subsystem"
+	cgroupV2 "huatuo-bamai/internal/cgroups/v2"
+	"huatuo-bamai/internal/log"
 	"huatuo-bamai/internal/pod"
 	"huatuo-bamai/internal/procfs"
 	"huatuo-bamai/pkg/metric"
 	"huatuo-bamai/pkg/tracing"
 
+	cadvisorV1 "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cpuload/netlink"
 )
 
-type loadavgCollector struct{}
+type loadavgCollector struct {
+	enableCgroupV2 bool
+	unsupportedV2  sync.Once
+}
 
 func init() {
 	tracing.RegisterEventTracing("loadavg", newLoadavg)
@@ -35,9 +44,26 @@ func init() {
 // newLoadavg returns a new Collector exposing load average stats.
 func newLoadavg() (*tracing.EventTracingAttr, error) {
 	return &tracing.EventTracingAttr{
-		TracingData: &loadavgCollector{},
-		Flag:        tracing.FlagMetric,
+		TracingData: &loadavgCollector{
+			enableCgroupV2: configSnapshot().Loadavg.EnableCgroupV2,
+		},
+		Flag: tracing.FlagMetric,
 	}, nil
+}
+
+func (c *loadavgCollector) collectContainerV2(
+	collect func() ([]*metric.Data, error),
+) ([]*metric.Data, error) {
+	loadavgs, err := collect()
+	if !errors.Is(err, cgroupV2.ErrTaskIteratorNotSupported) {
+		return loadavgs, err
+	}
+
+	c.unsupportedV2.Do(func() {
+		log.WithError(err).Warn(
+			"cgroup v2 container load metrics are unavailable; host load metrics remain enabled")
+	})
+	return nil, nil
 }
 
 // Load average of last 1, 5, 15 minutes.
@@ -72,37 +98,106 @@ func containerLoadavg() ([]*metric.Data, error) {
 		return nil, err
 	}
 
+	return collectContainerLoadavgV1(
+		containers,
+		n.GetCpuLoad,
+	)
+}
+
+func collectContainerLoadavgV1(
+	containers map[string]*pod.Container,
+	getCpuLoad func(string, string) (cadvisorV1.LoadStats, error),
+) ([]*metric.Data, error) {
 	loadavgs := []*metric.Data{}
 	for _, container := range containers {
-		stats, err := n.GetCpuLoad(container.Hostname, paths.Path(subsystem.SubsystemCPU, container.CgroupPath))
+		cgroupPath := paths.Path(subsystem.SubsystemCPU, container.CgroupPath)
+		stats, err := getCpuLoad(container.Hostname, cgroupPath)
 		if err != nil {
 			continue
 		}
 
-		loadavgs = append(loadavgs,
-			metric.NewContainerGaugeData(container,
-				"nr_running", float64(stats.NrRunning), "nr_running of container", nil),
-			metric.NewContainerGaugeData(container,
-				"nr_uninterruptible", float64(stats.NrUninterruptible), "nr_uninterruptible of container", nil))
+		loadavgs = append(loadavgs, containerLoadMetrics(
+			container, stats.NrRunning, stats.NrUninterruptible)...)
 	}
 
 	return loadavgs, nil
 }
 
-func (c *loadavgCollector) Update() ([]*metric.Data, error) {
-	var loadavgs []*metric.Data
+func containerLoadavgV2() ([]*metric.Data, error) {
+	containers, err := pod.ContainersByType(pod.ContainerTypeNormal | pod.ContainerTypeSidecar)
+	if err != nil {
+		return nil, err
+	}
 
-	if cgroups.CgroupMode() == cgroups.Legacy {
-		// continue for node loadavg if err
-		if containersLoads, err := containerLoadavg(); err == nil {
-			loadavgs = append(loadavgs, containersLoads...)
+	paths := make([]string, 0, len(containers))
+	for _, container := range containers {
+		paths = append(paths, container.CgroupPath)
+	}
+	statsByPath, err := cgroupV2.SharedLoadStats(
+		cgroupV2.LoadStatsConsumerLoadavg, paths)
+
+	loadavgs := []*metric.Data{}
+	for _, container := range containers {
+		stats, ok := statsByPath[container.CgroupPath]
+		if !ok {
+			continue
+		}
+
+		loadavgs = append(loadavgs, containerLoadMetrics(
+			container, stats.NrRunning, stats.NrUninterruptible)...)
+	}
+
+	return loadavgs, err
+}
+
+func containerLoadMetrics(
+	container *pod.Container,
+	nrRunning uint64,
+	nrUninterruptible uint64,
+) []*metric.Data {
+	return []*metric.Data{
+		metric.NewContainerGaugeData(container,
+			"nr_running", float64(nrRunning), "nr_running of container", nil),
+		metric.NewContainerGaugeData(container,
+			"nr_uninterruptible", float64(nrUninterruptible),
+			"nr_uninterruptible of container", nil),
+	}
+}
+
+func (c *loadavgCollector) Update() ([]*metric.Data, error) {
+	var containerLoadavgFn func() ([]*metric.Data, error)
+	switch cgroups.CgroupMode() {
+	case cgroups.Legacy, cgroups.Hybrid:
+		// Preserve the historical best-effort semantics for cgroup v1:
+		// container failures must not mark the loadavg collector as failed.
+		containerLoadavgFn = func() ([]*metric.Data, error) {
+			loadavgs, _ := containerLoadavg()
+			return loadavgs, nil
+		}
+	case cgroups.Unified:
+		if c.enableCgroupV2 {
+			containerLoadavgFn = func() ([]*metric.Data, error) {
+				return c.collectContainerV2(containerLoadavgV2)
+			}
 		}
 	}
+	return collectLoadavg(containerLoadavgFn, nodeLoadAvg)
+}
 
-	data, err := nodeLoadAvg()
-	if err != nil {
-		return loadavgs, err
+func collectLoadavg(
+	containerLoadavgFn func() ([]*metric.Data, error),
+	nodeLoadavgFn func() ([]*metric.Data, error),
+) ([]*metric.Data, error) {
+	var loadavgs []*metric.Data
+	var containerErr error
+	if containerLoadavgFn != nil {
+		containersLoads, err := containerLoadavgFn()
+		loadavgs = append(loadavgs, containersLoads...)
+		containerErr = err
 	}
 
-	return append(loadavgs, data...), nil
+	data, nodeErr := nodeLoadavgFn()
+	loadavgs = append(loadavgs, data...)
+
+	return loadavgs, errors.Join(containerErr, nodeErr)
 }
