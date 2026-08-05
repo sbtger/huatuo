@@ -193,6 +193,8 @@ huatuo_bamai_loadavg_container_nr_uninterruptible{container_host="coredns-855c4d
 |loadavg_container_container_nr_running|Number of running tasks in container|count|Container| host, region |cgroup v1 only|
 |loadavg_container_container_nr_uninterruptible|Number of uninterruptible tasks in container|count|Container| host, region |cgroup v1 only|
 
+Kubernetes deployments must run Huatuo with `hostPID: true`. Without host PID namespace visibility, cgroup v2 container metrics are omitted as unsupported instead of exporting misleading zeros.
+
 ## Memory System
 
 ### Reclaim

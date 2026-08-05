@@ -187,6 +187,8 @@ huatuo_bamai_loadavg_container_nr_uninterruptible{container_host="coredns-855c4d
 |loadavg_container_container_nr_running|容器中运行的任务数量|计数|容器| host, region | 只支持 cgroup v1|
 |loadavg_container_container_nr_uninterruptible|容器中不可中断任务的数量|计数|容器| host, region |只支持 cgroup v1|
 
+Kubernetes 部署必须为 Huatuo 设置 `hostPID: true`。无法访问宿主机 PID namespace 时，cgroup v2 容器指标会作为不支持而省略，不会输出有误导性的全零数据。
+
 ## 内存系统
 
 ### 资源回收
