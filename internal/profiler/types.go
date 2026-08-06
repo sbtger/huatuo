@@ -28,6 +28,7 @@ const (
 	ProfileTypeMemInuseObjects = "memory:inuse_objects:count:objects:count"
 	ProfileTypeLockCountSample = "process_lock:lock:count:lock:count"
 	ProfileTypeLockTimeSample  = "process_lock:lock:nanoseconds:lock:nanoseconds"
+	ProfileTypeEventSample     = "event:samples:count:event:count"
 )
 
 // MetadataCollection is the storage collection name for profiling metadata documents.
