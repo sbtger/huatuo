@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"huatuo-bamai/internal/goheap"
+	"huatuo-bamai/internal/javastack"
 )
 
 // OOMGoHeapConfig controls the optional pre-exit Go heap snapshot path.
@@ -42,6 +43,27 @@ func (c OOMGoHeapConfig) Validate() error {
 	}
 	if c.MaxTargets <= 0 || c.MaxTargets > goheap.DefaultMaxTargets {
 		return fmt.Errorf("maximum targets must be between 1 and %d", goheap.DefaultMaxTargets)
+	}
+	return nil
+}
+
+// OOMJavaStackConfig controls the optional Java OOM stack snapshot path.
+type OOMJavaStackConfig struct {
+	Enabled                  bool   `default:"false"`
+	ReconcileIntervalSeconds uint64 `default:"10"`
+	MaxTargets               int    `default:"128"`
+}
+
+// Validate bounds steady-state process tracking.
+func (c OOMJavaStackConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+	if c.ReconcileIntervalSeconds == 0 {
+		return errors.New("reconcile interval must be greater than zero seconds")
+	}
+	if c.MaxTargets <= 0 || c.MaxTargets > javastack.DefaultMaxTargets {
+		return fmt.Errorf("maximum targets must be between 1 and %d", javastack.DefaultMaxTargets)
 	}
 	return nil
 }
@@ -80,7 +102,8 @@ type Config struct {
 		MceThrBackoff int64 `default:"1800"`
 	}
 
-	OOMGoHeap OOMGoHeapConfig
+	OOMGoHeap    OOMGoHeapConfig
+	OOMJavaStack OOMJavaStackConfig
 
 	IssuesList [][]string
 }
@@ -89,6 +112,9 @@ type Config struct {
 func (c Config) Validate() error {
 	if err := c.OOMGoHeap.Validate(); err != nil {
 		return fmt.Errorf("validating OOM Go heap config: %w", err)
+	}
+	if err := c.OOMJavaStack.Validate(); err != nil {
+		return fmt.Errorf("validating OOM Java stack config: %w", err)
 	}
 	return nil
 }

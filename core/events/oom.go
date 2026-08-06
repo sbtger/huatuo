@@ -28,6 +28,7 @@ import (
 	"huatuo-bamai/internal/cgroups"
 	"huatuo-bamai/internal/cgroups/subsystem"
 	"huatuo-bamai/internal/goheap"
+	"huatuo-bamai/internal/javastack"
 	"huatuo-bamai/internal/log"
 	"huatuo-bamai/internal/pod"
 	"huatuo-bamai/internal/utils/bytesutil"
@@ -71,9 +72,11 @@ type oomMetric struct {
 }
 
 type oomCollector struct {
-	cgroup         cgroups.Cgroup
-	goHeapCaptures atomic.Uint64
-	goHeapErrors   atomic.Uint64
+	cgroup            cgroups.Cgroup
+	goHeapCaptures    atomic.Uint64
+	goHeapErrors      atomic.Uint64
+	javaStackCaptures atomic.Uint64
+	javaStackErrors   atomic.Uint64
 }
 
 const oomExitWorkerLimit = 8
@@ -120,6 +123,10 @@ func (c *oomCollector) Update() ([]*metric.Data, error) {
 			"OOM Go heap captures received", nil),
 		metric.NewCounterData("go_heap_error_total", float64(c.goHeapErrors.Load()),
 			"OOM Go heap optional-path errors", nil),
+		metric.NewCounterData("java_stack_capture_total", float64(c.javaStackCaptures.Load()),
+			"OOM Java stack snapshots received", nil),
+		metric.NewCounterData("java_stack_error_total", float64(c.javaStackErrors.Load()),
+			"OOM Java stack optional-path errors", nil),
 	)
 	for _, container := range containers {
 		if val, exists := outOfMemoryCounterContainer[container.ID]; exists {
@@ -217,6 +224,30 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		}
 	}
 
+	var javaController *javastack.Controller
+	var javaSymbols *javastack.SymbolManager
+	var javaProfiler *oomJavaStackProfiler
+	var javaActive atomic.Bool
+	if cfg.OOMJavaStack.Enabled {
+		javaSymbols = javastack.NewSymbolManager()
+		registry := javastack.NewRegistry(javastack.NewProcDiscoverer("/proc"),
+			cfg.OOMJavaStack.MaxTargets)
+		javaController, err = javastack.OpenController(childCtx, b, registry,
+			javastack.ControllerOptions{
+				ReconcilePeriod: time.Duration(
+					cfg.OOMJavaStack.ReconcileIntervalSeconds) * time.Second,
+			})
+		if err != nil {
+			c.javaStackErrors.Add(1)
+			log.Warnf("OOM Java stack capture disabled: %v", err)
+			javaSymbols = nil
+			javaController = nil
+		} else {
+			javaProfiler = newOOMJavaStackProfiler(javaSymbols)
+			javaActive.Store(true)
+		}
+	}
+
 	/*
 	 * processEvent preserves the original serialized enrichment and storage.
 	 * Only workers with a slot wait for exit context; overflow events retain
@@ -235,11 +266,18 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		processMu.Lock()
 		oomData := c.prepareOOMEvent(data)
 		processMu.Unlock()
-		if tracerID != "" {
+		if tracerID != "" && heapProfiler != nil {
 			if err := heapProfiler.ObserveOOM(data.VictimPID, data.Timestamp,
 				tracerID, oomData.Victim.ContainerID, eventTime); err != nil {
 				c.goHeapErrors.Add(1)
 				log.Warnf("OOM Go heap event correlation failed: %v", err)
+			}
+		}
+		if tracerID != "" && javaProfiler != nil {
+			if err := javaProfiler.ObserveOOM(data.VictimPID, data.Timestamp,
+				tracerID, oomData.Victim.ContainerID, eventTime); err != nil {
+				c.javaStackErrors.Add(1)
+				log.Warnf("OOM Java stack event correlation failed: %v", err)
 			}
 		}
 
@@ -277,6 +315,9 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		}
 		if heapController != nil {
 			_ = heapController.Close()
+		}
+		if javaController != nil {
+			_ = javaController.Close()
 		}
 		workers.Wait()
 	}()
@@ -319,6 +360,27 @@ func (c *oomCollector) Start(ctx context.Context) error {
 		}()
 	}
 
+	if javaController != nil {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			defer javaActive.Store(false)
+			err := javaController.Run(func(snapshot *javastack.Snapshot) error {
+				c.javaStackCaptures.Add(1)
+				if err := javaProfiler.HandleSnapshot(snapshot); err != nil {
+					c.javaStackErrors.Add(1)
+					log.Warnf("OOM Java stack snapshot processing failed: %v", err)
+				}
+				return nil
+			})
+			if err != nil && childCtx.Err() == nil {
+				c.javaStackErrors.Add(1)
+				log.Warnf("OOM Java stack capture disabled after reader failure: %v", err)
+				_ = javaController.Close()
+			}
+		}()
+	}
+
 	b.DetachOnContextDone(childCtx, cancel)
 
 	for {
@@ -340,7 +402,7 @@ func (c *oomCollector) Start(ctx context.Context) error {
 			executable := processlang.OpenExecutable(int(data.VictimPID))
 			eventTime := time.Now()
 			tracerID := ""
-			if heapActive.Load() {
+			if heapActive.Load() || javaActive.Load() {
 				tracerID = xid.New().String()
 			}
 

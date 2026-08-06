@@ -37,6 +37,7 @@
 #define COMPAT_BPF_NOEXIST	1 /* create new element if it didn't exist */
 #define COMPAT_BPF_EXIST	2 /* update existing element */
 #define COMPAT_BPF_F_LOCK	4 /* spin_lock-ed map_lookup/map_update */
+#define COMPAT_BPF_F_NO_PREALLOC 1
 
 #define NR_SOFTIRQS_MAX 16
 
