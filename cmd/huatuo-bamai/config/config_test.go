@@ -73,6 +73,11 @@ CaptureBudgetMicroseconds = 1500
 ReconcileIntervalSeconds = 7
 MaxTargets = 512
 
+[EventTracing.OOMJavaStack]
+Enabled = true
+ReconcileIntervalSeconds = 9
+MaxTargets = 64
+
 [MetricCollector.Vmstat]
 IncludedOnHost = "pgscan_direct"
 ExcludedOnHost = "total"
@@ -141,6 +146,10 @@ ExcludedOnContainer = "writeback"
 		got.ReconcileIntervalSeconds != 7 || got.MaxTargets != 512 {
 		t.Errorf("EventTracing.OOMGoHeap = %+v, want explicit overrides", got)
 	}
+	if got := Get().EventTracing.OOMJavaStack; !got.Enabled ||
+		got.ReconcileIntervalSeconds != 9 || got.MaxTargets != 64 {
+		t.Errorf("EventTracing.OOMJavaStack = %+v, want explicit overrides", got)
+	}
 	if Get().Storage.Elasticsearch.Enabled() {
 		t.Error("Elasticsearch is enabled without connection settings")
 	}
@@ -154,6 +163,16 @@ func TestOOMGoHeapDefaultsDisabled(t *testing.T) {
 	if got.CaptureBudgetMicroseconds != 2000 ||
 		got.ReconcileIntervalSeconds != 10 || got.MaxTargets != 4096 {
 		t.Fatalf("EventTracing.OOMGoHeap defaults = %+v", got)
+	}
+}
+
+func TestOOMJavaStackDefaultsDisabled(t *testing.T) {
+	got := loadConfigDefaults(t).EventTracing.OOMJavaStack
+	if got.Enabled {
+		t.Fatal("OOM Java stack capture is enabled by default")
+	}
+	if got.ReconcileIntervalSeconds != 10 || got.MaxTargets != 128 {
+		t.Fatalf("EventTracing.OOMJavaStack defaults = %+v", got)
 	}
 }
 
@@ -300,6 +319,22 @@ func TestBamaiConfigValidate(t *testing.T) {
 			mutate: func(cfg *BamaiConfig) {
 				cfg.EventTracing.OOMGoHeap.Enabled = true
 				cfg.EventTracing.OOMGoHeap.MaxTargets = 4097
+			},
+			wantErr: "maximum targets",
+		},
+		{
+			name: "invalid OOM Java stack reconcile interval",
+			mutate: func(cfg *BamaiConfig) {
+				cfg.EventTracing.OOMJavaStack.Enabled = true
+				cfg.EventTracing.OOMJavaStack.ReconcileIntervalSeconds = 0
+			},
+			wantErr: "reconcile interval",
+		},
+		{
+			name: "invalid OOM Java stack target limit",
+			mutate: func(cfg *BamaiConfig) {
+				cfg.EventTracing.OOMJavaStack.Enabled = true
+				cfg.EventTracing.OOMJavaStack.MaxTargets = 4097
 			},
 			wantErr: "maximum targets",
 		},

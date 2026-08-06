@@ -833,7 +833,24 @@ BlackList = ["netdev_hw", "metax_gpu", "ascend_npu", "diskio"]
 
 该功能要求内核和 Go runtime 布局受支持；不支持时仅记录告警，并继续采集普通 OOM 事件。
 
-#### 8.8 已知问题过滤（IssuesList）
+#### 8.8 Java OOM 调用栈快照（EventTracing.OOMJavaStack）
+
+该可选旁路在 OOM victim 收到 `SIGKILL` 时抓取当前信号投递线程的一次用户态调用栈。它不进行常态 CPU/内存采样，也不扫描 Java 堆；输出是权重为 1 的瞬时执行栈，不是 Java 内存火焰图。Huatuo 通过 HotSpot 导出的 VMStructs/VMTypes 发现 CodeCache 布局，并在信号返回前直接复制已编译方法名，不需要 JVMTI agent。
+
+```bash
+[EventTracing.OOMJavaStack]
+    Enabled = false
+    ReconcileIntervalSeconds = 10
+    MaxTargets = 128
+```
+
+- **Enabled**：是否启用 Java OOM 调用栈快照，默认 `false`。
+- **ReconcileIntervalSeconds**：发现 Java 进程和刷新 HotSpot 布局的间隔，默认 10 秒。
+- **MaxTargets**：最多跟踪的 JVM 数，默认 128，最大 4096。
+
+当前直接解析 HotSpot nmethod，输出只包含 Java 方法帧；为控制常驻内存，不预加载 libjvm 或其他共享库的 ELF/native 符号。Interpreter、JVM stub、native 和无法读取的帧仅计入未解析数量。相同 `libjvm.so` 的必要布局会在固定上限的缓存中复用，而 CodeCache 地址仍按 JVM 独立读取。未开启 `PreserveFramePointer` 时，用户栈可能较浅或采集失败。
+
+#### 8.9 已知问题过滤（IssuesList）
 
 ```bash
 # Linux kernel event tracing configuration.

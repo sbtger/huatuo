@@ -835,7 +835,24 @@ This optional path snapshots the Go runtime heap immediately before the kernel d
 
 The kernel and Go runtime layouts must be supported. Unsupported systems log a warning and continue collecting ordinary OOM events.
 
-#### 8.8 Known Issue Filtering (IssuesList)
+#### 8.8 Java OOM Stack Snapshot (EventTracing.OOMJavaStack)
+
+This optional path captures one user stack from the Java OOM victim's signal-delivery thread when it receives `SIGKILL`. It performs no periodic CPU or allocation sampling and does not scan the Java heap. The output is a count-1 execution snapshot, not a Java memory flame graph. Huatuo discovers CodeCache layouts through HotSpot's exported VMStructs/VMTypes tables and copies compiled method names before the signal returns, without a JVMTI agent.
+
+```bash
+[EventTracing.OOMJavaStack]
+    Enabled = false
+    ReconcileIntervalSeconds = 10
+    MaxTargets = 128
+```
+
+- **Enabled**: Enables Java OOM stack snapshots. Default: `false`.
+- **ReconcileIntervalSeconds**: Java discovery and HotSpot layout refresh interval. Default: 10 seconds.
+- **MaxTargets**: Maximum tracked JVMs. Default: 128; maximum: 4096.
+
+The direct path currently resolves HotSpot nmethods and publishes Java method frames only. To bound resident memory, it does not preload ELF/native symbols from libjvm or other shared libraries. Interpreter, JVM stub, native, and unreadable frames are counted as unresolved. The required layout is reused in a bounded cache for JVMs that share the same `libjvm.so`, while CodeCache addresses are still read separately for each JVM. Without `PreserveFramePointer`, the user stack may be shallow or unavailable.
+
+#### 8.9 Known Issue Filtering (IssuesList)
 
 ```bash
 # Linux kernel event tracing configuration.
