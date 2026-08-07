@@ -16,10 +16,12 @@ package goheap
 
 import (
 	"context"
+	"debug/elf"
 	"encoding/binary"
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"testing"
 )
@@ -81,6 +83,35 @@ func TestInspectCurrentGoProcess(t *testing.T) {
 	}
 	if target.GoVersion == "" || target.MBucketsAddress() == 0 || target.StartTimeTicks == 0 {
 		t.Fatalf("incomplete target: %+v", target)
+	}
+}
+
+func TestLookupStrippedMBucketsMatchesELFSymbol(t *testing.T) {
+	// Keep the memory profiler linked into this test binary.
+	runtime.MemProfile(nil, false)
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	file, err := elf.Open(executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+
+	want, err := lookupSymbol(file, "runtime.mbuckets")
+	if errors.Is(err, errMBucketsSymbolNotFound) {
+		t.Skip("test executable has no ELF symbols")
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := lookupStrippedMBuckets(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("stripped runtime.mbuckets = %#x, want %#x", got, want)
 	}
 }
 

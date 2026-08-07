@@ -207,6 +207,9 @@ func inspectExecutable(file *os.File) binaryInfo {
 	defer elfFile.Close()
 
 	symbolAddress, err := lookupSymbol(elfFile, "runtime.mbuckets")
+	if errors.Is(err, errMBucketsSymbolNotFound) {
+		symbolAddress, err = lookupStrippedMBuckets(elfFile)
+	}
 	if err != nil {
 		return binaryInfo{err: err}
 	}
