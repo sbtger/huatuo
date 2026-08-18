@@ -71,6 +71,7 @@ type defaultBPF struct {
 	programsByID     map[uint32]*loadedProgram
 	mapIDsByName     map[string]uint32
 	programIDsByName map[string]uint32
+	attachSkip       map[string]bool
 	perfEvent        *perfEventAttach
 	isClosed         bool
 }
@@ -141,6 +142,7 @@ func loadBPFFromCollectionSpec(bpfName string, specs *ebpf.CollectionSpec, const
 		name:         bpfName,
 		mapsByID:     make(map[uint32]loadedMap),
 		programsByID: make(map[uint32]*loadedProgram),
+		attachSkip:   make(map[string]bool),
 	}
 
 	// maps
@@ -254,6 +256,16 @@ func (b *defaultBPF) mapByID(mapID uint32) (*ebpf.Map, error) {
 // ProgramIDByName returns the program ID for name, or zero if it does not exist.
 func (b *defaultBPF) ProgramIDByName(name string) uint32 {
 	return b.programIDsByName[name]
+}
+
+// SetAttachSkip marks programs that Attach and AttachAndEventPipe must skip.
+func (b *defaultBPF) SetAttachSkip(names ...string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for _, name := range names {
+		b.attachSkip[name] = true
+	}
 }
 
 // String returns the bpf string.
@@ -459,6 +471,9 @@ func (b *defaultBPF) ReadMap(mapID uint32, key []byte) ([]byte, error) {
 
 	val, err := m.LookupBytes(key)
 	if err != nil {
+		if errors.Is(err, ebpf.ErrKeyNotExist) {
+			return nil, ErrMapKeyNotFound
+		}
 		return nil, err
 	}
 

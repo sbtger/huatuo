@@ -86,7 +86,8 @@ func (h *EventsHandler) releasePermit() {
 // All filter fields are optional regex patterns; omitting a field matches all values.
 // Additional filter fields can be added to WatchFilters without breaking existing clients.
 type WatchRequest struct {
-	Filters WatchFilters `json:"filters"`
+	Filters           WatchFilters `json:"filters"`
+	IncludeTracerData bool         `json:"include_tracer_data,omitempty"`
 }
 
 // WatchFilters holds optional regex patterns for the fields callers care about.
@@ -159,7 +160,8 @@ func (h *EventsHandler) watch(ctx *server.Context) error {
 		return response.ErrInvalidRequest.WithMessage(err.Error())
 	}
 
-	log.Infof("[eventwatch] connected: filters=%+v", req.Filters)
+	log.Infof("[eventwatch] connected: filters=%+v include_tracer_data=%t",
+		req.Filters, req.IncludeTracerData)
 
 	flusher, ok := ctx.Writer().(http.Flusher)
 	if !ok {
@@ -212,7 +214,7 @@ func (h *EventsHandler) watch(ctx *server.Context) error {
 			if !matcher.Match(doc) {
 				continue
 			}
-			event := DocumentToWatchEvent(doc)
+			event := documentToWatchEvent(doc, req.IncludeTracerData)
 			data, err := json.Marshal(event)
 			if err != nil {
 				continue

@@ -42,4 +42,8 @@ type WatchEventData struct {
 	TracerName             string `json:"tracer_name,omitempty"`
 	TracerID               string `json:"tracer_id,omitempty"`
 	TracerRunType          string `json:"tracer_run_type,omitempty"`
+	// TracerData is opt-in because an OOM runtime snapshot can be close to the
+	// configured event-size limit. Existing watch clients keep the compact
+	// payload unless they explicitly request the full tracer data.
+	TracerData any `json:"tracer_data,omitempty"`
 }

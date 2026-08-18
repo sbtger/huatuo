@@ -176,6 +176,7 @@ Content-Type: application/json
 
 ```json
 {
+  "include_tracer_data": false,
   "filters": {
     "tracer_name": "<regex>",
     "hostname": "<regex>",
@@ -185,6 +186,10 @@ Content-Type: application/json
   }
 }
 ```
+
+| 顶层字段 | 类型 | 是否必填 | 说明 |
+|---|---|---|---|
+| `include_tracer_data` | bool | 否 | 是否在 `data.tracer_data` 中携带采集器原始数据，默认 `false`；OOM 运行时快照消费者应显式设为 `true` |
 
 **filters 字段说明：**
 
@@ -213,6 +218,26 @@ data: {"specversion":"1.0","id":"...","source":"/huatuo/node-1/oom",...}\n\n
 ```text
 : ping\n
 ```
+
+#### 3.5 消费 OOM 运行时内存快照
+
+OOM 运行时快照附加在原始 OOM 事件的
+`data.tracer_data.runtime_memory_snapshot` 中，不会生成第二个事件。建议只为 OOM
+订阅开启完整数据，避免其他事件和普通订阅者承担最多约 1 MiB 的快照传输开销：
+
+```json
+{
+  "include_tracer_data": true,
+  "filters": {"tracer_name": "^oom$"}
+}
+```
+
+基础 OOM 信息始终位于 `data.tracer_data.trigger` 和
+`data.tracer_data.victim`。快照不存在时仍应正常处理基础 OOM 事件；`status` 为
+`COMPLETE` 时消费全部 `entries`，以 `PARTIAL_` 开头时消费已保留条目并展示
+`truncation_reasons`，其他失败或跳过状态只展示状态。未知 `schema_version`
+应保留原始 JSON，不能导致整个 OOM 事件解析失败。Go 的
+`allocation_stack`、Java/Python 的对象类型和形状字段均按字段是否存在解析。
 
 ---
 
@@ -320,7 +345,8 @@ import (
 
 // WatchRequest 是发送给 /v1/events/watch 的请求体。
 type WatchRequest struct {
-	Filters WatchFilters `json:"filters"`
+	Filters           WatchFilters `json:"filters"`
+	IncludeTracerData bool         `json:"include_tracer_data,omitempty"`
 }
 
 type WatchFilters struct {

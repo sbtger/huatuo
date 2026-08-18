@@ -23,6 +23,8 @@ var (
 	ErrClosed = errors.New("bpf: object is closed")
 	// ErrMapNotFound indicates that a requested BPF map is unavailable.
 	ErrMapNotFound = errors.New("bpf: map not found")
+	// ErrMapKeyNotFound indicates that a requested BPF map key is absent.
+	ErrMapKeyNotFound = errors.New("bpf: map key not found")
 	// ErrDuplicateAttach indicates that a BPF attach target is already in use.
 	ErrDuplicateAttach = errors.New("bpf: duplicate attach")
 )

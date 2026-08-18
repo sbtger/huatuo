@@ -176,6 +176,7 @@ Content-Type: application/json
 
 ```json
 {
+  "include_tracer_data": false,
   "filters": {
     "tracer_name": "<regex>",
     "hostname": "<regex>",
@@ -185,6 +186,10 @@ Content-Type: application/json
   }
 }
 ```
+
+| Top-level field | Type | Required | Description |
+|---|---|---|---|
+| `include_tracer_data` | bool | No | Includes the collector's original payload under `data.tracer_data`; defaults to `false`. OOM runtime-snapshot consumers should explicitly set it to `true`. |
 
 **`filters` field reference:**
 
@@ -213,6 +218,29 @@ The server also sends periodic heartbeat comment lines to keep the connection al
 ```text
 : ping\n
 ```
+
+#### 3.5 Consuming OOM Runtime Memory Snapshots
+
+The runtime snapshot is appended to the original OOM event at
+`data.tracer_data.runtime_memory_snapshot`; it is not emitted as a second event.
+Enable full tracer data only for a filtered OOM subscription so other events and
+ordinary subscribers do not pay the transfer cost of a snapshot that may be
+close to 1 MiB:
+
+```json
+{
+  "include_tracer_data": true,
+  "filters": {"tracer_name": "^oom$"}
+}
+```
+
+The base OOM data remains in `data.tracer_data.trigger` and
+`data.tracer_data.victim`. A missing snapshot must not cause consumers to reject
+the base OOM event. Consume all `entries` for `COMPLETE`; consume the retained
+entries and display `truncation_reasons` for statuses prefixed with `PARTIAL_`;
+for other failure or skip statuses, display the status. Preserve raw JSON for an
+unknown `schema_version` instead of failing the whole event. Parse Go
+`allocation_stack` and Java/Python object-type and shape fields by presence.
 
 ---
 
@@ -320,7 +348,8 @@ import (
 
 // WatchRequest is the request body sent to /v1/events/watch.
 type WatchRequest struct {
-	Filters WatchFilters `json:"filters"`
+	Filters           WatchFilters `json:"filters"`
+	IncludeTracerData bool         `json:"include_tracer_data,omitempty"`
 }
 
 type WatchFilters struct {

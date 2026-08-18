@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -23,6 +24,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestWatchRequest_IncludeTracerDataDefaultsToFalse(t *testing.T) {
+	var req WatchRequest
+	require.NoError(t, json.Unmarshal([]byte(`{"filters":{"tracer_name":"^oom$"}}`), &req))
+	require.False(t, req.IncludeTracerData)
+}
+
+func TestWatchRequest_IncludeTracerDataOptIn(t *testing.T) {
+	var req WatchRequest
+	require.NoError(t, json.Unmarshal([]byte(`{
+		"filters":{"tracer_name":"^oom$"},
+		"include_tracer_data":true
+	}`), &req))
+	require.True(t, req.IncludeTracerData)
+}
 
 func TestEventsHandler_AcquireClientConcurrent(t *testing.T) {
 	h := NewEventsHandler(1, 0)

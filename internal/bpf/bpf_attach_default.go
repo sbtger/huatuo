@@ -55,6 +55,11 @@ func parseSectionSymbol(sectionName string) (string, error) {
 	return parts[1], nil
 }
 
+func isInternalTailCallProgram(program *loadedProgram) bool {
+	return program.sectionPrefix == "kprobe" &&
+		strings.HasPrefix(program.sectionName, "kprobe/huatuo_tailcall_")
+}
+
 func parseKprobeAttachOptions(
 	program *loadedProgram,
 	symbol string,
@@ -272,54 +277,118 @@ func (b *defaultBPF) attach() (err error) {
 	}()
 
 	for _, program := range b.programsByID {
-		switch program.programType {
-		case ebpf.TracePoint:
-			symbol, parseErr := parseSectionSymbol(program.sectionName)
-			if parseErr != nil {
-				return parseErr
-			}
-			attachOpts, parseErr := parseTracepointAttachOptions(program, symbol)
-			if parseErr != nil {
-				return fmt.Errorf("parse BPF section %q: %w", program.sectionName, parseErr)
-			}
-			if err = b.attachTracepoint(attachOpts); err != nil {
-				return err
-			}
-		case ebpf.Kprobe:
-			symbol, parseErr := parseSectionSymbol(program.sectionName)
-			if parseErr != nil {
-				return parseErr
-			}
-			attachOpts, parseErr := parseKprobeAttachOptions(
-				program,
-				symbol,
-				program.sectionPrefix == "kretprobe",
-				0,
-			)
-			if parseErr != nil {
-				return fmt.Errorf("parse BPF section %q: %w", program.sectionName, parseErr)
-			}
-			if err = b.attachKprobe(attachOpts); err != nil {
-				return err
-			}
-		case ebpf.RawTracepoint:
-			symbol, parseErr := parseSectionSymbol(program.sectionName)
-			if parseErr != nil {
-				return parseErr
-			}
-			attachOpts, parseErr := parseRawTracepointAttachOptions(program, symbol)
-			if parseErr != nil {
-				return fmt.Errorf("parse BPF section %q: %w", program.sectionName, parseErr)
-			}
-			if err = b.attachRawTracepoint(attachOpts); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unsupported BPF program type %q", program.programType)
+		if isInternalTailCallProgram(program) {
+			continue
+		}
+		if b.attachSkip[program.name] {
+			continue
+		}
+		if err = b.attachProgram(program); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func (b *defaultBPF) attachProgram(program *loadedProgram) error {
+	switch program.programType {
+	case ebpf.TracePoint:
+		symbol, parseErr := parseSectionSymbol(program.sectionName)
+		if parseErr != nil {
+			return parseErr
+		}
+		attachOpts, parseErr := parseTracepointAttachOptions(program, symbol)
+		if parseErr != nil {
+			return fmt.Errorf("parse BPF section %q: %w", program.sectionName, parseErr)
+		}
+		if err := b.attachTracepoint(attachOpts); err != nil {
+			return err
+		}
+	case ebpf.Kprobe:
+		symbol, parseErr := parseSectionSymbol(program.sectionName)
+		if parseErr != nil {
+			return parseErr
+		}
+		attachOpts, parseErr := parseKprobeAttachOptions(
+			program,
+			symbol,
+			program.sectionPrefix == "kretprobe",
+			0,
+		)
+		if parseErr != nil {
+			return fmt.Errorf("parse BPF section %q: %w", program.sectionName, parseErr)
+		}
+		if err := b.attachKprobe(attachOpts); err != nil {
+			return err
+		}
+	case ebpf.RawTracepoint:
+		symbol, parseErr := parseSectionSymbol(program.sectionName)
+		if parseErr != nil {
+			return parseErr
+		}
+		attachOpts, parseErr := parseRawTracepointAttachOptions(program, symbol)
+		if parseErr != nil {
+			return fmt.Errorf("parse BPF section %q: %w", program.sectionName, parseErr)
+		}
+		if err := b.attachRawTracepoint(attachOpts); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported BPF program type %q", program.programType)
+	}
+
+	return nil
+}
+
+// AttachProgram attaches a single program by name. It is idempotent for
+// single-target programs: if the program already holds an active link it is a
+// no-op. Skipped programs are still attachable through this method.
+func (b *defaultBPF) AttachProgram(name string) error {
+	if err := b.acquireWriteLock(); err != nil {
+		return err
+	}
+	defer b.mu.Unlock()
+
+	progID := b.programIDsByName[name]
+	program, ok := b.programsByID[progID]
+	if !ok {
+		return fmt.Errorf("unknown BPF program %q", name)
+	}
+	if len(program.links) > 0 {
+		return nil
+	}
+	return b.attachProgram(program)
+}
+
+// DetachProgram detaches a single program by name, closing all of its links.
+// It is a no-op when the program is not attached.
+func (b *defaultBPF) DetachProgram(name string) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if b.isClosed {
+		return nil
+	}
+	progID := b.programIDsByName[name]
+	program, ok := b.programsByID[progID]
+	if !ok {
+		return fmt.Errorf("unknown BPF program %q", name)
+	}
+
+	var detachErrs []error
+	for linkKey, l := range program.links {
+		if l != nil {
+			if err := l.Close(); err != nil {
+				detachErrs = append(detachErrs, fmt.Errorf(
+					"detach link %q from program %q: %w", linkKey, name, err,
+				))
+			}
+		}
+	}
+	program.links = make(map[string]link.Link)
+
+	return errors.Join(detachErrs...)
 }
 
 func (b *defaultBPF) attachKprobe(opts kprobeAttachOptions) error {

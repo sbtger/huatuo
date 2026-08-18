@@ -52,6 +52,27 @@ func TestParseSectionSymbol(t *testing.T) {
 	}
 }
 
+func TestInternalTailCallProgram(t *testing.T) {
+	t.Parallel()
+
+	if !isInternalTailCallProgram(&loadedProgram{
+		sectionPrefix: "kprobe",
+		sectionName:   "kprobe/huatuo_tailcall_oom_snapshot_poll",
+	}) {
+		t.Fatal("Huatuo tail-call program would be attached as a real kprobe")
+	}
+	if isInternalTailCallProgram(&loadedProgram{
+		sectionPrefix: "kprobe", sectionName: "kprobe/oom_kill_process",
+	}) {
+		t.Fatal("ordinary kprobe was classified as an internal tail call")
+	}
+	if isInternalTailCallProgram(&loadedProgram{
+		sectionPrefix: "kprobe", sectionName: "kprobe/exit_mm_release",
+	}) {
+		t.Fatal("exit_mm_release gate kprobe was classified as an internal tail call")
+	}
+}
+
 func TestParseKprobeAttachOptions(t *testing.T) {
 	t.Parallel()
 
@@ -224,6 +245,98 @@ func TestParseRawTracepointAttachOptions(t *testing.T) {
 	if _, err := parseRawTracepointAttachOptions(program, ""); err == nil {
 		t.Fatal("parseRawTracepointAttachOptions() error = nil, want non-nil")
 	}
+}
+
+func TestSetAttachSkip(t *testing.T) {
+	t.Parallel()
+
+	b := &defaultBPF{attachSkip: make(map[string]bool)}
+	b.SetAttachSkip("exit_mm_release", "other")
+	if !b.attachSkip["exit_mm_release"] || !b.attachSkip["other"] {
+		t.Fatal("SetAttachSkip did not mark all names")
+	}
+}
+
+func TestAttachSkipsMarkedPrograms(t *testing.T) {
+	t.Parallel()
+
+	b := &defaultBPF{
+		attachSkip: map[string]bool{"unsupported": true},
+		programsByID: map[uint32]*loadedProgram{
+			1: {
+				name: "unsupported", programType: ebpf.UnspecifiedProgram,
+				sectionName: "kprobe/unsupported", sectionPrefix: "kprobe",
+			},
+		},
+	}
+
+	// The only program is marked skipped, so attach() must return without
+	// attempting it; an UnspecifiedProgram would otherwise fail immediately.
+	if err := b.attach(); err != nil {
+		t.Fatalf("attach() with only a skipped program: %v", err)
+	}
+}
+
+func TestAttachProgramAndDetachProgramLifecycle(t *testing.T) {
+	t.Parallel()
+
+	newBPF := func() *defaultBPF {
+		return &defaultBPF{
+			programIDsByName: map[string]uint32{"foo": 1},
+			programsByID: map[uint32]*loadedProgram{
+				1: {
+					name: "foo", programType: ebpf.UnspecifiedProgram,
+					sectionName: "kprobe/foo", sectionPrefix: "kprobe",
+					links: map[string]link.Link{},
+				},
+			},
+		}
+	}
+
+	t.Run("unknown program", func(t *testing.T) {
+		t.Parallel()
+		b := newBPF()
+		if err := b.AttachProgram("nope"); err == nil {
+			t.Fatal("AttachProgram with unknown name: want error")
+		}
+		if err := b.DetachProgram("nope"); err == nil {
+			t.Fatal("DetachProgram with unknown name: want error")
+		}
+	})
+
+	t.Run("fresh attach reaches program", func(t *testing.T) {
+		t.Parallel()
+		b := newBPF()
+		// An unsupported program type fails in attachProgram before any kernel
+		// call, proving AttachProgram dispatches to the attach path.
+		if err := b.AttachProgram("foo"); err == nil {
+			t.Fatal("AttachProgram on unsupported program type: want error")
+		}
+	})
+
+	t.Run("idempotent attach and detach", func(t *testing.T) {
+		t.Parallel()
+		b := newBPF()
+		prog := b.programsByID[1]
+		prog.links["foo+0"] = link.Link(nil)
+
+		// Attaching an already-attached program is a no-op.
+		if err := b.AttachProgram("foo"); err != nil {
+			t.Fatalf("AttachProgram on attached program: %v", err)
+		}
+
+		if err := b.DetachProgram("foo"); err != nil {
+			t.Fatalf("DetachProgram: %v", err)
+		}
+		if len(prog.links) != 0 {
+			t.Fatalf("DetachProgram left %d links, want 0", len(prog.links))
+		}
+
+		// Detaching an already-detached program is a no-op.
+		if err := b.DetachProgram("foo"); err != nil {
+			t.Fatalf("DetachProgram on detached program: %v", err)
+		}
+	})
 }
 
 func TestDuplicateAttachErrors(t *testing.T) {

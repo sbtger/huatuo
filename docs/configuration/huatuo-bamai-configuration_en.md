@@ -870,6 +870,102 @@ This section is responsible for capturing key kernel events and monitoring laten
 
   Example: `IssuesList = [["ignored_process", "comm=ignored_process"], ["neighbor_cleanup", "neigh_invalidate/"]]`
 
+#### 8.9 OOM Victim Runtime FAST Snapshot
+
+```toml
+[EventTracing.OOMRuntimeSnapshot]
+Enabled = false
+GateTimeoutMilliseconds = 50
+CaptureCooldownMilliseconds = 30000
+FailureCooldownMilliseconds = 60000
+MaxFailureCooldownMilliseconds = 300000
+MaxConcurrentGates = 1
+MaxOutputBytes = 1048576
+MaxObjects = 100000
+MaxStacks = 4096
+MaxStackDepth = 64
+
+[EventTracing.OOMRuntimeSnapshot.Filter]
+Included = []
+Excluded = []
+```
+
+This feature is disabled by default. It changes only Huatuo and does not need a
+patched kernel, kernel module, or device node. Huatuo's OOM BPF program provides
+a first-wins, hard-deadline gate in the `oom_kill_process` kprobe. At idle it
+does not scan `/proc`, connect to applications, start an
+in-process agent, or collect periodically. After the gate identifies a victim,
+Go reads the Runtime's existing mbuckets externally. HotSpot uses
+`process_vm_readv` to parse VMStructs, G1 regions, object types, and direct
+array fields of business objects. CPython 3.8-3.14 externally reads
+`_PyRuntime`, pymalloc arenas/pools, and validated GC generation lists from the
+target executable/libpython. The 50 ms path does not start a helper or wait for
+a remote-debug safe point. It does not require an application module, startup
+flag, resident agent, or GDB function call. Java does not require Attach, a JDK
+diagnostic command, or a startup flag. The current external Java FAST path
+supports Linux x86-64 HotSpot G1 on JDK 8, 11, 17, 21, and 25.
+Filters read cmdline only after a
+gate request arrives.
+
+`GateTimeoutMilliseconds` defaults to `50`; only values from 1 through 50 ms
+are accepted. It is the absolute budget from BPF publication to ACK or
+fail-open. It can be changed through the existing dynamic configuration API
+without restarting Huatuo. The new value applies to the next OOM gate request;
+an in-flight capture keeps the deadline with which it started. For example:
+
+```bash
+curl -X PUT http://127.0.0.1:19704/config \
+  -H 'Content-Type: application/json' \
+  -d '{"config":{"EventTracing.OOMRuntimeSnapshot.GateTimeoutMilliseconds":40}}'
+```
+
+The endpoint persists the value and updates the BPF config map. The next OOM
+uses the new deadline. If Huatuo hangs or cannot ACK, BPF fails open at the
+absolute deadline. An early ACK releases the gate immediately. Ordinary kprobe
+BPF cannot sleep, so the first admitted OOM busy-polls and occupies one CPU
+during this window. Scheduler and softirq tail latency must be validated on the
+production kernel and cpuset before enabling the feature.
+
+`MaxConcurrentGates=1` implements host-wide first-wins admission. While a
+capture is active, a new request is counted as `SKIPPED_BUSY`; BPF does not
+enter its wait loop and releases it before reading
+`/proc`, detecting a language, or starting a provider. After an admitted
+request finishes, `CaptureCooldownMilliseconds=30000` suppresses repeated
+captures counted as `SKIPPED_COOLDOWN`. The cooldown is live-configurable; zero
+disables cooldown but retains busy rejection. Skipped requests only increment
+their counters and do not write manifests. Failures back off for 60, 120, and
+240 seconds, capped by `MaxFailureCooldownMilliseconds=300000`; success resets
+the streak. The BPF gate keeps one active slot and bypasses user-space waiting
+for later victims. The normal
+`oom_kill_process` event is emitted first, so every bypassed victim still has
+the base OOM event and follows the ordinary kill path immediately.
+
+In addition to module-qualified type counts and shallow bytes, Python FAST
+aggregates direct fields by owner type, field name, and referenced type. Each
+field reports reference count, deduplicated object count, shallow bytes, and
+length distribution. This attributes buffers such as
+`service.cache.CacheEntry.payload` to a business field without serializing
+values. It is not recursive retained-size analysis, and bytes shared across
+different fields must not be added together.
+
+The GC-generation fallback covers GC-tracked objects only and reports
+layout-estimated shallow bytes. The primary pymalloc path samples by block
+size, pool occupancy, and address range, then reports both raw observations
+and explicit type estimates. The target must be a little-endian ELF64 image
+with the standard `_PyRuntime` dynamic symbol, and Huatuo needs permission for
+`process_vm_readv`. The current matrix covers x86-64 CPython 3.8 through 3.14.
+
+FAST results no longer create separate manifest/object JSON files or snapshot
+directories. A provider first copies bounded remote evidence into Huatuo, then
+ACKs to release the victim. Huatuo sorts and limits that owned data to
+`MaxOutputBytes`, then correlates it with the original
+`oom_kill_process` event by `victim TGID + oom_timestamp` and embeds it as
+`tracer_data.runtime_memory_snapshot` in the same `oom` JSON. The default hard
+limit is 1 MiB. Time, object, stack, or byte limits retain the completed Top-N
+prefix and report `status`, `truncated`, and `truncation_reasons`. JSON assembly
+and localfile/Elasticsearch persistence happen after ACK and do not consume the
+50 ms kill-gate budget.
+
 ### 9. Metric Collector
 
 This section defines collection rules for various system and network metrics. All `Included`/`Excluded` fields share the same filter logic (regex):
