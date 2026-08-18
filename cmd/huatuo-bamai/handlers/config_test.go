@@ -87,6 +87,37 @@ func TestConfigHandlerUpdatesTypedValues(t *testing.T) {
 	}
 }
 
+func TestConfigHandlerUpdatesOOMSnapshotGateTimeout(t *testing.T) {
+	httpGin.SetMode(httpGin.TestMode)
+
+	if err := config.Load(writeConfig(t, `
+Log = { Level = "Info" }
+`)); err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	engine := httpGin.New()
+	server.NewRoot(engine, "").PUT("/config", NewConfigHandler().update)
+	req := httptest.NewRequest(http.MethodPut, "/config", bytes.NewBufferString(
+		`{"config":{"EventTracing.OOMRuntimeSnapshot.GateTimeoutMilliseconds":40,`+
+			`"EventTracing.OOMRuntimeSnapshot.CaptureCooldownMilliseconds":1000}}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	engine.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d, body: %s", rec.Code,
+			http.StatusNoContent, rec.Body.String())
+	}
+	if got := config.Get().EventTracing.OOMRuntimeSnapshot.GateTimeoutMilliseconds; got != 40 {
+		t.Fatalf("gate timeout = %d ms, want 40 ms", got)
+	}
+	if got := config.Get().EventTracing.OOMRuntimeSnapshot.CaptureCooldownMilliseconds; got != 1000 {
+		t.Fatalf("capture cooldown = %d ms, want 1000 ms", got)
+	}
+}
+
 func writeConfig(t *testing.T, content string) string {
 	t.Helper()
 

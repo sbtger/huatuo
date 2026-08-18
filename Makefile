@@ -155,7 +155,11 @@ unit: gen-build
 integration: all
 	@bash integration/run.sh
 
+# Root-only live process/version matrix intended for the 2222 validation VM.
+oom-runtime-snapshot-vm-test:
+	@bash integration/oom_runtime_snapshot_vm.sh
+
 e2e: all
 	@bash e2e/run.sh
 
-.PHONY: all build-nostatic bpf-build gen-build sync build check import-fmt golangci-lint vendor clean test unit integration e2e docker-build docker-clean compose-dev-up compose-dev-down
+.PHONY: all build-nostatic bpf-build gen-build sync build check import-fmt golangci-lint vendor clean test unit integration oom-runtime-snapshot-vm-test e2e docker-build docker-clean compose-dev-up compose-dev-down

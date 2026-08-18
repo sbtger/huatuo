@@ -26,6 +26,29 @@ import (
 
 // DocumentToWatchEvent converts a tracing Document into a CloudEvents 1.0 WatchEvent.
 func DocumentToWatchEvent(doc *tracing.Document) pkgtypes.WatchEvent {
+	return documentToWatchEvent(doc, false)
+}
+
+func documentToWatchEvent(
+	doc *tracing.Document, includeTracerData bool,
+) pkgtypes.WatchEvent {
+	data := pkgtypes.WatchEventData{
+		Hostname:               doc.Hostname,
+		Region:                 doc.Region,
+		ObservedTimestamp:      doc.TracerTime,
+		ContainerID:            doc.ContainerID,
+		ContainerHostname:      doc.ContainerHostname,
+		ContainerHostNamespace: doc.ContainerHostNamespace,
+		ContainerType:          doc.ContainerType,
+		ContainerQos:           doc.ContainerQoS,
+		TracerName:             doc.TracerName,
+		TracerID:               doc.TracerID,
+		TracerRunType:          doc.TracerRunType,
+	}
+	if includeTracerData {
+		data.TracerData = doc.TracerData
+	}
+
 	return pkgtypes.WatchEvent{
 		SpecVersion:     "1.0",
 		ID:              uuid.New().String(),
@@ -33,18 +56,6 @@ func DocumentToWatchEvent(doc *tracing.Document) pkgtypes.WatchEvent {
 		Type:            "tech.huatuo.kernel.event",
 		DataContentType: "application/json",
 		Time:            doc.UploadedTime.UTC().Format(time.RFC3339Nano),
-		Data: pkgtypes.WatchEventData{
-			Hostname:               doc.Hostname,
-			Region:                 doc.Region,
-			ObservedTimestamp:      doc.TracerTime,
-			ContainerID:            doc.ContainerID,
-			ContainerHostname:      doc.ContainerHostname,
-			ContainerHostNamespace: doc.ContainerHostNamespace,
-			ContainerType:          doc.ContainerType,
-			ContainerQos:           doc.ContainerQoS,
-			TracerName:             doc.TracerName,
-			TracerID:               doc.TracerID,
-			TracerRunType:          doc.TracerRunType,
-		},
+		Data:            data,
 	}
 }

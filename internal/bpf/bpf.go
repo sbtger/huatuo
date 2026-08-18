@@ -47,6 +47,19 @@ type BPF interface {
 	// Detach all programs.
 	Detach() error
 
+	// SetAttachSkip marks programs by name that Attach and AttachAndEventPipe
+	// must leave un-attached. Skipped programs remain loaded so they can be
+	// attached later with AttachProgram; call it before Attach.
+	SetAttachSkip(names ...string)
+
+	// AttachProgram attaches a single program by name. It is idempotent for
+	// single-target programs: attaching an already-attached program is a no-op.
+	AttachProgram(name string) error
+
+	// DetachProgram detaches a single program by name, closing all of its links.
+	// It is a no-op when the program is not attached.
+	DetachProgram(name string) error
+
 	// IsLoaded reports whether the BPF object is still loaded.
 	IsLoaded() (bool, error)
 

@@ -26,6 +26,7 @@ import (
 	"huatuo-bamai/internal/cgroups"
 	"huatuo-bamai/internal/cgroups/subsystem"
 	"huatuo-bamai/internal/log"
+	"huatuo-bamai/internal/memsnap"
 	"huatuo-bamai/internal/pod"
 	"huatuo-bamai/internal/utils/bytesutil"
 	"huatuo-bamai/internal/utils/kernaddr"
@@ -45,9 +46,10 @@ type OOMActor struct {
 }
 
 type OOMTracingData struct {
-	Trigger        OOMActor           `json:"trigger"`
-	Victim         OOMActor           `json:"victim"`
-	MemorySnapshot *OOMMemorySnapshot `json:"memory_snapshot,omitempty"`
+	Trigger               OOMActor                  `json:"trigger"`
+	Victim                OOMActor                  `json:"victim"`
+	MemorySnapshot        *OOMMemorySnapshot        `json:"memory_snapshot,omitempty"`
+	RuntimeMemorySnapshot *OOMRuntimeMemorySnapshot `json:"runtime_memory_snapshot,omitempty"`
 }
 
 type oomMetric struct {
@@ -56,7 +58,8 @@ type oomMetric struct {
 }
 
 type oomCollector struct {
-	cgroup cgroups.Cgroup
+	cgroup          cgroups.Cgroup
+	runtimeSnapshot *oomRuntimeSnapshotService
 }
 
 var (
@@ -75,12 +78,29 @@ func newOOMCollector() (*tracing.EventTracingAttr, error) {
 		log.Warnf("failed to initialize cgroup reader for oom snapshot: %v", err)
 	}
 
+	collector := &oomCollector{cgroup: cgroup}
+	eventConfig := configSnapshot()
+	// Build the service regardless of the enable flag so a live PUT /config can
+	// later enable the gate through the existing service; the CPU-affinity
+	// requirement only applies while the synchronous gate is enabled.
+	service, err := buildOOMRuntimeSnapshotService(&eventConfig.OOMRuntimeSnapshot)
+	if err != nil {
+		return nil, err
+	}
+	service.useLiveConfig()
+	collector.runtimeSnapshot = service
+	if eventConfig.OOMRuntimeSnapshot.Enabled {
+		if err := eventConfig.OOMRuntimeSnapshot.Validate(); err != nil {
+			return nil, err
+		}
+		if err := validateOOMRuntimeSnapshotCPUCapacity(); err != nil {
+			return nil, err
+		}
+	}
 	return &tracing.EventTracingAttr{
-		TracingData: &oomCollector{
-			cgroup: cgroup,
-		},
-		Interval: 10,
-		Flag:     tracing.FlagTracing | tracing.FlagMetric,
+		TracingData: collector,
+		Interval:    10,
+		Flag:        tracing.FlagTracing | tracing.FlagMetric,
 	}, nil
 }
 
@@ -105,6 +125,9 @@ func (c *oomCollector) Update() ([]*metric.Data, error) {
 	}
 
 	mutex.Unlock()
+	if c.runtimeSnapshot != nil {
+		metrics = append(metrics, c.runtimeSnapshot.Update()...)
+	}
 	return metrics, nil
 }
 
@@ -118,11 +141,85 @@ func (c *oomCollector) Start(ctx context.Context) error {
 	childCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	if c.runtimeSnapshot != nil {
+		if err := c.runtimeSnapshot.attachBPF(b); err != nil {
+			return err
+		}
+		defer c.runtimeSnapshot.detachBPF()
+		// Default-disabled: leave the capture-freeze probe detached so it does
+		// not fire on every process exit. A live PUT /config enable reconciles
+		// it through refreshBPFConfig -> AttachProgram.
+		if !configSnapshot().OOMRuntimeSnapshot.Enabled {
+			b.SetAttachSkip(oomRuntimeSnapshotExitMMReleaseProgram)
+		}
+	}
+
 	reader, err := b.AttachAndEventPipe(childCtx, "oom_perf_events", 8192)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
+
+	var pendingSaves sync.WaitGroup
+	defer pendingSaves.Wait()
+	runtimeWaitSlot := make(chan struct{}, 1)
+	queueSave := func(oomData *OOMTracingData, eventTime time.Time,
+		key oomRuntimeSnapshotKey, admissionDeadlineNS uint64,
+	) {
+		save := func() {
+			if err := tracing.Save(&tracing.WriteRequest{
+				TracerName: "oom", TracerTime: eventTime, TracerData: oomData,
+				ContainerID: oomData.Victim.ContainerID,
+			}); err != nil {
+				log.Warnf("failed to save tracing data: %v", err)
+			}
+		}
+		if !configSnapshot().OOMRuntimeSnapshot.Enabled || key.oomMonotonicNS == 0 {
+			save()
+			return
+		}
+		if snapshot, ok := runtimeSnapshotBridge.wait(
+			childCtx, key, 0); ok {
+			oomData.RuntimeMemorySnapshot = snapshot
+			save()
+			return
+		}
+		waitSnapshot := func() (*OOMRuntimeMemorySnapshot, bool) {
+			remaining := c.runtimeSnapshot.waitBudget(eventTime, admissionDeadlineNS)
+			return runtimeSnapshotBridge.wait(childCtx, key, remaining)
+		}
+		select {
+		case runtimeWaitSlot <- struct{}{}:
+		default:
+			// The wait slot is held by another event's pending save. Wait
+			// synchronously instead of mislabeling an admitted event as
+			// SKIPPED_BUSY; the kernel single-slot gate already bounds
+			// concurrent captures, and this backpressures the perf loop under
+			// an OOM storm.
+			snapshot, ok := waitSnapshot()
+			if !ok {
+				snapshot = runtimeSnapshotStatus(key,
+					memsnap.StatusGateTimeout,
+					"Runtime snapshot did not arrive before the OOM event deadline")
+			}
+			oomData.RuntimeMemorySnapshot = snapshot
+			save()
+			return
+		}
+		pendingSaves.Add(1)
+		go func() {
+			defer pendingSaves.Done()
+			defer func() { <-runtimeWaitSlot }()
+			snapshot, ok := waitSnapshot()
+			if !ok {
+				snapshot = runtimeSnapshotStatus(key,
+					memsnap.StatusGateTimeout,
+					"Runtime snapshot did not arrive before the OOM event deadline")
+			}
+			oomData.RuntimeMemorySnapshot = snapshot
+			save()
+		}()
+	}
 
 	b.DetachOnContextDone(childCtx, cancel)
 
@@ -138,6 +235,10 @@ func (c *oomCollector) Start(ctx context.Context) error {
 					continue
 				}
 				return fmt.Errorf("failed to read perf event: %w", err)
+			}
+			eventTime := time.Now()
+			if c.runtimeSnapshot != nil && configSnapshot().OOMRuntimeSnapshot.Enabled {
+				c.runtimeSnapshot.submit(childCtx, b, &data)
 			}
 
 			containers, err := pod.Containers()
@@ -157,14 +258,9 @@ func (c *oomCollector) Start(ctx context.Context) error {
 
 			mutex.Unlock()
 
-			if err := tracing.Save(&tracing.WriteRequest{
-				TracerName:  "oom",
-				TracerTime:  time.Now(),
-				TracerData:  oomData,
-				ContainerID: oomData.Victim.ContainerID,
-			}); err != nil {
-				log.Warnf("failed to save tracing data: %v", err)
-			}
+			queueSave(oomData, eventTime, oomRuntimeSnapshotKey{
+				victimTGID: data.VictimPID, oomMonotonicNS: data.Timestamp,
+			}, data.SnapshotAdmissionDeadlineNS)
 		}
 	}
 }

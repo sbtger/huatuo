@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -64,4 +65,37 @@ func TestDocumentToWatchEvent_Data(t *testing.T) {
 		TracerRunType:     doc.TracerRunType,
 	}
 	require.Equal(t, want, ev.Data)
+}
+
+func TestDocumentToWatchEvent_TracerDataIsOptIn(t *testing.T) {
+	doc := newTestDocument()
+	doc.TracerData = map[string]any{
+		"runtime_memory_snapshot": map[string]any{
+			"status":      "COMPLETE",
+			"entry_count": 2,
+		},
+	}
+
+	compact := DocumentToWatchEvent(doc)
+	require.Nil(t, compact.Data.(pkgtypes.WatchEventData).TracerData)
+
+	full := documentToWatchEvent(doc, true)
+	require.Equal(t, doc.TracerData,
+		full.Data.(pkgtypes.WatchEventData).TracerData)
+
+	raw, err := json.Marshal(full)
+	require.NoError(t, err)
+	var encoded map[string]any
+	require.NoError(t, json.Unmarshal(raw, &encoded))
+	data := encoded["data"].(map[string]any)
+	require.JSONEq(t, `{
+		"runtime_memory_snapshot": {"status": "COMPLETE", "entry_count": 2}
+	}`, mustMarshalJSON(t, data["tracer_data"]))
+}
+
+func mustMarshalJSON(t *testing.T, value any) string {
+	t.Helper()
+	raw, err := json.Marshal(value)
+	require.NoError(t, err)
+	return string(raw)
 }

@@ -869,6 +869,88 @@ BlackList = ["netdev_hw", "metax_gpu", "ascend_npu", "diskio", "tcp_retransmit"]
 
   示例：`IssuesList = [["ignored_process", "comm=ignored_process"], ["neighbor_cleanup", "neigh_invalidate/"]]`
 
+#### 8.9 OOM victim Runtime FAST 内存切片
+
+```toml
+[EventTracing.OOMRuntimeSnapshot]
+Enabled = false
+GateTimeoutMilliseconds = 50
+CaptureCooldownMilliseconds = 30000
+FailureCooldownMilliseconds = 60000
+MaxFailureCooldownMilliseconds = 300000
+MaxConcurrentGates = 1
+MaxOutputBytes = 1048576
+MaxObjects = 100000
+MaxStacks = 4096
+MaxStackDepth = 64
+
+[EventTracing.OOMRuntimeSnapshot.Filter]
+Included = []
+Excluded = []
+```
+
+该功能默认关闭，只修改 Huatuo，不要求修改内核源码、安装内核模块或创建设备节点。
+Huatuo 的 OOM BPF 程序在 `oom_kill_process` kprobe 内提供 first-wins 和硬 deadline gate。
+常态下不扫描 `/proc`、不连接业务进程、不启动进程内 agent，也不周期采集。只有 gate
+给出本次 victim 后才读取该 PID 的必要元数据并调用 FAST Provider：Go 从目标进程读取
+Runtime 已有的 mbucket 采样；HotSpot 通过 `process_vm_readv` 外部解析 VMStructs、G1
+Region、对象类型和业务对象的一层数组字段引用；CPython 3.8-3.14 从目标
+executable/libpython 的 `_PyRuntime`、pymalloc arena/pool 和 GC generation 外部读取
+有界样本，并解析业务类型、实例 dict/managed values 和字段引用。50 ms 短窗口不会启动
+helper 或等待 remote-debug safe point。Python 路径不要求业务预装模块、启动参数或常驻
+agent，也不调用 GDB 函数。Java 不依赖 Attach、JDK 诊断命令或启动参数；当前外部 FAST
+路径支持 Linux x86-64 HotSpot G1 JDK 8、11、17、21、25。
+
+`GateTimeoutMilliseconds` 默认值为 `50`，配置只接受 1-50 ms。该值是从 BPF 发布
+请求到 ACK 或 fail-open 的绝对预算上限，可以通过现有
+动态配置接口修改，无需重启 Huatuo；新值从下一次 OOM gate 请求开始生效，已经开始的
+采集仍使用创建时的 deadline。例如将后续请求调整为 40 ms：
+
+```bash
+curl -X PUT http://127.0.0.1:19704/config \
+  -H 'Content-Type: application/json' \
+  -d '{"config":{"EventTracing.OOMRuntimeSnapshot.GateTimeoutMilliseconds":40}}'
+```
+
+接口会同时写回配置文件并更新 BPF config map。下一次 OOM 使用新 deadline；即使
+Huatuo 卡死或无法 ACK，BPF 也会在绝对 deadline 到期后 fail-open。ACK 提前到达时立即
+放行，不等待满 50 ms。普通 kprobe BPF 不能睡眠，因此首个获准 OOM 在该窗口忙轮询并
+瞬时占用一个 CPU；生产启用前必须在目标内核和 cpuset 上验证调度与 softirq 尾延迟。
+`Included` 和 `Excluded` 只在请求到达后匹配 victim cmdline。
+
+`MaxConcurrentGates=1` 实施 host 级 first-wins：已有采集时，新请求在读取 `/proc`、识别
+语言或启动 Provider 之前记录 `SKIPPED_BUSY`，BPF 不进入等待并立即放行。一次获准的请求
+结束后，默认 `CaptureCooldownMilliseconds=30000`；冷却期记录 `SKIPPED_COOLDOWN` 并立即放行。
+冷却值可通过同一动态配置接口修改，`0` 表示关闭冷却但仍保留并发拒绝。两类跳过请求
+只增加对应指标，不写独立 manifest。失败从
+`FailureCooldownMilliseconds=60000` 开始按 60/120/240 秒退避，并受
+`MaxFailureCooldownMilliseconds=300000` 限制；成功会清零失败次数。BPF 只保留一个
+active slot，后续 victim 不进入用户态等待，仍保留普通 OOM 事件并按原路径立即被杀死。
+
+Python FAST 除了按模块限定类名统计对象壳的数量和 shallow bytes，还会按“业务类 +
+字段名 + 引用类型”累计直接字段的引用次数、去重对象数、shallow bytes 及长度分布。
+例如可以把 `service.cache.CacheEntry.payload` 的 `bytearray` 直接归因到业务字段；同一
+字段共享的对象只计一次。该结果不递归计算 retained size，跨字段共享也不能直接相加。
+
+GC generation 回退结果只覆盖 GC tracked 对象，shallow bytes 为 layout 估算；pymalloc
+主路径按 block size、pool occupancy 和地址区间分层采样并外推对象类型，同时保留原始
+样本和覆盖率。目标需为 little-endian ELF64 并保留标准 `_PyRuntime` 动态符号，Huatuo 需有
+`process_vm_readv` 权限。当前版本矩阵覆盖 x86-64 CPython 3.8-3.14。
+
+Go 的 `MaxStacks` 是两阶段 Top-K 输出上限，不是链表前 N 个 bucket 的截断点。第一阶段
+沿 mbucket 链读取 header 和计数并保留 in-use bytes 最大的候选，第二阶段仅复制候选的
+PC 栈并通过目标 ELF 的 pclntab 符号化；因此链表后部的大 bucket 仍可入选。如果应用把
+`runtime.MemProfileRate` 设为 0，历史采样不存在，结果会明确标记 provider 不可用。
+Huatuo 没有为此增加常态采样，Go Runtime 默认采样本身不计入 Huatuo 开销。
+
+FAST 结果不会创建独立的 manifest/objects JSON 或快照目录。Provider 先把有界远端证据
+复制到 Huatuo，ACK 立即释放 victim，然后在本地按 `MaxOutputBytes` 排序和裁剪，并通过
+`victim TGID + oom_timestamp` 与原始 `oom_kill_process` 事件精确关联，作为
+`tracer_data.runtime_memory_snapshot` 写进同一条 `oom` JSON。默认上限为 1 MiB；达到
+时间、对象数、调用栈数或字节上限时保留已经完成的 Top-N，并写明 `status`、
+`truncated` 和 `truncation_reasons`。JSON 组装和 localfile/Elasticsearch 保存都在 ACK
+之后，不占用 50 ms kill gate。
+
 ### 9. 指标采集器配置
 
 该 section 定义各类系统与网络指标的采集规则。所有 `Included`/`Excluded` 字段底层共用同一套过滤逻辑（正则表达式）：
