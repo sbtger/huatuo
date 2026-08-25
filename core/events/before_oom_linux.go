@@ -39,6 +39,7 @@ import (
 	"huatuo-bamai/internal/memsnap/capturehelper"
 	gomemsnap "huatuo-bamai/internal/memsnap/providers/golang"
 	"huatuo-bamai/internal/memsnap/providers/java"
+	"huatuo-bamai/internal/memsnap/providers/python"
 	"huatuo-bamai/internal/procfs"
 	"huatuo-bamai/internal/utils/parseutil"
 	"huatuo-bamai/pkg/tracing"
@@ -114,6 +115,9 @@ func init() {
 	})
 	capturehelper.RegisterProvider(memsnap.LanguageJava, func() memsnap.Provider {
 		return java.NewProvider()
+	})
+	capturehelper.RegisterProvider(memsnap.LanguagePython, func() memsnap.Provider {
+		return python.NewProvider()
 	})
 	tracing.RegisterEventTracing(beforeOOMTracer, newBeforeOOMSnapshot)
 }
