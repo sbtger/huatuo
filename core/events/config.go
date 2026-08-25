@@ -19,9 +19,29 @@ import (
 	"fmt"
 	"slices"
 	"sync/atomic"
+	"time"
 
 	"huatuo-bamai/internal/matcher"
+	"huatuo-bamai/internal/memsnap"
 )
+
+// BeforeOOMConfig controls event-driven runtime snapshots for
+// container cgroups approaching their memory limit.
+type BeforeOOMConfig struct {
+	// Enabled is evaluated when the tracing registry is initialized. Publishing
+	// a new runtime config does not rebuild that registry, so changing this value
+	// takes effect only after huatuo-bamai restarts.
+	Enabled          bool `default:"false"`
+	ThresholdPercent int  `default:"90"`
+	CooldownSeconds  int  `default:"300"`
+	// CaptureTimeout names are kept for configuration compatibility. These
+	// values are cooperative stop budgets, not wall-clock upper bounds; an
+	// in-flight synchronous syscall cannot be interrupted by context cancellation.
+	GoCaptureTimeoutMilliseconds     int `default:"100"`
+	JavaCaptureTimeoutMilliseconds   int `default:"2000"`
+	PythonCaptureTimeoutMilliseconds int `default:"2000"`
+	TopK                             int `default:"10"`
+}
 
 // Config holds event tracing configuration.
 type Config struct {
@@ -63,6 +83,8 @@ type Config struct {
 		MceThrBackoff int64 `default:"1800"`
 	}
 
+	BeforeOOMMemorySnapshot BeforeOOMConfig
+
 	IssuesList [][]string
 }
 
@@ -90,7 +112,42 @@ func (c *Config) Validate() error {
 	if err := matcher.ValidateClassifications(c.IssuesList); err != nil {
 		return fmt.Errorf("validating issues list: %w", err)
 	}
+	if err := validateBeforeOOMConfig(&c.BeforeOOMMemorySnapshot); err != nil {
+		return fmt.Errorf("validating before-OOM memory snapshot: %w", err)
+	}
 
+	return nil
+}
+
+func validateBeforeOOMConfig(cfg *BeforeOOMConfig) error {
+	const maxTimeDuration = time.Duration(1<<63 - 1)
+
+	if cfg.ThresholdPercent <= 0 || cfg.ThresholdPercent > 100 {
+		return fmt.Errorf("threshold percent must be in [1, 100], got %d",
+			cfg.ThresholdPercent)
+	}
+	for _, duration := range []struct {
+		name  string
+		value int
+		unit  time.Duration
+	}{
+		{"cooldown seconds", cfg.CooldownSeconds, time.Second},
+		{"Go capture timeout milliseconds", cfg.GoCaptureTimeoutMilliseconds, time.Millisecond},
+		{"Java capture timeout milliseconds", cfg.JavaCaptureTimeoutMilliseconds, time.Millisecond},
+		{"Python capture timeout milliseconds", cfg.PythonCaptureTimeoutMilliseconds, time.Millisecond},
+	} {
+		if duration.value <= 0 {
+			return fmt.Errorf("%s must be positive", duration.name)
+		}
+		if uint64(duration.value) > uint64(maxTimeDuration)/uint64(duration.unit) {
+			return fmt.Errorf("%s overflows time.Duration: %d", duration.name,
+				duration.value)
+		}
+	}
+	if cfg.TopK <= 0 || cfg.TopK > memsnap.MaxTopK {
+		return fmt.Errorf("snapshot top-K must be in [1, %d], got %d",
+			memsnap.MaxTopK, cfg.TopK)
+	}
 	return nil
 }
 

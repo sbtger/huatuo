@@ -16,10 +16,13 @@ package events
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
+	"huatuo-bamai/internal/memsnap"
 	testutils "huatuo-bamai/internal/testing"
 )
 
@@ -48,11 +51,24 @@ func TestConfigValidate(t *testing.T) {
 			},
 			wantError: "validating issues list",
 		},
+		{
+			name: "invalid before-OOM snapshot",
+			configure: func(cfg *Config) {
+				cfg.BeforeOOMMemorySnapshot.TopK = 0
+			},
+			wantError: "validating before-OOM memory snapshot",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &Config{}
+			cfg := &Config{BeforeOOMMemorySnapshot: BeforeOOMConfig{
+				ThresholdPercent: 90, CooldownSeconds: 300,
+				GoCaptureTimeoutMilliseconds:     100,
+				JavaCaptureTimeoutMilliseconds:   2000,
+				PythonCaptureTimeoutMilliseconds: 2000,
+				TopK:                             10,
+			}}
 			cfg.SchedTick.IntervalThreshold = 1
 			if tt.configure != nil {
 				tt.configure(cfg)
@@ -89,6 +105,60 @@ func TestSetPublishesIndependentConfig(t *testing.T) {
 	snapshot := configSnapshot()
 	if snapshot.IssuesList[0][0] != "dropwatch" || snapshot.Netdev.DeviceList[0] != "eth0" {
 		t.Fatalf("published config aliases caller data: %+v", snapshot)
+	}
+}
+
+func TestBeforeOOMConfigRejectsOverflowAndUnboundedTopK(t *testing.T) {
+	validConfig := func() BeforeOOMConfig {
+		return BeforeOOMConfig{
+			ThresholdPercent: 90, CooldownSeconds: 300,
+			GoCaptureTimeoutMilliseconds:     100,
+			JavaCaptureTimeoutMilliseconds:   2000,
+			PythonCaptureTimeoutMilliseconds: 2000,
+			TopK:                             10,
+		}
+	}
+	if strconv.IntSize == 64 {
+		tests := []struct {
+			name string
+			unit time.Duration
+			set  func(*BeforeOOMConfig, int)
+		}{
+			{name: "cooldown", unit: time.Second, set: func(cfg *BeforeOOMConfig, value int) {
+				cfg.CooldownSeconds = value
+			}},
+			{name: "Go timeout", unit: time.Millisecond, set: func(cfg *BeforeOOMConfig, value int) {
+				cfg.GoCaptureTimeoutMilliseconds = value
+			}},
+			{name: "Java timeout", unit: time.Millisecond, set: func(cfg *BeforeOOMConfig, value int) {
+				cfg.JavaCaptureTimeoutMilliseconds = value
+			}},
+			{name: "Python timeout", unit: time.Millisecond, set: func(cfg *BeforeOOMConfig, value int) {
+				cfg.PythonCaptureTimeoutMilliseconds = value
+			}},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				maximum := int(int64(1<<63-1) / int64(tt.unit))
+				cfg := validConfig()
+				tt.set(&cfg, maximum)
+				if err := validateBeforeOOMConfig(&cfg); err != nil {
+					t.Fatalf("maximum valid duration rejected: %v", err)
+				}
+				tt.set(&cfg, maximum+1)
+				if err := validateBeforeOOMConfig(&cfg); err == nil ||
+					!strings.Contains(err.Error(), "overflows time.Duration") {
+					t.Fatalf("overflow validation error = %v", err)
+				}
+			})
+		}
+	}
+
+	cfg := validConfig()
+	cfg.TopK = memsnap.MaxTopK + 1
+	if err := validateBeforeOOMConfig(&cfg); err == nil ||
+		!strings.Contains(err.Error(), "top-K") {
+		t.Fatalf("top-K validation error = %v", err)
 	}
 }
 
