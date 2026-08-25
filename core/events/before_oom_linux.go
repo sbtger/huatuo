@@ -37,6 +37,7 @@ import (
 	"huatuo-bamai/internal/log"
 	"huatuo-bamai/internal/memsnap"
 	"huatuo-bamai/internal/memsnap/capturehelper"
+	gomemsnap "huatuo-bamai/internal/memsnap/providers/golang"
 	"huatuo-bamai/internal/procfs"
 	"huatuo-bamai/internal/utils/parseutil"
 	"huatuo-bamai/pkg/tracing"
@@ -107,6 +108,9 @@ type beforeOOMData struct {
 }
 
 func init() {
+	capturehelper.RegisterProvider(memsnap.LanguageGo, func() memsnap.Provider {
+		return gomemsnap.NewProvider()
+	})
 	tracing.RegisterEventTracing(beforeOOMTracer, newBeforeOOMSnapshot)
 }
 
