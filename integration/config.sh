@@ -113,6 +113,32 @@ write_sched_tick_irqoff_config() {
 	write_sched_tick_config_with_threshold 1
 }
 
+# The caller provides an isolated kubelet stub and Docker API version. Keep all
+# unrelated collectors disabled so the test measures only the before-OOM path.
+write_before_oom_memory_snapshot_config() {
+	cat > "${HUATUO_BAMAI_TEST_TMPDIR}/bamai.conf" << EOF
+BlackList = ["arp", "ascend_npu", "cpu_stat", "cpu_util", "cpuidle", "cpusys", "diskio", "dload", "dropwatch", "hungtask", "iolatency", "iotracing", "loadavg", "memburst", "memory_buddyinfo", "memory_events", "memory_free", "memory_others", "memory_reclaim", "memory_reclaim_events", "memory_vmstat", "metax_gpu", "mountpoint_perm", "net_rx_latency", "netdev", "netdev_bonding_lacp", "netdev_dcb", "netdev_events", "netdev_hw", "netdev_qdisc", "netdev_rdma_link", "netdev_txqueue_timeout", "netstat", "oom", "ras", "runqlat", "sched_tick", "sockstat", "softirq", "softlockup", "tcp_memory", "tcp_retransmit", "tracing_status"]
+
+[EventTracing.BeforeOOMMemorySnapshot]
+    Enabled = true
+    ThresholdPercent = 60
+    CooldownSeconds = 30
+    GoCaptureTimeoutMilliseconds = 2000
+    JavaCaptureTimeoutMilliseconds = 2000
+    PythonCaptureTimeoutMilliseconds = 2000
+    TopK = 3
+
+[Pod]
+    KubeletReadOnlyPort = 0
+    KubeletAuthorizedPort = ${BEFORE_OOM_KUBELET_PORT}
+    KubeletClientCertPath = "${BEFORE_OOM_KUBELET_CERT},${BEFORE_OOM_KUBELET_KEY}"
+    DockerAPIVersion = "${BEFORE_OOM_DOCKER_API_VERSION}"
+
+[Storage.LocalFile]
+    Path = "${HUATUO_BAMAI_TEST_TMPDIR}/events"
+EOF
+}
+
 # The cpusys test controls proc/stat and perf through its isolated fixture root.
 write_cpusys_autotracing_config() {
 	cat > "${HUATUO_BAMAI_TEST_TMPDIR}/bamai.conf" << EOF
