@@ -18,9 +18,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"huatuo-bamai/internal/cgroups"
 	"huatuo-bamai/internal/cgroups/paths"
@@ -37,8 +39,15 @@ import (
 )
 
 type loadavgCollector struct {
+	sampleInterval time.Duration
 	enableCgroupV2 bool
 	unsupportedV2  sync.Once
+	mu             sync.Mutex
+	sampling       bool
+	sampledAt      time.Time
+	sampledData    []*metric.Data
+	sampledErr     error
+	averages       map[containerLoadKey]containerLoadAverage
 }
 
 func init() {
@@ -47,27 +56,20 @@ func init() {
 
 // newLoadavg returns a new Collector exposing load average stats.
 func newLoadavg() (*tracing.EventTracingAttr, error) {
+	cfg := configSnapshot().Loadavg
+	// The three-interval expiry must also fit in time.Duration.
+	const maxIntervalSeconds = math.MaxInt64 / int64(time.Second) / 3
+	if cfg.Interval < 0 || cfg.Interval > maxIntervalSeconds {
+		return nil, fmt.Errorf("loadavg interval must be between 0 and %d seconds (0 uses the default)", maxIntervalSeconds)
+	}
 	return &tracing.EventTracingAttr{
 		TracingData: &loadavgCollector{
-			enableCgroupV2: configSnapshot().Loadavg.EnableCgroupV2,
+			sampleInterval: time.Duration(cfg.Interval) * time.Second,
+			enableCgroupV2: cfg.EnableCgroupV2,
 		},
-		Flag: tracing.FlagMetric,
+		Interval: 5,
+		Flag:     tracing.FlagMetric | tracing.FlagTracing,
 	}, nil
-}
-
-func (c *loadavgCollector) collectContainerV2(
-	collect func() ([]*metric.Data, error),
-) ([]*metric.Data, error) {
-	loadavgs, err := collect()
-	if !errors.Is(err, cgroupV2.ErrTaskIteratorNotSupported) {
-		return loadavgs, err
-	}
-
-	c.unsupportedV2.Do(func() {
-		log.WithError(err).Warn(
-			"cgroup v2 container load metrics are unavailable; host load metrics remain enabled")
-	})
-	return nil, nil
 }
 
 // Load average of last 1, 5, 15 minutes.
@@ -90,7 +92,7 @@ func nodeLoadAvg() ([]*metric.Data, error) {
 	}, nil
 }
 
-func containerLoadavg() ([]*metric.Data, error) {
+func readContainerLoadV1() ([]containerLoadSample, error) {
 	n, err := netlink.New()
 	if err != nil {
 		return nil, err
@@ -102,17 +104,17 @@ func containerLoadavg() ([]*metric.Data, error) {
 		return nil, err
 	}
 
-	return collectContainerLoadavgV1(
+	return readContainerLoadSamplesV1(
 		containers,
 		n.GetCpuLoad,
 	)
 }
 
-func collectContainerLoadavgV1(
+func readContainerLoadSamplesV1(
 	containers map[string]*pod.Container,
 	getCpuLoad func(string, string) (cadvisorV1.LoadStats, error),
-) ([]*metric.Data, error) {
-	loadavgs := []*metric.Data{}
+) ([]containerLoadSample, error) {
+	samples := make([]containerLoadSample, 0, len(containers))
 	for _, container := range containers {
 		cgroupPath := paths.Path(subsystem.SubsystemCPU, container.CgroupPath)
 		stats, err := getCpuLoad(container.Hostname, cgroupPath)
@@ -120,14 +122,13 @@ func collectContainerLoadavgV1(
 			continue
 		}
 
-		loadavgs = append(loadavgs, containerLoadMetrics(
-			container, stats.NrRunning, stats.NrUninterruptible)...)
+		samples = append(samples, containerLoadSample{container, stats.NrRunning, stats.NrUninterruptible})
 	}
 
-	return loadavgs, nil
+	return samples, nil
 }
 
-func containerLoadavgV2() ([]*metric.Data, error) {
+func readContainerLoadV2() ([]containerLoadSample, error) {
 	containers, err := pod.ContainersByType(pod.ContainerTypeNormal | pod.ContainerTypeSidecar)
 	if err != nil {
 		return nil, err
@@ -140,18 +141,17 @@ func containerLoadavgV2() ([]*metric.Data, error) {
 	statsByPath, err := cgroupV2.SharedLoadStats(
 		cgroupV2.LoadStatsConsumerLoadavg, paths)
 
-	loadavgs := []*metric.Data{}
+	samples := make([]containerLoadSample, 0, len(containers))
 	for _, container := range containers {
 		stats, ok := statsByPath[container.CgroupPath]
 		if !ok {
 			continue
 		}
 
-		loadavgs = append(loadavgs, containerLoadMetrics(
-			container, stats.NrRunning, stats.NrUninterruptible)...)
+		samples = append(samples, containerLoadSample{container, stats.NrRunning, stats.NrUninterruptible})
 	}
 
-	return loadavgs, err
+	return samples, err
 }
 
 func containerLoadMetrics(
@@ -169,26 +169,45 @@ func containerLoadMetrics(
 }
 
 func (c *loadavgCollector) Update() ([]*metric.Data, error) {
-	return c.update(cgroups.CgroupMode(), containerLoadavg, containerLoadavgV2)
+	data, err, sampling := c.cachedContainerLoad(time.Now())
+	if sampling {
+		return collectLoadavg(func() ([]*metric.Data, error) { return data, err }, nodeLoadMetrics)
+	}
+	return c.update(cgroups.CgroupMode(), readContainerLoadV1, readContainerLoadV2)
 }
 
 func (c *loadavgCollector) update(
 	mode cgroups.Mode,
-	readV1 func() ([]*metric.Data, error),
-	readV2 func() ([]*metric.Data, error),
+	readV1, readV2 func() ([]containerLoadSample, error),
 ) ([]*metric.Data, error) {
-	var containerLoadavgFn func() ([]*metric.Data, error)
+	return collectLoadavg(func() ([]*metric.Data, error) {
+		samples, err := c.readContainerLoad(mode, readV1, readV2)
+		return instantaneousContainerLoad(samples), err
+	}, nodeLoadMetrics)
+}
+
+// Scrape fallback and background sampling share the same readers and policy.
+func (c *loadavgCollector) readContainerLoad(
+	mode cgroups.Mode,
+	readV1, readV2 func() ([]containerLoadSample, error),
+) ([]containerLoadSample, error) {
 	switch mode {
 	case cgroups.Legacy, cgroups.Hybrid:
-		containerLoadavgFn = readV1
+		return readV1()
 	case cgroups.Unified:
 		if c.enableCgroupV2 {
-			containerLoadavgFn = func() ([]*metric.Data, error) {
-				return c.collectContainerV2(readV2)
+			samples, err := readV2()
+			if errors.Is(err, cgroupV2.ErrTaskIteratorNotSupported) {
+				c.unsupportedV2.Do(func() {
+					log.WithError(err).Warn(
+						"cgroup v2 container load metrics are unavailable; host load metrics remain enabled")
+				})
+				return nil, nil
 			}
+			return samples, err
 		}
 	}
-	return collectLoadavg(containerLoadavgFn, nodeLoadMetrics)
+	return nil, nil
 }
 
 func nodeLoadMetrics() ([]*metric.Data, error) {

@@ -114,12 +114,12 @@ func TestLoadavgFailureIsolation(t *testing.T) {
 			}
 			called := false
 			c := loadavgCollector{}
-			data, err := c.update(tt.mode, func() ([]*metric.Data, error) {
+			data, err := c.update(tt.mode, func() ([]containerLoadSample, error) {
 				called = true
 				if tt.containerErr != nil {
 					return nil, tt.containerErr
 				}
-				return []*metric.Data{metric.NewContainerGaugeData(vmstatTestContainer(""), "nr_running", 2, "test", nil)}, nil
+				return []containerLoadSample{{vmstatTestContainer(""), 2, 0}}, nil
 			}, nil)
 			if called != (tt.mode == cgroups.Legacy) {
 				t.Fatalf("container called = %v", called)
@@ -129,6 +129,9 @@ func TestLoadavgFailureIsolation(t *testing.T) {
 			}
 			if tt.containerErr != nil && !errors.Is(err, tt.containerErr) {
 				t.Fatalf("lost error: %v", err)
+			}
+			if _, ok := tt.want["container_nr_running"]; ok {
+				tt.want["container_nr_uninterruptible"] = 0
 			}
 			assertVMStatMetrics(t, data, tt.want)
 		})
@@ -190,17 +193,17 @@ func TestLoadavgMergedHostContainerCoverage(t *testing.T) {
 				want["load1"], want["load5"], want["load15"] = 1, 2, 3
 			}
 			called := ""
-			read := func(reader string) ([]*metric.Data, error) {
+			read := func(reader string) ([]containerLoadSample, error) {
 				if called != "" {
 					t.Fatal("container reader called more than once")
 				}
 				called = reader
-				return containerLoadMetrics(vmstatTestContainer(""), 2, 3), tt.readErr
+				return []containerLoadSample{{vmstatTestContainer(""), 2, 3}}, tt.readErr
 			}
 			c := loadavgCollector{enableCgroupV2: tt.enabled}
 			data, err := c.update(tt.mode,
-				func() ([]*metric.Data, error) { return read("v1") },
-				func() ([]*metric.Data, error) { return read("v2") },
+				func() ([]containerLoadSample, error) { return read("v1") },
+				func() ([]containerLoadSample, error) { return read("v2") },
 			)
 			if called != tt.wantReader || (err != nil) != tt.wantErr {
 				t.Fatalf("reader = %q, error = %v; want reader %q, error %v", called, err, tt.wantReader, tt.wantErr)
@@ -269,32 +272,32 @@ func TestCollectLoadavgReturnsHostAndPartialContainerMetrics(t *testing.T) {
 	}
 }
 
-func TestCollectContainerV2IgnoresUnsupportedIterator(t *testing.T) {
+func TestReadContainerLoadIgnoresUnsupportedIterator(t *testing.T) {
 	collector := &loadavgCollector{enableCgroupV2: true}
-	got, err := collector.collectContainerV2(func() ([]*metric.Data, error) {
+	got, err := collector.readContainerLoad(cgroups.Unified, nil, func() ([]containerLoadSample, error) {
 		return nil, cgroupV2.ErrTaskIteratorNotSupported
 	})
 	if err != nil {
-		t.Fatalf("collectContainerV2() error = %v, want nil", err)
+		t.Fatalf("readContainerLoad() error = %v, want nil", err)
 	}
 	if len(got) != 0 {
-		t.Fatalf("collectContainerV2() metrics = %v, want none", got)
+		t.Fatalf("readContainerLoad() samples = %v, want none", got)
 	}
 }
 
-func TestCollectContainerV2PreservesRuntimeErrorAndPartialMetrics(t *testing.T) {
+func TestReadContainerLoadPreservesRuntimeErrorAndPartialSamples(t *testing.T) {
 	wantErr := errors.New("iterator read failed")
-	wantMetric := metric.NewGaugeData("container_load", 1, "container load", nil)
+	wantSample := containerLoadSample{vmstatTestContainer(""), 2, 3}
 	collector := &loadavgCollector{enableCgroupV2: true}
 
-	got, err := collector.collectContainerV2(func() ([]*metric.Data, error) {
-		return []*metric.Data{wantMetric}, wantErr
+	got, err := collector.readContainerLoad(cgroups.Unified, nil, func() ([]containerLoadSample, error) {
+		return []containerLoadSample{wantSample}, wantErr
 	})
 	if !errors.Is(err, wantErr) {
-		t.Fatalf("collectContainerV2() error = %v, want %v", err, wantErr)
+		t.Fatalf("readContainerLoad() error = %v, want %v", err, wantErr)
 	}
-	if len(got) != 1 || got[0] != wantMetric {
-		t.Fatalf("collectContainerV2() metrics = %v, want partial metric", got)
+	if len(got) != 1 || got[0] != wantSample {
+		t.Fatalf("readContainerLoad() samples = %v, want partial sample", got)
 	}
 }
 
@@ -315,7 +318,7 @@ func TestNewLoadavgBindsCgroupV2Config(t *testing.T) {
 	}
 }
 
-func TestCollectContainerLoadavgV1SilentlySkipsFailures(t *testing.T) {
+func TestReadContainerLoadSamplesV1SilentlySkipsFailures(t *testing.T) {
 	wantErr := errors.New("netlink failed")
 	containers := map[string]*pod.Container{
 		"good": {
@@ -332,7 +335,7 @@ func TestCollectContainerLoadavgV1SilentlySkipsFailures(t *testing.T) {
 		},
 	}
 
-	got, err := collectContainerLoadavgV1(
+	got, err := readContainerLoadSamplesV1(
 		containers,
 		func(name, _ string) (cadvisorV1.LoadStats, error) {
 			switch name {
@@ -346,12 +349,12 @@ func TestCollectContainerLoadavgV1SilentlySkipsFailures(t *testing.T) {
 		},
 	)
 	if err != nil {
-		t.Fatalf("collectContainerLoadavgV1 error = %v, want nil", err)
+		t.Fatalf("readContainerLoadSamplesV1 error = %v, want nil", err)
 	}
-	if len(got) != 2 {
-		t.Fatalf("metric count = %d, want 2", len(got))
+	if len(got) != 1 {
+		t.Fatalf("sample count = %d, want 1", len(got))
 	}
-	if got[0].Value != 2 || got[1].Value != 3 {
-		t.Fatalf("metrics = %v, want running 2 and uninterruptible 3", got)
+	if got[0].container != containers["good"] || got[0].running != 2 || got[0].uninterruptible != 3 {
+		t.Fatalf("samples = %v, want good container running 2 and uninterruptible 3", got)
 	}
 }

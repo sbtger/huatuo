@@ -903,10 +903,14 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 ```bash
 # Metric Collector
 [MetricCollector]
-	# 开启 cgroup v2 容器负载指标。BPF task iterator 每次抓取会遍历一次
+	# 开启 cgroup v2 容器负载指标。BPF task iterator 默认每 15 秒后台采样遍历一次
 	# 宿主机全部任务。关闭时仍保留宿主机 loadavg 和 cgroup v1 容器指标。
 	# Kubernetes 部署必须设置 hostPID: true。
 	[MetricCollector.Loadavg]
+		# 后台采样间隔，单位秒；0 使用默认值 15。
+		# 控制容器负载及可选主机 D 状态采样，不影响主机 /proc/loadavg 抓取，
+		# 也不影响 AutoTracing.Dload.Interval（默认 10 秒）。
+		# Interval = 15
 		# EnableCgroupV2 = false
 
 	# Netdev statistic

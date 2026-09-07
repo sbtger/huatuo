@@ -912,10 +912,15 @@ This section defines collection rules for various system and network metrics. Al
 # Metric Collector
 [MetricCollector]
 	# Opt in to container load metrics on cgroup v2. The BPF task iterator
-	# walks all host tasks once per scrape. Host loadavg and cgroup v1 container
+	# walks all host tasks once per background sample (default: 15 seconds).
+	# Host loadavg and cgroup v1 container
 	# metrics remain available when this is false.
 	# Kubernetes deployments must run with hostPID: true.
 	[MetricCollector.Loadavg]
+		# Sampling interval in seconds; 0 uses the default of 15.
+		# Controls container load and optional host D-state sampling, not
+		# host /proc/loadavg scrapes or AutoTracing.Dload.Interval (default: 10).
+		# Interval = 15
 		# EnableCgroupV2 = false
 
 	# Netdev statistic

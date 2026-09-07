@@ -34,7 +34,8 @@ type Config struct {
 	}
 
 	Loadavg struct {
-		EnableCgroupV2 bool `default:"false"`
+		Interval       int64 `default:"15"`
+		EnableCgroupV2 bool  `default:"false"`
 	}
 
 	NetdevStats struct {

@@ -90,6 +90,7 @@ IncludedOnContainer = "inactive_file"
 ExcludedOnContainer = "writeback"
 
 [MetricCollector.Loadavg]
+Interval = 30
 EnableCgroupV2 = true
 `)
 	if path == "" {
@@ -158,6 +159,9 @@ EnableCgroupV2 = true
 	if !Get().MetricCollector.Loadavg.EnableCgroupV2 {
 		t.Error("MetricCollector.Loadavg.EnableCgroupV2 should be true")
 	}
+	if got := Get().MetricCollector.Loadavg.Interval; got != 30 {
+		t.Errorf("MetricCollector.Loadavg.Interval = %d, want 30", got)
+	}
 	if len(Get().EventTracing.NetRxLatency.ExcludedContainerQos) != 1 {
 		t.Errorf("unexpected ExcludedContainerQos length: %d", len(Get().EventTracing.NetRxLatency.ExcludedContainerQos))
 	}
@@ -179,6 +183,12 @@ func TestLoadRepositoryConfig(t *testing.T) {
 	path := filepath.Join("..", "..", "..", "huatuo-bamai.conf")
 	if err := Load(path); err != nil {
 		t.Fatalf("Load(%q) error = %v", path, err)
+	}
+	if got := Get().MetricCollector.Loadavg.Interval; got != 15 {
+		t.Errorf("MetricCollector.Loadavg.Interval = %d, want default 15", got)
+	}
+	if got := Get().AutoTracing.Dload.Interval; got != 10 {
+		t.Errorf("AutoTracing.Dload.Interval = %d, want unchanged default 10", got)
 	}
 }
 
