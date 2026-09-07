@@ -15,20 +15,109 @@
 package collector
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"huatuo-bamai/internal/cgroups"
 	"huatuo-bamai/internal/cgroups/stats"
+	"huatuo-bamai/internal/pod"
+	"huatuo-bamai/pkg/metric"
 )
 
 type cpuUsageCgroup struct {
 	cgroups.Cgroup
 	usage stats.CpuUsage
+	err   error
 }
 
 func (c *cpuUsageCgroup) CpuUsage(string) (*stats.CpuUsage, error) {
-	return &c.usage, nil
+	return &c.usage, c.err
+}
+
+func TestCPUUtilCollectorHostMetrics(t *testing.T) {
+	c := cpuUtilCollector{
+		cgroup:   &cpuUsageCgroup{},
+		numCores: 8,
+		cpuDataCache: cpuUtilStat{
+			lastTimestamp: time.Now(),
+			usrUtil:       12,
+			sysUtil:       3,
+			totalUtil:     15,
+		},
+	}
+	metrics, err := c.updateHostDataCache()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]float64{"usr": 12, "sys": 3, "total": 15}
+	if len(metrics) != len(want) {
+		t.Fatalf("got %d metrics, want %d", len(metrics), len(want))
+	}
+	for _, m := range metrics {
+		value, ok := want[m.Name()]
+		if !ok || m.Value != value || m.Type() != metric.MetricTypeGauge {
+			t.Fatalf("unexpected metric: %s = %v, type %v", m.Name(), m.Value, m.Type())
+		}
+		labels := m.Labels()
+		if len(labels) != 2 {
+			t.Fatalf("unexpected host labels: %v", labels)
+		}
+		for _, key := range []string{"host", "region"} {
+			if _, ok := labels[key]; !ok {
+				t.Fatalf("missing label %q: %v", key, labels)
+			}
+		}
+		delete(want, m.Name())
+	}
+}
+
+func BenchmarkCPUUtilCollectorHostMetrics(b *testing.B) {
+	c := cpuUtilCollector{cgroup: &cpuUsageCgroup{}, numCores: 8}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if _, err := c.updateHostDataCache(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestCPUUtilCollectorFailureIsolation(t *testing.T) {
+	discoveryErr := errors.New("kubelet unavailable")
+	usageErr := errors.New("cpu accounting unavailable")
+	for _, tt := range []struct {
+		name                   string
+		discoveryErr, usageErr error
+		wantMetrics            int
+	}{
+		{"no containers", nil, nil, 3},
+		{"discovery fails", discoveryErr, nil, 3},
+		{"usage fails", nil, usageErr, 0},
+		{"both fail", discoveryErr, usageErr, 0},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			c := cpuUtilCollector{cgroup: &cpuUsageCgroup{err: tt.usageErr}, numCores: 8}
+			metrics, err := c.update(func() (map[string]*pod.Container, error) {
+				return nil, tt.discoveryErr
+			})
+			if tt.discoveryErr == nil && tt.usageErr == nil && err != nil {
+				t.Fatal(err)
+			}
+			for _, wantErr := range []error{tt.discoveryErr, tt.usageErr} {
+				if wantErr != nil && !errors.Is(err, wantErr) {
+					t.Errorf("error = %v, want %v", err, wantErr)
+				}
+			}
+			if len(metrics) != tt.wantMetrics {
+				t.Fatalf("got %d metrics, want %d", len(metrics), tt.wantMetrics)
+			}
+			for _, m := range metrics {
+				if m.Name() == "cores" {
+					t.Fatal("host capacity metric must not be exported")
+				}
+			}
+		})
+	}
 }
 
 func TestCPUUtilCollectorUpdateDataCacheCounterRegression(t *testing.T) {
