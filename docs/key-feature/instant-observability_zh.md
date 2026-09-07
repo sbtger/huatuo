@@ -345,6 +345,8 @@ tcp_retransmit 的使用方式、字段、分类和丢包关联请参考 [tcpsha
 
 ### 6. hungtask 任务挂起
 
+`hungtask_container_total` 使用 raw tracepoint 在事件时刻记录的阻塞任务 cgroup 身份匹配容器，已匹配追踪附带 `ContainerID`，不再事后通过 TID 查询归属。容器元数据缺失或不支持身份采集时，仅保留主机总计。容器计数不受追踪保存退避影响；CPU 与阻塞任务栈仍为全机快照。层级匹配、回退及计数语义见 [HungTask 指标](kernel-wide-insight_zh.md#hungtask)。
+
 **功能描述** 检测系统 hungtask 事件，捕获当前所有处于 D 状态（不可中断睡眠）的进程内核栈及所有 CPU 的回溯信息，用于保留故障现场。采用退避策略，同一轮事件风暴期间上报间隔从 10 分钟递增至最长 3 小时。同时维护 hungtask 发生次数的计数指标。注意：部分 Linux 发行版（如 Fedora 42）默认禁用 hungtask 检测，此时该观测器不会启动。
 
 **数据存储** 自动存储至 Elasticsearch 或物理机磁盘文件。

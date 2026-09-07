@@ -345,6 +345,8 @@ All event records include the following common fields:
 
 ### 6. hungtask
 
+`hungtask_container_total` attributes events using the blocked task's cgroup identity captured at the raw tracepoint; matched traces carry `ContainerID`. It does not resolve a potentially reused TID later in userspace. Missing container metadata or unsupported identity capture leaves events in the host total only. Container counting is independent of trace-save backoff. CPU and blocked-task stack snapshots remain system-wide. See [HungTask metrics](kernel-wide-insight_en.md#hungtask) for hierarchy matching, fallback and accounting details.
+
 **Description** Detects hungtask events. Captures the kernel stacks of all processes in D state (uninterruptible sleep) and NMI backtrace for all CPUs to preserve the fault scene. A backoff strategy is applied: the reporting interval increases from 10 minutes up to a maximum of 3 hours during an event storm. A hungtask occurrence counter metric is also maintained. Note: some Linux distributions (e.g., Fedora 42) disable hungtask detection by default, in which case this observer will not start.
 
 **Data Storage** Automatically stored in Elasticsearch or as files on the physical machine disk.
