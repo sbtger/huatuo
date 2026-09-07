@@ -33,6 +33,10 @@ type Config struct {
 		EnableMTLink bool `default:"false"`
 	}
 
+	Loadavg struct {
+		EnableCgroupV2 bool `default:"false"`
+	}
+
 	NetdevStats struct {
 		EnableNetlink  bool `default:"false"`
 		DeviceExcluded string
