@@ -97,9 +97,12 @@ func TestLoadStatsLiveTaskIterator(t *testing.T) {
 		}
 	}
 
-	result, err := LoadStats(cgroupPaths)
+	result, host, err := SharedLoadStatsWithHost(LoadStatsConsumerLoadavg, cgroupPaths)
 	if err != nil {
 		t.Fatalf("LoadStats(%q) error = %v", cgroupPaths, err)
+	}
+	if host == nil || host.NrSleeping <= 6 {
+		t.Fatalf("host total must include tasks outside fixture cgroups: %+v", host)
 	}
 	for i, cgroupPath := range cgroupPaths {
 		load, ok := result[cgroupPath]
@@ -110,6 +113,10 @@ func TestLoadStatsLiveTaskIterator(t *testing.T) {
 			t.Fatalf("LoadStats(%q) = %+v, want %d sleeping tasks",
 				cgroupPath, load, wantSleeping[i])
 		}
+	}
+	hostOnly, err := defaultTaskLoadSnapshotter.Snapshot([]uint64{hostLoadStatsID})
+	if err != nil || hostOnly[hostLoadStatsID].NrSleeping <= 6 {
+		t.Fatalf("host-only snapshot: %v, %v", hostOnly, err)
 	}
 }
 

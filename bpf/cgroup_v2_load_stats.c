@@ -114,32 +114,9 @@ static __always_inline u64 task_cgroup_id(struct task_struct *task)
 	return BPF_CORE_READ((struct kernfs_node___id64 *)kn, id);
 }
 
-SEC("iter/task")
-int aggregate_cgroup_load(struct bpf_iter__task *ctx)
+static __always_inline void account_task(struct cgroup_load_stats *stats,
+					long state, bool in_iowait)
 {
-	struct cgroup_load_stats *stats;
-	struct task_struct *task;
-	u64 cgroup_id;
-	long state;
-
-	/* Also check the terminal callback so an empty traversal cannot pass. */
-	if (!collector_in_host_pid_namespace())
-		return 0;
-
-	task = ctx->task;
-	if (!task)
-		return 0;
-
-	cgroup_id = task_cgroup_id(task);
-	if (!cgroup_id)
-		return 0;
-
-	stats = bpf_map_lookup_elem(&cgroup_load_stats, &cgroup_id);
-	if (!stats)
-		return 0;
-
-	state = task_state(task);
-
 	/*
 	 * __state is a bitmask, so base sleep states can be combined with
 	 * modifier bits. Mirror the scheduler's load-contribution rules.
@@ -154,8 +131,37 @@ int aggregate_cgroup_load(struct bpf_iter__task *ctx)
 	else if (state & __TASK_STOPPED)
 		stats->nr_stopped++;
 
-	if (BPF_CORE_READ_BITFIELD_PROBED(task, in_iowait))
+	if (in_iowait)
 		stats->nr_iowait++;
+}
+
+SEC("iter/task")
+int aggregate_cgroup_load(struct bpf_iter__task *ctx)
+{
+	struct cgroup_load_stats *stats, *host_stats;
+	struct task_struct *task;
+	u64 cgroup_id, host_id = 0;
+	long state;
+	bool in_iowait;
+
+	/* Also check the terminal callback so an empty traversal cannot pass. */
+	if (!collector_in_host_pid_namespace())
+		return 0;
+	task = ctx->task;
+	if (!task)
+		return 0;
+
+	/* Host totals include root, non-container tasks and all descendants. */
+	host_stats = bpf_map_lookup_elem(&cgroup_load_stats, &host_id);
+	cgroup_id = task_cgroup_id(task);
+	stats = cgroup_id ? bpf_map_lookup_elem(&cgroup_load_stats, &cgroup_id) : NULL;
+	state = task_state(task);
+	in_iowait = BPF_CORE_READ_BITFIELD_PROBED(task, in_iowait);
+	/* Keep null checks separate: LLVM may OR pointers in a combined check. */
+	if (host_stats)
+		account_task(host_stats, state, in_iowait);
+	if (stats)
+		account_task(stats, state, in_iowait);
 
 	return 0;
 }

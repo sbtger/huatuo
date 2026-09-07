@@ -912,6 +912,10 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 		# 也不影响 AutoTracing.Dload.Interval（默认 10 秒）。
 		# Interval = 15
 		# EnableCgroupV2 = false
+		# 开启主机参与负载计算的 D 状态任务计数，每 Interval 秒采样。
+		# 适用于 cgroup v1/v2，需要主机 PID 可见性、内核 BTF 和 BPF
+		# task iterator，与 v2 容器统计共用遍历；不支持时省略指标。
+		# EnableHostUninterruptible = false
 
 	# Netdev statistic
 	#

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"huatuo-bamai/internal/cgroups"
+	"huatuo-bamai/internal/cgroups/stats"
 	cgroupV2 "huatuo-bamai/internal/cgroups/v2"
 	"huatuo-bamai/internal/pod"
 	"huatuo-bamai/pkg/metric"
@@ -63,12 +64,12 @@ func instantaneousContainerLoad(samples []containerLoadSample) []*metric.Data {
 // The tracing manager owns cancellation and restart; no detached goroutine lives
 // beyond the collector lifecycle.
 func (c *loadavgCollector) Start(ctx context.Context) error {
-	return c.sampleLoad(ctx, func() ([]containerLoadSample, error) {
-		return c.readContainerLoad(cgroups.CgroupMode(), readContainerLoadV1, readContainerLoadV2)
+	return c.sampleLoad(ctx, func() ([]containerLoadSample, *stats.LoadStats, error) {
+		return c.readLoadSample(cgroups.CgroupMode(), readContainerLoadV1, readContainerLoadV2, readTaskLoadWithHost)
 	})
 }
 
-func (c *loadavgCollector) sampleLoad(ctx context.Context, read func() ([]containerLoadSample, error)) error {
+func (c *loadavgCollector) sampleLoad(ctx context.Context, read func() ([]containerLoadSample, *stats.LoadStats, error)) error {
 	c.mu.Lock()
 	c.sampling = true
 	c.mu.Unlock()
@@ -87,8 +88,8 @@ func (c *loadavgCollector) sampleLoad(ctx context.Context, read func() ([]contai
 			return nil
 		}
 		at := time.Now()
-		samples, err := read()
-		c.publishContainerLoad(at, samples, err)
+		samples, host, err := read()
+		c.publishContainerLoad(at, samples, err, host)
 		select {
 		case <-ctx.Done():
 			return nil
@@ -97,10 +98,14 @@ func (c *loadavgCollector) sampleLoad(ctx context.Context, read func() ([]contai
 	}
 }
 
-func (c *loadavgCollector) publishContainerLoad(at time.Time, samples []containerLoadSample, err error) {
+func (c *loadavgCollector) publishContainerLoad(at time.Time, samples []containerLoadSample, err error, host *stats.LoadStats) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	data := instantaneousContainerLoad(samples)
+	if host != nil {
+		data = append(data, metric.NewGaugeData("nr_uninterruptible", float64(host.NrUninterruptible),
+			"number of host uninterruptible tasks contributing to load", nil))
+	}
 	next := make(map[containerLoadKey]containerLoadAverage, len(samples))
 	for _, sample := range samples {
 		container := sample.container

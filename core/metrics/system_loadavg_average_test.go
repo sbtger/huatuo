@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"huatuo-bamai/internal/cgroups"
+	"huatuo-bamai/internal/cgroups/stats"
 	cgroupV2 "huatuo-bamai/internal/cgroups/v2"
 	"huatuo-bamai/pkg/metric"
 )
@@ -77,10 +78,10 @@ func TestLoadavgIntervalControlsAverageAndExpiry(t *testing.T) {
 			c := &loadavgCollector{sampling: true, sampleInterval: interval}
 			at := time.Unix(100, 0)
 			samples := []containerLoadSample{{vmstatTestContainer("/one"), 2, 3}}
-			c.publishContainerLoad(at, samples, nil)
+			c.publishContainerLoad(at, samples, nil, nil)
 			dt := interval + 2*time.Second
 			at = at.Add(dt)
-			c.publishContainerLoad(at, samples, nil)
+			c.publishContainerLoad(at, samples, nil, nil)
 			data, err, _ := c.cachedContainerLoad(at)
 			if err != nil {
 				t.Fatal(err)
@@ -101,7 +102,7 @@ func TestLoadavgIntervalControlsAverageAndExpiry(t *testing.T) {
 			if data, err, _ := c.cachedContainerLoad(expires); err == nil || len(data) != 0 {
 				t.Fatal("stale sample exported")
 			}
-			c.publishContainerLoad(expires, samples, nil)
+			c.publishContainerLoad(expires, samples, nil, nil)
 			if data, _, _ := c.cachedContainerLoad(expires); len(data) != 2 {
 				t.Fatal("average survived a gap longer than three intervals")
 			}
@@ -114,12 +115,12 @@ func TestLoadSamplerUsesInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	reads := 0
-	err := c.sampleLoad(ctx, func() ([]containerLoadSample, error) {
+	err := c.sampleLoad(ctx, func() ([]containerLoadSample, *stats.LoadStats, error) {
 		reads++
 		if reads == 2 {
 			cancel()
 		}
-		return nil, nil
+		return nil, nil, nil
 	})
 	if err != nil || reads != 2 {
 		t.Fatalf("sampler ignored interval: reads=%d err=%v", reads, err)
@@ -130,14 +131,14 @@ func TestContainerLoadAverage(t *testing.T) {
 	c := &loadavgCollector{sampling: true, sampleInterval: 5 * time.Second}
 	at := time.Unix(100, 0)
 	samples := []containerLoadSample{{vmstatTestContainer("/one"), 2, 3}}
-	c.publishContainerLoad(at, samples, nil)
+	c.publishContainerLoad(at, samples, nil, nil)
 	data, _, _ := c.cachedContainerLoad(at)
 	if len(data) != 2 {
 		t.Fatalf("baseline emitted averages: %v", loadMetricValues(data))
 	}
 	for _, dt := range []time.Duration{5 * time.Second, 7 * time.Second} {
 		at = at.Add(dt)
-		c.publishContainerLoad(at, samples, nil)
+		c.publishContainerLoad(at, samples, nil, nil)
 	}
 	data, err, active := c.cachedContainerLoad(at)
 	if err != nil || !active {
@@ -152,7 +153,7 @@ func TestContainerLoadAverage(t *testing.T) {
 		}
 	}
 	samples[0].running, samples[0].uninterruptible = 0, 0
-	c.publishContainerLoad(at.Add(5*time.Second), samples, nil)
+	c.publishContainerLoad(at.Add(5*time.Second), samples, nil, nil)
 	data, _, _ = c.cachedContainerLoad(at.Add(5 * time.Second))
 	if got := loadMetricValues(data)["container_load1"]; math.Abs(got-values["container_load1"]*math.Exp(-5.0/60)) > 1e-12 {
 		t.Fatalf("decay = %g", got)
@@ -174,14 +175,14 @@ func TestContainerLoadAverageReset(t *testing.T) {
 			c := &loadavgCollector{sampling: true, sampleInterval: 5 * time.Second}
 			at := time.Unix(100, 0)
 			samples := []containerLoadSample{{vmstatTestContainer("/one"), 2, 3}}
-			c.publishContainerLoad(at, samples, nil)
-			c.publishContainerLoad(at.Add(5*time.Second), samples, nil)
+			c.publishContainerLoad(at, samples, nil, nil)
+			c.publishContainerLoad(at.Add(5*time.Second), samples, nil, nil)
 			next := at.Add(15 * time.Second)
 			switch reason {
 			case "missing":
-				c.publishContainerLoad(at.Add(10*time.Second), nil, nil)
+				c.publishContainerLoad(at.Add(10*time.Second), nil, nil, nil)
 			case "failure":
-				c.publishContainerLoad(at.Add(10*time.Second), nil, errors.New("read failed"))
+				c.publishContainerLoad(at.Add(10*time.Second), nil, errors.New("read failed"), nil)
 			case "restart":
 				samples[0].container.StartedAt = at
 			case "path":
@@ -189,7 +190,7 @@ func TestContainerLoadAverageReset(t *testing.T) {
 			case "gap":
 				next = at.Add(21 * time.Second)
 			}
-			c.publishContainerLoad(next, samples, nil)
+			c.publishContainerLoad(next, samples, nil, nil)
 			data, _, _ := c.cachedContainerLoad(next)
 			if len(data) != 2 {
 				t.Fatalf("history survived %s", reason)
@@ -228,9 +229,9 @@ func TestLoadSamplerLifecycle(t *testing.T) {
 	ready := make(chan struct{})
 	done := make(chan error, 1)
 	go func() {
-		done <- c.sampleLoad(ctx, func() ([]containerLoadSample, error) {
+		done <- c.sampleLoad(ctx, func() ([]containerLoadSample, *stats.LoadStats, error) {
 			close(ready)
-			return []containerLoadSample{{vmstatTestContainer("/one"), 1, 2}}, nil
+			return []containerLoadSample{{vmstatTestContainer("/one"), 1, 2}}, nil, nil
 		})
 	}()
 	<-ready
@@ -268,7 +269,7 @@ func BenchmarkContainerLoadAverage(b *testing.B) {
 			b.ResetTimer()
 			for range b.N {
 				at = at.Add(c.samplingInterval())
-				c.publishContainerLoad(at, samples, nil)
+				c.publishContainerLoad(at, samples, nil, nil)
 			}
 		})
 	}

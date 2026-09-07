@@ -922,6 +922,11 @@ This section defines collection rules for various system and network metrics. Al
 		# host /proc/loadavg scrapes or AutoTracing.Dload.Interval (default: 10).
 		# Interval = 15
 		# EnableCgroupV2 = false
+		# Opt in to host D-state tasks contributing to load, sampled every
+		# Interval seconds. Requires host PID visibility, kernel BTF and the BPF
+		# task iterator; works on cgroup v1/v2. Shares the v2 traversal.
+		# Unsupported systems omit this metric without a procfs fallback.
+		# EnableHostUninterruptible = false
 
 	# Netdev statistic
 	#

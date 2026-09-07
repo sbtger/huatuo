@@ -43,6 +43,45 @@ func (f taskLoadSnapshotterFunc) Snapshot(ids []uint64) (map[uint64]stats.LoadSt
 	return f(ids)
 }
 
+func TestSharedLoadStatsWithHost(t *testing.T) {
+	for _, paths := range [][]string{nil, {"container"}} {
+		calls := 0
+		shared := &sharedTaskLoadSnapshotter{snapshotter: taskLoadSnapshotterFunc(func(ids []uint64) (map[uint64]stats.LoadStats, error) {
+			calls++
+			if len(ids) != len(paths)+1 || ids[len(ids)-1] != hostLoadStatsID {
+				t.Fatalf("targets = %v", ids)
+			}
+			return map[uint64]stats.LoadStats{0: {NrUninterruptible: 7}, 10: {NrUninterruptible: 2}}, nil
+		})}
+		result, host, err := sharedLoadStatsWithHost(LoadStatsConsumerLoadavg, paths, shared, func(string) (uint64, error) { return 10, nil })
+		if err != nil || host == nil || host.NrUninterruptible != 7 || len(result) != len(paths) || calls != 1 {
+			t.Fatalf("result=%v host=%v err=%v calls=%d", result, host, err, calls)
+		}
+		if len(paths) > 0 && result["container"].NrUninterruptible != 2 {
+			t.Fatal("host replaced container counts")
+		}
+	}
+}
+
+func TestSharedLoadStatsWithHostFailureIsolation(t *testing.T) {
+	failure := errors.New("resolve failure")
+	shared := &sharedTaskLoadSnapshotter{snapshotter: taskLoadSnapshotterFunc(func([]uint64) (map[uint64]stats.LoadStats, error) { return map[uint64]stats.LoadStats{0: {}}, nil })}
+	result, host, err := sharedLoadStatsWithHost(LoadStatsConsumerLoadavg, []string{"failed"}, shared, func(string) (uint64, error) { return 0, failure })
+	if len(result) != 0 || host == nil || !errors.Is(err, failure) {
+		t.Fatalf("host lost on resolution failure: %v %v %v", result, host, err)
+	}
+	shared.snapshotter = taskLoadSnapshotterFunc(func([]uint64) (map[uint64]stats.LoadStats, error) { return nil, ErrTaskIteratorNotSupported })
+	_, host, err = sharedLoadStatsWithHost(LoadStatsConsumerLoadavg, nil, shared, nil)
+	if host != nil || !errors.Is(err, ErrTaskIteratorNotSupported) {
+		t.Fatal("unsupported iterator became zero")
+	}
+	shared.snapshotter = taskLoadSnapshotterFunc(func([]uint64) (map[uint64]stats.LoadStats, error) { return map[uint64]stats.LoadStats{}, nil })
+	_, host, err = sharedLoadStatsWithHost(LoadStatsConsumerLoadavg, nil, shared, nil)
+	if host != nil || err == nil {
+		t.Fatal("missing host row became zero")
+	}
+}
+
 func (s *fakeTaskLoadSnapshotter) Snapshot(
 	ids []uint64,
 ) (map[uint64]stats.LoadStats, error) {

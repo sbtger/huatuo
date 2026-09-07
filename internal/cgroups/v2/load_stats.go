@@ -35,9 +35,11 @@ import (
 )
 
 const (
-	loadStatsObject        = "cgroup_v2_load_stats.o"
-	minLoadStatsMapEntries = 128
-	maxLoadStatsMapEntries = 65536
+	// Zero is not a kernfs cgroup ID; reserve it for the entire host.
+	hostLoadStatsID        uint64 = 0
+	loadStatsObject               = "cgroup_v2_load_stats.o"
+	minLoadStatsMapEntries        = 128
+	maxLoadStatsMapEntries        = 65536
 	// Coalesce adjacent consumers without reusing samples across their
 	// seconds-scale sampling intervals.
 	sharedLoadSnapshotMaxAge = 100 * time.Millisecond
@@ -141,6 +143,37 @@ func SharedLoadStats(
 ) (map[string]stats.LoadStats, error) {
 	return sharedLoadStats(
 		consumer, cgroupPaths, defaultSharedLoadSnapshotter, cgroupID)
+}
+
+// SharedLoadStatsWithHost includes all host tasks, even those outside the
+// requested cgroups, in the same iterator traversal. With empty paths this
+// also works on cgroup v1 hosts. A nil host result is unavailable, not zero.
+func SharedLoadStatsWithHost(
+	consumer LoadStatsConsumer,
+	cgroupPaths []string,
+) (map[string]stats.LoadStats, *stats.LoadStats, error) {
+	return sharedLoadStatsWithHost(consumer, cgroupPaths,
+		defaultSharedLoadSnapshotter, cgroupID)
+}
+
+func sharedLoadStatsWithHost(
+	consumer LoadStatsConsumer,
+	cgroupPaths []string,
+	snapshotter *sharedTaskLoadSnapshotter,
+	resolveID func(string) (uint64, error),
+) (map[string]stats.LoadStats, *stats.LoadStats, error) {
+	pathIDs, ids, resolveErr := resolveLoadStatsTargets(cgroupPaths, resolveID)
+	ids = append(ids, hostLoadStatsID)
+	snapshot, err := snapshotter.Snapshot(consumer, ids)
+	if err != nil {
+		return nil, nil, errors.Join(resolveErr, err)
+	}
+	result := loadStatsByPath(pathIDs, snapshot)
+	host, ok := snapshot[hostLoadStatsID]
+	if !ok {
+		return result, nil, errors.Join(resolveErr, errors.New("host task counts missing from iterator snapshot"))
+	}
+	return result, &host, resolveErr
 }
 
 // ForgetSharedLoadStatsConsumer removes a stopped consumer's targets from

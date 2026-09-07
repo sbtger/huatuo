@@ -39,15 +39,17 @@ import (
 )
 
 type loadavgCollector struct {
-	sampleInterval time.Duration
-	enableCgroupV2 bool
-	unsupportedV2  sync.Once
-	mu             sync.Mutex
-	sampling       bool
-	sampledAt      time.Time
-	sampledData    []*metric.Data
-	sampledErr     error
-	averages       map[containerLoadKey]containerLoadAverage
+	sampleInterval            time.Duration
+	enableCgroupV2            bool
+	enableHostUninterruptible bool
+	unsupportedHost           sync.Once
+	unsupportedV2             sync.Once
+	mu                        sync.Mutex
+	sampling                  bool
+	sampledAt                 time.Time
+	sampledData               []*metric.Data
+	sampledErr                error
+	averages                  map[containerLoadKey]containerLoadAverage
 }
 
 func init() {
@@ -64,8 +66,9 @@ func newLoadavg() (*tracing.EventTracingAttr, error) {
 	}
 	return &tracing.EventTracingAttr{
 		TracingData: &loadavgCollector{
-			sampleInterval: time.Duration(cfg.Interval) * time.Second,
-			enableCgroupV2: cfg.EnableCgroupV2,
+			sampleInterval:            time.Duration(cfg.Interval) * time.Second,
+			enableCgroupV2:            cfg.EnableCgroupV2,
+			enableHostUninterruptible: cfg.EnableHostUninterruptible,
 		},
 		Interval: 5,
 		Flag:     tracing.FlagMetric | tracing.FlagTracing,
