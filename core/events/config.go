@@ -31,6 +31,7 @@ type Config struct {
 	}
 
 	MemoryReclaim struct {
+		EnableHost bool `default:"false"`
 		// 900ms
 		BlockedThreshold uint64 `default:"900000000"`
 	}

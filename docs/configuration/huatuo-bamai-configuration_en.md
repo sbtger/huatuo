@@ -682,8 +682,21 @@ This section captures key kernel events and latency, including scheduler tick in
 # Default: 900000000ns, 900ms
 #
 [EventTracing.MemoryReclaim]
+	# EnableHost = false
 	# BlockedThreshold = 900000000
 ```
+
+- **EnableHost**: Retain slow direct-reclaim events without a resolved container
+  in the host stream. Default: `false`. Requires the `memory_reclaim_events` collector
+  and its existing `try_to_free_pages` entry/return probes to be available and
+  attachable; no additional probe or cgroup-version-specific switch is needed.
+  Keeps the `memory_reclaim` event name and the same `BlockedThreshold`.
+  Empty container IDs are marked
+  `container_attribution="unresolved"`: this includes host tasks and unresolved
+  containers, not proven host-only attribution. Known containers still emit one
+  container event, without a host duplicate. This does not trace kswapd or add an
+  aggregate metric; enabling it adds event output/storage for previously dropped
+  events.
 
 - **BlockedThreshold**: Memory reclaim blocking time threshold (nanoseconds).
 
