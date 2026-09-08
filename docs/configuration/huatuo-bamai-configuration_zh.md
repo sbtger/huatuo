@@ -436,7 +436,7 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 
 **触发逻辑**：当 SysThreshold 与 DeltaSysThreshold 同时满足时触发。
 
-#### 7.3 Dload 自动追踪 — 容器 D 状态任务剖析
+#### 7.3 Dload 自动追踪 — 容器与可选主机 D 状态任务剖析
 
 ```bash
 # dload
@@ -463,11 +463,24 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 # Default: false
 #
 [AutoTracing.Dload]
+	# EnableHost = false
+	# HostThresholdLoad = 5
 	# ThresholdLoad = 5
 	# Interval = 10
 	# IntervalTracing = 1800
 	# EnableCgroupV2 = false
 ```
+
+- **EnableHost**：开启整机 D 状态独立触发，默认 `false`。包含容器线程，
+  不代表仅统计物理机服务。要求启用 `dload`、内核 BTF 可读、支持 BPF `task` iterator、
+  具备 BPF 权限及主机 PID 可见性（Kubernetes 设置 `hostPID: true`）。支持 cgroup v1/v2，
+  不依赖 `EnableCgroupV2` 开关。内核不支持 iterator 时无法提供主机触发，
+  原有 v1 容器 netlink 路径仍可使用。
+
+- **HostThresholdLoad**：整机 D 状态任务数量的一分钟 EMA 阈值，默认 `5`，
+  仅在 `EnableHost` 开启时使用。超过阈值触发主机堆栈采集，主机独立维护冷却状态，
+  冷却时长使用 `IntervalTracing`。复用 `Interval`（默认 10 秒）采样，
+  不是 `/proc/loadavg` 的 R+D 负载，也不受 `MetricCollector.Loadavg.Interval` 控制。
 
 - **ThresholdLoad**：容器不可中断睡眠（D 状态）任务数量的一分钟 EMA 阈值。
 

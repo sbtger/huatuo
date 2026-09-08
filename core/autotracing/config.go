@@ -71,11 +71,13 @@ type Config struct {
 	}
 
 	Dload struct {
-		ThresholdLoad   int64 `default:"5"`
-		Interval        int64 `default:"10"`
-		IntervalTracing int64 `default:"1800"`
-		EnableDebug     bool  `default:"false"`
-		EnableCgroupV2  bool  `default:"false"`
+		EnableHost        bool  `default:"false"`
+		HostThresholdLoad int64 `default:"5"`
+		ThresholdLoad     int64 `default:"5"`
+		Interval          int64 `default:"10"`
+		IntervalTracing   int64 `default:"1800"`
+		EnableDebug       bool  `default:"false"`
+		EnableCgroupV2    bool  `default:"false"`
 	}
 
 	IOTracing struct {
