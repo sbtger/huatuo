@@ -378,7 +378,7 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 
   默认无规则，监控所有容器。
 
-#### 7.2 CPUSys 自动追踪 — 宿主机突发高系统 CPU 使用场景
+#### 7.2 CPUSys 自动追踪 — 宿主机 CPU 突增
 
 ```bash
 # cpusys
@@ -408,9 +408,15 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 #
 # NOTE:
 # Running this performance tool, when:
-# SysThreshold and DeltaSysThreshold are true.
+# Both thresholds of any enabled trigger are exceeded (system, user or total).
 #
 [AutoTracing.CPUSys]
+	# EnableUser = false
+	# EnableTotal = false
+	# UserThreshold = 75
+	# DeltaUserThreshold = 45
+	# UsageThreshold = 90
+	# DeltaUsageThreshold = 55
 	# SysThreshold = 45
 	# DeltaSysThreshold = 20
 	# Interval = 10
@@ -434,7 +440,20 @@ BlackList = ["netdev_hw", "netdev_qdisc", "metax_gpu", "ascend_npu", "diskio", "
 
 - **RunTracingToolTimeout**：单次追踪执行超时时间（秒）。默认 10s。
 
-**触发逻辑**：当 SysThreshold 与 DeltaSysThreshold 同时满足时触发。
+| 可选配置项 | 默认值 | 范围与行为 |
+| --- | --- | --- |
+| `EnableUser` | `false` | 增加整机用户态 CPU 突增触发（`user + nice`）。 |
+| `EnableTotal` | `false` | 增加整机实际执行 CPU 突增触发（`user + nice + system + irq + softirq`），不含 idle、iowait、steal。 |
+| `UserThreshold` | `75`（%） | 用户态使用率须超过此值，仅在 `EnableUser` 开启时使用。 |
+| `DeltaUserThreshold` | `45`（百分点） | 用户态使用率相较上一采样区间的增幅也须超过此值。 |
+| `UsageThreshold` | `90`（%） | 实际执行 CPU 使用率须超过此值，仅在 `EnableTotal` 开启时使用。 |
+| `DeltaUsageThreshold` | `55`（百分点） | 实际执行 CPU 使用率相较上一采样区间的增幅也须超过此值。 |
+
+**触发逻辑与前提**：须启用 `cpusys`、可读取主机 `/proc/stat`，且现有整机 perf
+采集工具及其所需权限可用。每种触发条件都要求使用率与正向增幅同时超过对应阈值，
+任意一种命中即可触发。三种条件共用采集流程与 `IntervalTracing` 冷却时间，
+同时命中不会重复采集。使用率按整机 CPU 时间计算，包含容器工作量，不按容器配额归一化。
+两个新增开关默认关闭，保持原系统态触发与输出。
 
 #### 7.3 Dload 自动追踪 — 容器与可选主机 D 状态任务剖析
 

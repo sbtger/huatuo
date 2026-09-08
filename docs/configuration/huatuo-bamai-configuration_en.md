@@ -383,7 +383,7 @@ The automatic tracing module is one of HUATUO’s intelligent features. It trigg
 
   Default: no rules, all containers monitored.
 
-#### 7.2 CPUSys Automatic Tracing — Sudden High System CPU on Host
+#### 7.2 CPUSys Automatic Tracing — Host CPU Bursts
 
 ```bash
 # cpusys
@@ -413,9 +413,15 @@ The automatic tracing module is one of HUATUO’s intelligent features. It trigg
 #
 # NOTE:
 # Profiling triggers when:
-# SysThreshold AND DeltaSysThreshold are exceeded.
+# Both thresholds of any enabled trigger are exceeded (system, user or total).
 #
 [AutoTracing.CPUSys]
+	# EnableUser = false
+	# EnableTotal = false
+	# UserThreshold = 75
+	# DeltaUserThreshold = 45
+	# UsageThreshold = 90
+	# DeltaUsageThreshold = 55
 	# SysThreshold = 45
 	# DeltaSysThreshold = 20
 	# Interval = 10
@@ -441,7 +447,23 @@ The automatic tracing module is one of HUATUO’s intelligent features. It trigg
 
   Default: 10s.
 
-**Trigger Logic**: Tracing is triggered when both SysThreshold and DeltaSysThreshold are satisfied.
+| Optional key | Default | Scope and behavior |
+| --- | --- | --- |
+| `EnableUser` | `false` | Add a whole-host user CPU burst trigger (`user + nice`). |
+| `EnableTotal` | `false` | Add a whole-host executing CPU burst trigger (`user + nice + system + irq + softirq`); excludes idle, iowait and steal. |
+| `UserThreshold` | `75` (%) | User CPU percentage must exceed this value; used only with `EnableUser`. |
+| `DeltaUserThreshold` | `45` (percentage points) | User CPU increase over the previous interval must also exceed this value. |
+| `UsageThreshold` | `90` (%) | Executing CPU percentage must exceed this value; used only with `EnableTotal`. |
+| `DeltaUsageThreshold` | `55` (percentage points) | Executing CPU increase over the previous interval must also exceed this value. |
+
+**Trigger logic and prerequisites**: `cpusys` must be enabled, host `/proc/stat`
+must be readable, and the existing system-wide perf capture must be available
+with the required privileges. Each enabled trigger requires both its percentage
+and positive increase to exceed the corresponding thresholds. Any matching
+trigger can start the shared capture; all three share `IntervalTracing` and do
+not launch duplicate captures for simultaneous crossings. Percentages include
+container work and use aggregate host CPU time, not container quotas. Both new
+switches default off, preserving the system-only trigger and output.
 
 #### 7.3 Dload AutoTracing — Container and Optional Host D-State Profiling
 

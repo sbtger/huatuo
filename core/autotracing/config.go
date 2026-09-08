@@ -64,6 +64,12 @@ type Config struct {
 	}
 
 	CPUSys struct {
+		EnableUser            bool  `default:"false"`
+		EnableTotal           bool  `default:"false"`
+		UserThreshold         int64 `default:"75"`
+		UsageThreshold        int64 `default:"90"`
+		DeltaUserThreshold    int64 `default:"45"`
+		DeltaUsageThreshold   int64 `default:"55"`
 		SysThreshold          int64 `default:"45"`
 		DeltaSysThreshold     int64 `default:"20"`
 		Interval              int64 `default:"10"`
