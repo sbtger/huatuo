@@ -39,7 +39,9 @@ func newMemBurst() (*tracing.EventTracingAttr, error) {
 }
 
 type (
-	memBurstTracing   struct{}
+	memBurstTracing struct {
+		containers map[string]*containerMemBurst
+	}
 	MemoryTracingData struct {
 		TopMemoryUsage []*processMemInfo `json:"top_memory_usage"`
 	}
@@ -90,22 +92,14 @@ func checkAndRecordMemoryUsage(currentIndex *int, isHistoryFull *bool,
 		return []*processMemInfo{}, fmt.Errorf("read memory info: %w", err)
 	}
 	currentSum := memInfo["Active(anon)"] + memInfo["Inactive(anon)"]
-	history[*currentIndex] = currentSum
-	if *currentIndex == historyWindowLength-1 {
-		*isHistoryFull = true
-	}
-	*currentIndex = (*currentIndex + 1) % historyWindowLength
 	log.Debugf("Checked memory status. active_anon=%v KiB inactive_anon=%v KiB\n", memInfo["Active(anon)"], memInfo["Inactive(anon)"])
-	if *isHistoryFull {
-		oldestSum := history[*currentIndex] // current index is the oldest element
-		if float64(currentSum) >= burstRatio*float64(oldestSum) && currentSum >= (anonThreshold*memTotal/100) {
-			topProcesses, err := topMemoryProcesses(topNProcesses, memoryRSS)
-			if err == nil {
-				return topProcesses, nil
-			}
-			log.Errorf("Fail to getTopMemoryProcesses")
-			return []*processMemInfo{}, err
+	if recordMemoryBurst(currentSum, memTotal, history, currentIndex, isHistoryFull, burstRatio, anonThreshold) {
+		topProcesses, err := topMemoryProcesses(topNProcesses, memoryRSS)
+		if err == nil {
+			return topProcesses, nil
 		}
+		log.Errorf("Fail to getTopMemoryProcesses")
+		return []*processMemInfo{}, err
 	}
 	return []*processMemInfo{}, nil
 }
@@ -132,6 +126,10 @@ func (c *memBurstTracing) Start(ctx context.Context) error {
 		return err
 	}
 	memTotal := memInfo["MemTotal"]
+	c.containers = make(map[string]*containerMemBurst)
+	if cfg.MemoryBurst.EnableContainer {
+		c.sampleContainers(&cfg.MemoryBurst, memTotal, time.Now())
+	}
 	history := make([]int, historyWindowLength) // circular buffer
 	var currentIndex int
 	var isHistoryFull bool // don't check memory burst until we have enough data
@@ -153,6 +151,9 @@ func (c *memBurstTracing) Start(ctx context.Context) error {
 				log.Info("Caller request to stop")
 				return nil
 			case <-ticker.C:
+				if cfg.MemoryBurst.EnableContainer {
+					c.sampleContainers(&cfg.MemoryBurst, memTotal, time.Now())
+				}
 				topProcesses, err = checkAndRecordMemoryUsage(&currentIndex, &isHistoryFull, memTotal, history, historyWindowLength, topNProcesses, burstRatio, anonThreshold)
 				if err != nil {
 					log.Errorf("Fail to checkAndRecordMemoryUsage")
