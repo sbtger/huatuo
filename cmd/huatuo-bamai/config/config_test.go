@@ -660,3 +660,28 @@ func TestUpdatePublishesConsistentSnapshots(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestMemoryBurstSnapshotConfigRejectsInvalidValues(t *testing.T) {
+	for _, value := range []int{0, -1} {
+		t.Run(fmt.Sprint(value), func(t *testing.T) {
+			loadConfigDefaults(t)
+			before := Get()
+			if err := Update(map[string]any{"AutoTracing.MemoryBurst.SnapshotProcessMaxNum": value}); !errors.Is(err, ErrInvalidUpdate) {
+				t.Fatalf("invalid update accepted: %v", err)
+			}
+			if Get() != before {
+				t.Fatal("invalid update was published")
+			}
+			path := filepath.Join(t.TempDir(), "invalid.toml")
+			if err := os.WriteFile(path, []byte(fmt.Sprintf("[AutoTracing.MemoryBurst]\nSnapshotProcessMaxNum = %d\n", value)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := Load(path); err == nil {
+				t.Fatal("invalid file accepted")
+			}
+			if Get() != before {
+				t.Fatal("invalid file was published")
+			}
+		})
+	}
+}

@@ -988,3 +988,70 @@ func TestActionBatchSnapshotSequenceAndFailures(t *testing.T) {
 		})
 	}
 }
+
+func TestThresholdRetriesAfterBurstContention(t *testing.T) {
+	for _, outcome := range []string{"released", "pressure recovered", "canceled"} {
+		t.Run(outcome, func(t *testing.T) {
+			batch := newRunnerActionBatchForTest(t)
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+			batch.ctx = ctx
+			calls, saves := 0, 0
+			batch.ops.save = func(*tracing.WriteRequest) error { saves++; return nil }
+			batch.ops.snapshotProcessMemory = func(context.Context, memsnapshot.ProcessInstanceID, collector.Options) (*collector.Result, error) {
+				calls++
+				if calls == 1 {
+					if outcome == "canceled" {
+						cancel()
+					}
+					if outcome == "pressure recovered" {
+						for _, target := range batch.targets {
+							createMemoryCgroupForTest(t, batch.source.root, target.Cgroup.Path, 1)
+						}
+					}
+					return nil, collector.ErrCaptureBusy
+				}
+				return &collector.Result{SnapshotStartedAt: time.Now()}, nil
+			}
+			finished := batch.Run()
+			if outcome == "released" {
+				if calls != 2 || saves != 1 || finished.IsZero() {
+					t.Fatalf("retry lost: calls=%d saves=%d finished=%v", calls, saves, finished)
+				}
+			} else if calls != 1 || saves != 0 || !finished.IsZero() {
+				t.Fatalf("invalid retry: calls=%d saves=%d", calls, saves)
+			}
+		})
+	}
+}
+
+func TestBurstCaptureFailureBoundsError(t *testing.T) {
+	snapshot := burstCaptureFailure(errors.New(strings.Repeat("x", 1<<20)))
+	if snapshot.Status != memsnapshot.SnapshotStatusFailed || len(snapshot.StatusReason) > 4096 || !snapshot.OutputTruncated {
+		t.Fatal("capture failure was not bounded")
+	}
+}
+
+func TestBurstSnapshotIdentityChangedBeforePersistence(t *testing.T) {
+	identity, err := memsnapshot.ReadProcessInstanceID(os.Getpid())
+	if err != nil {
+		t.Fatal(err)
+	}
+	captured := &memsnapshot.Snapshot{}
+	memory := &memsnapshot.ProcessMemory{}
+	snapshots := []burstProcessSnapshot{
+		{identity: identity, Snapshot: captured, ProcessMemory: memory},
+		{identity: identity, Snapshot: captured, ProcessMemory: memory},
+	}
+	// Capture succeeded, but the selected process instance changed before save.
+	snapshots[0].identity.StartTimeTicks++
+	revalidateBurstSnapshots(snapshots)
+	failed := snapshots[0].Snapshot
+	if failed == captured || failed.Status != memsnapshot.SnapshotStatusFailed ||
+		failed.StatusReason == "" || len(failed.StatusReason) > 4096 || snapshots[0].ProcessMemory != nil {
+		t.Fatal("stale capture was not replaced by a bounded failure without memory counters")
+	}
+	if snapshots[1].Snapshot != captured || snapshots[1].ProcessMemory != memory {
+		t.Fatal("identity failure affected another process snapshot")
+	}
+}

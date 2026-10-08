@@ -17,6 +17,8 @@ package autotracing
 import (
 	"sort"
 
+	"github.com/ccfos/huatuo/internal/memsnapshot"
+
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -24,6 +26,7 @@ type processMemInfo struct {
 	PID         int32
 	ProcessName string
 	MemSize     uint64
+	identity    memsnapshot.ProcessInstanceID
 }
 
 type memoryType int
@@ -43,6 +46,10 @@ func topMemoryProcesses(topN int, metric memoryType) ([]*processMemInfo, error) 
 
 	var infos []*processMemInfo
 	for _, p := range procs {
+		identity, err := memsnapshot.ReadProcessInstanceID(int(p.Pid))
+		if err != nil {
+			continue
+		}
 		var val uint64
 		switch metric {
 		case memoryRSS:
@@ -66,6 +73,7 @@ func topMemoryProcesses(topN int, metric memoryType) ([]*processMemInfo, error) 
 
 		infos = append(infos, &processMemInfo{
 			PID:         p.Pid,
+			identity:    identity,
 			ProcessName: name,
 			MemSize:     val,
 		})
@@ -76,8 +84,15 @@ func topMemoryProcesses(topN int, metric memoryType) ([]*processMemInfo, error) 
 		return infos[i].MemSize > infos[j].MemSize
 	})
 
-	if len(infos) < topN {
-		return infos, nil
+	selected := infos[:0]
+	for _, info := range infos {
+		if len(selected) >= topN {
+			break
+		}
+		if err := memsnapshot.ValidateProcessInstanceID(info.identity); err != nil {
+			continue
+		}
+		selected = append(selected, info)
 	}
-	return infos[:topN], nil
+	return selected, nil
 }

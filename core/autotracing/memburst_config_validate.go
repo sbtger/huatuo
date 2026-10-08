@@ -35,5 +35,8 @@ func validateMemBurst(c *MemBurstConfig) error {
 	if c.DumpProcessMaxNum <= 0 {
 		return fmt.Errorf("memory burst dump process max num must be positive, got %d", c.DumpProcessMaxNum)
 	}
+	if c.SnapshotProcessMaxNum <= 0 || uint64(c.SnapshotProcessMaxNum) > uint64(1<<63-1)/uint64(burstProcessSnapshotBudget) {
+		return fmt.Errorf("memory burst snapshot process max num must be positive and fit the capture budget, got %d", c.SnapshotProcessMaxNum)
+	}
 	return nil
 }
