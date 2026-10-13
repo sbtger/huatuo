@@ -1,0 +1,710 @@
+{
+  "schema_version": 1,
+  "recorded_date": "2026-10-13",
+  "tested_production_revision": "f7ae016d1178ed7e7759d92c33bb2d1bb3d88a62",
+  "suite_state": "Pre-commit branch regression after audit completeness and Go fixture lint fixes",
+  "environment": {
+    "go": "go version go1.24.3 linux/amd64",
+    "kernel": "5.10.0-cache-ext-vm-nokmem-8780cdccc1e2",
+    "cgroup": "v1",
+    "architecture": "linux/amd64",
+    "qps_per_language": 10
+  },
+  "binary_sha256": {
+    "agent": "e955922921d2b2e2403957d3d76ec84941203c0cb237cb31bce118e7eb00f0de",
+    "agent-fault": "7e993c336046559e7e8f2c5adbb1c14a7204094c5ea72736003e5488e0e6e0d9",
+    "business-go": "0d48c1fba2f6675ac85df84c2a241cd4a674891e2e6c437272efa0cd9867a332",
+    "deny-readv": "5de15d4fae58111887d48b6ec66d4bd25c660d2ed4f5a26ee3c91bde149aa645"
+  },
+  "bpf_sha256": {
+    "memory_free_compact.o": "3de234f512d0ec26e5a33fefc2217ec80b264110f6818c9ad0cb427ff4f2028f",
+    "physical_page_counter.o": "bd1a495bfb639fd6e915f6dee8536f64b4cc76e74b3e658224fc28195669f13c",
+    "netdev_txqueue_timeout.o": "05ea67797ee0968c23651ea255cd231373608d839846e015b715a525c4e3855a",
+    "system_softlockup.o": "313fbac7c44baaaa66c90c1352c377578155acf57a64027a9e6bdf807418f8ef",
+    "system_ras.o": "3e748d8ad14bb1ba0f4b2a1fa12bc7c570af13212b4dbd97bc6cb8eafd2eb039",
+    "ras.o": "1df4e0152a2777583b583bdeceef14201e17163edba4c8ff902277ec7c3f7928",
+    "softlockup.o": "280e61a3416d7b1abf078f59bc928e961c2d4a93d30d1980337cdd48e278a980",
+    "net_rx_latency.o": "dea61677cf976a2e9679d2136d3bdba23ed5ef5d779f249ef65f83ff2c33de7f",
+    "iolatency_tracing.o": "56df5e9ed26ba47e63c5b6746aa4277a23dad33316dc48d6ede428dbe426a391",
+    "tcp_retransmit.o": "71d2cc32a48b23a895553bf341fb6bc8fa94021afb8219296d11fbe7f765c3cd",
+    "net_dropwatch.o": "7b773f704ddceff92a959b4194e3a713a3afc0f4a10eba82326864a86b6ac997",
+    "native_oncpu_profiler.o": "4ec12465b1f1c08c708152a47df54c5c9fb0542998ee31643b81a70f64a65716",
+    "cgroup_css_sync.o": "f63f33d5eb46aae1eccea48b060833d441cfcb0858374cabd57764d309114366",
+    "cpu_runqlat_tracing.o": "0abfbe00a96f21985675c1fc316071a19ca66add0abcfef67bb3f870dd95f9da",
+    "cgroup_v2_load_stats.o": "443b0ee60e0a8d5fd352a3847ec72278bb82665dd317da3bbbcf0f7ac7c0b5c3",
+    "netdev_hw.o": "7f75d7950fd112c6dc64a6254a2aa067ea0661aaaa9570f3f05c81d57d5bb46e",
+    "memory_reclaim_events.o": "5a9d4771c1e6a337320edcc38d233ad380f3dce185e0aea6832e4a5d2e3e9195",
+    "memory_reclaim.o": "6c31c3abceeca8aedee98708fd08e84bfdef8e295fbaa921c452899e62cdbb4f",
+    "hungtask.o": "98ec8ac67d48c3ca4aa4c3f4466f3b7ee353d01c7461c1b4b33e9e5fe8a56379",
+    "dropwatch.o": "f9c5291ca876b4240a7715fe4e16cfe5ba552478ddab4d37b6b00c422835e202",
+    "native_virtual_alloc.o": "89ad248c349282963813373fd8453622cb1a052712bb25d9ee3f14fc2081efb7",
+    "memory_oom_kill.o": "97a1d908dbf94e0889ffc8766c28829d582ffb08890179560043781dd5bf8355",
+    "oom.o": "d3c9a1cf3e5d5d0e9f34c4d16b13cf566a4dfa331f30aaffd5955b48d8d39367",
+    "sched_tick.o": "d76415c32bbc28807a314c2073922b3e8a09b23e5b8a18e2caf8984b8896a522",
+    "system_softirq.o": "4d581099b03adc750924e9cf6e7fde68a50abab13d585fc27cb8ef061dbe5ff5",
+    "cgroup_css_events.o": "ed4c49f25c3c01d23d7910c23ab5d15f2ee71726efef0efaa895590b9f87aeff",
+    "native_physical_usage.o": "ebb342e5033aa8ffd7d02ac16763043b7c6824f72af06bb2aa0d45f6cb1e13de",
+    "native_offcpu_profiler.o": "f895a1b0a7e8425ac59189f5a1804ca426b9942084b8186f76e64861932613d5",
+    "native_memory_origins.o": "5d0825c8de6afccce95a0b6a82cfb7fc65ce4e206d29ae51bf97a3b760ed0ea4",
+    "native_physical_alloc.o": "9dbc7848db3ad7e3c6c91794b62410f8d9f459b6cfe7c14d71097a4b75c7c546",
+    "irqtracing.o": "383900ac13b4424950d54f55d00f48e7ebf16c27ffd198f610f1610a3a23c930",
+    "iotracing.o": "fec4ad01240492fc8960c0d4dab0cb58adbc04f13df30a5d546b6dd001d0f68e",
+    "netdev_bonding_lacp.o": "58c918e1ff9118c841dca662917d5fbe4b6db2524f934aad7bbb1ad236f2484c",
+    "system_hungtask.o": "805e77bb3afd287acc7c3129b4c95e421986bc8aaa7d5d8dfafcd35ce0586c29",
+    "native_physical_usage_thp.o": "bd0f7576965b7127714fcfc7b18fd2d1630dc366a010bd82005ac5d863e4fbef",
+    "perf.o": "6a9f8083c913ba479325a1dd8e354c60d5610a4012630f5facfa33e42cd5a730"
+  },
+  "source_sha256": {
+    "test_audit.py": "289cfe8a312d51f535b414678edd7367a185d85619bb83fb7e302cb1175e3c1e",
+    "test_contract.py": "90dacef2680f0e967e657f1b9bb35091f81c7893ce54c018ef7109ed0d936bc7",
+    "deny_readv.c": "415eee95dbef7d9c351eb46416579472b99320c7bb8e1b9f7d686a9282fecc48",
+    "support.py": "a8ceda5e4e8e1600f53b314893c1d01fb86ee6a26ef213b06af93858b15290ec",
+    "test_business.py": "66d22826689c6ad091cb0d8355c71112d702345b784312acca36251b070c66bd",
+    "audit.py": "62e046e1ed0932ef0780d33c3f35ee686fe2f3a0db8a0274512225d7c5516a0e",
+    "build.py": "08139b5c2c506b1999ed922283dc25e0fff2153be1cc8cf6e0e58d9c4377e8e9",
+    "log_policy.py": "caf74118eb030a7b1e5127b3144351c6aa89554feef296998394ecd2df87646b",
+    "run.py": "57cee7e1e2762704fc0042b28067713f5db6155479396a6ed4281b6700cf2031",
+    "contract.py": "60afa8795e57a91a7bae098600bc733d0d040fc208db56c50392d738381a336b",
+    "test_logs.py": "a8c26c1bef27c3cca3fa650f92d29e123f048e0b9ea5366de2c417d8da1e350b",
+    "workloads/SnapshotBusiness.java": "377e6120876c038ab703ebc3afcfebd33ef79d6fc05349e45148fc1fcea1c08a",
+    "workloads/python_service.py": "5803875469b4875d4194be95b8e93ca4c961dc42bd396eaac39d8b7e1a2a8c02",
+    "workloads/main.go": "036cdd196ba561601c062167b87a887630cfec36223b2e662b373d568fdfdbbc"
+  },
+  "status": "PASS",
+  "audit_status": "PASS",
+  "phase_count": 26,
+  "work_requests": {
+    "go": 930
+  },
+  "state_updates_and_reads": {
+    "go": 460
+  },
+  "unexpected_agent_log_count": 0,
+  "business_error_count": 0,
+  "evidence_errors": [],
+  "cases": [
+    {
+      "name": "go/agent-off",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1,
+          "seq_after": 16,
+          "tick_before": 6,
+          "tick_after": 35,
+          "total": 1768,
+          "largest_success_gap": 0.10081938281655312,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/blacklist",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "agent_http_responsive": true
+      },
+      "business": {
+        "go": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 16,
+          "seq_after": 32,
+          "tick_before": 35,
+          "tick_after": 64,
+          "total": 6864,
+          "largest_success_gap": 0.10085645201615989,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/plain-agent",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 33,
+          "seq_after": 48,
+          "tick_before": 66,
+          "tick_after": 93,
+          "total": 15288,
+          "largest_success_gap": 0.10189255094155669,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/instrumented-control",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 50,
+          "seq_after": 64,
+          "tick_before": 95,
+          "tick_after": 121,
+          "total": 27040,
+          "largest_success_gap": 0.10078019415959716,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/permission",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "read Go runtime metadata: read runtime.mbuckets head: operation not permitted",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 66,
+          "seq_after": 81,
+          "tick_before": 123,
+          "tick_after": 150,
+          "total": 43173,
+          "largest_success_gap": 0.10078035900369287,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/permission-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 5,
+        "recovery_same_agent": false
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 82,
+          "seq_after": 97,
+          "tick_before": 152,
+          "tick_after": 179,
+          "total": 61789,
+          "largest_success_gap": 0.10074456804431975,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/efault",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "read Go runtime metadata: read runtime.mbuckets head: bad address",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 98,
+          "seq_after": 113,
+          "tick_before": 181,
+          "tick_after": 208,
+          "total": 83733,
+          "largest_success_gap": 0.10273573291487992,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/efault-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 5,
+        "recovery_same_agent": true
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 114,
+          "seq_after": 129,
+          "tick_before": 210,
+          "tick_after": 236,
+          "total": 109005,
+          "largest_success_gap": 0.10248750704340637,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/short",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "read Go runtime metadata: read runtime.mbuckets head: short process memory read: got 7, want 8",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 130,
+          "seq_after": 145,
+          "tick_before": 239,
+          "tick_after": 265,
+          "total": 137605,
+          "largest_success_gap": 0.10049386089667678,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/short-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 146,
+          "seq_after": 161,
+          "tick_before": 267,
+          "tick_after": 294,
+          "total": 169533,
+          "largest_success_gap": 0.10234124702401459,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/panic",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "runtime snapshot panic: test-only runtime snapshot panic",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 163,
+          "seq_after": 177,
+          "tick_before": 296,
+          "tick_after": 323,
+          "total": 204789,
+          "largest_success_gap": 0.10357325803488493,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/panic-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 6,
+        "recovery_same_agent": true
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 179,
+          "seq_after": 194,
+          "tick_before": 325,
+          "tick_after": 351,
+          "total": 245895,
+          "largest_success_gap": 0.1017920458689332,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/cancel",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context canceled",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 195,
+          "seq_after": 210,
+          "tick_before": 353,
+          "tick_after": 380,
+          "total": 288015,
+          "largest_success_gap": 0.10208963602781296,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/cancel-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 211,
+          "seq_after": 226,
+          "tick_before": 382,
+          "tick_after": 409,
+          "total": 333463,
+          "largest_success_gap": 0.10168076190166175,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/delay",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context deadline exceeded",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 60,
+          "scheduled": 60,
+          "completed": 60,
+          "seq_before": 227,
+          "seq_after": 257,
+          "tick_before": 411,
+          "tick_after": 467,
+          "total": 430989,
+          "largest_success_gap": 0.10266018006950617,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/delay-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 6,
+        "recovery_same_agent": true
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 258,
+          "seq_after": 273,
+          "tick_before": 470,
+          "tick_after": 496,
+          "total": 486213,
+          "largest_success_gap": 0.1015565930865705,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/block",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "agent_http_responsive": true,
+        "exit_signal": "SIGKILL"
+      },
+      "business": {
+        "go": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 274,
+          "seq_after": 301,
+          "tick_before": 498,
+          "tick_after": 548,
+          "total": 590863,
+          "largest_success_gap": 0.10386548307724297,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/block-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 302,
+          "seq_after": 317,
+          "tick_before": 550,
+          "tick_after": 576,
+          "total": 655239,
+          "largest_success_gap": 0.10269317519851029,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/kill_after_read",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "agent_http_responsive": true,
+        "exit_signal": "SIGKILL"
+      },
+      "business": {
+        "go": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 318,
+          "seq_after": 344,
+          "tick_before": 578,
+          "tick_after": 628,
+          "total": 771420,
+          "largest_success_gap": 0.10333320684731007,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/kill_after_read-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 345,
+          "seq_after": 360,
+          "tick_before": 630,
+          "tick_after": 656,
+          "total": 844740,
+          "largest_success_gap": 0.10185817186720669,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/restart",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 6
+      },
+      "business": {
+        "go": {
+          "samples": 36,
+          "scheduled": 36,
+          "completed": 36,
+          "seq_before": 362,
+          "seq_after": 379,
+          "tick_before": 658,
+          "tick_after": 690,
+          "total": 936130,
+          "largest_success_gap": 0.10149660892784595,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/restart-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 6,
+        "recovery_same_agent": true
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 381,
+          "seq_after": 395,
+          "tick_before": 692,
+          "tick_after": 719,
+          "total": 1016730,
+          "largest_success_gap": 0.1049408339895308,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/storage_full",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "storage_failure": "ENOSPC"
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 397,
+          "seq_after": 412,
+          "tick_before": 722,
+          "tick_after": 748,
+          "total": 1106014,
+          "largest_success_gap": 0.10292386822402477,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/storage_full-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 413,
+          "seq_after": 428,
+          "tick_before": 750,
+          "tick_after": 777,
+          "total": 1193478,
+          "largest_success_gap": 0.10191973485052586,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/invalid_config",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 429,
+          "seq_after": 444,
+          "tick_before": 779,
+          "tick_after": 809,
+          "total": 1284270,
+          "largest_success_gap": 0.10073469299823046,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/invalid_config-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 444,
+          "seq_after": 459,
+          "tick_before": 809,
+          "tick_after": 836,
+          "total": 1372410,
+          "largest_success_gap": 0.1016943990252912,
+          "assertion_errors": []
+        }
+      }
+    }
+  ],
+  "performance_evaluated": false,
+  "all_exception_paths_proven": false
+}
