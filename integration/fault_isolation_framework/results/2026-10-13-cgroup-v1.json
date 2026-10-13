@@ -1,0 +1,3853 @@
+{
+  "schema_version": 1,
+  "recorded_date": "2026-10-13",
+  "tested_production_revision": "f7ae016d1178ed7e7759d92c33bb2d1bb3d88a62",
+  "environment": {
+    "go": "go version go1.24.3 linux/amd64",
+    "kernel": "5.10.0-cache-ext-vm-nokmem-8780cdccc1e2",
+    "cgroup": "v1",
+    "architecture": "linux/amd64",
+    "java": "openjdk version \"17.0.19\" 2026-04-21\nOpenJDK Runtime Environment (build 17.0.19+10-1-24.04.2-Ubuntu)\nOpenJDK 64-Bit Server VM (build 17.0.19+10-1-24.04.2-Ubuntu, mixed mode, sharing)\n",
+    "python": "Python 3.12.3\n",
+    "qps_per_language": 10
+  },
+  "binary_sha256": {
+    "agent": "f647baeee432789aa9fa84417a44e6331e52554fc4ba76d008383b93a1e88ac5",
+    "agent-fault": "55967a8686a55eab4cee3a2c2cdb6d8986a96ddca869a9100972861542ea78d3",
+    "business-go": "8a1980de6dce526383fbf3e0d954f27c287c8045cf2209a0dc1945458e9c8a2b",
+    "deny-readv": "5de15d4fae58111887d48b6ec66d4bd25c660d2ed4f5a26ee3c91bde149aa645"
+  },
+  "bpf_sha256": {
+    "memory_free_compact.o": "3de234f512d0ec26e5a33fefc2217ec80b264110f6818c9ad0cb427ff4f2028f",
+    "physical_page_counter.o": "bd1a495bfb639fd6e915f6dee8536f64b4cc76e74b3e658224fc28195669f13c",
+    "netdev_txqueue_timeout.o": "05ea67797ee0968c23651ea255cd231373608d839846e015b715a525c4e3855a",
+    "system_softlockup.o": "313fbac7c44baaaa66c90c1352c377578155acf57a64027a9e6bdf807418f8ef",
+    "system_ras.o": "3e748d8ad14bb1ba0f4b2a1fa12bc7c570af13212b4dbd97bc6cb8eafd2eb039",
+    "ras.o": "1df4e0152a2777583b583bdeceef14201e17163edba4c8ff902277ec7c3f7928",
+    "softlockup.o": "280e61a3416d7b1abf078f59bc928e961c2d4a93d30d1980337cdd48e278a980",
+    "net_rx_latency.o": "dea61677cf976a2e9679d2136d3bdba23ed5ef5d779f249ef65f83ff2c33de7f",
+    "iolatency_tracing.o": "56df5e9ed26ba47e63c5b6746aa4277a23dad33316dc48d6ede428dbe426a391",
+    "tcp_retransmit.o": "71d2cc32a48b23a895553bf341fb6bc8fa94021afb8219296d11fbe7f765c3cd",
+    "net_dropwatch.o": "7b773f704ddceff92a959b4194e3a713a3afc0f4a10eba82326864a86b6ac997",
+    "native_oncpu_profiler.o": "4ec12465b1f1c08c708152a47df54c5c9fb0542998ee31643b81a70f64a65716",
+    "cgroup_css_sync.o": "f63f33d5eb46aae1eccea48b060833d441cfcb0858374cabd57764d309114366",
+    "cpu_runqlat_tracing.o": "0abfbe00a96f21985675c1fc316071a19ca66add0abcfef67bb3f870dd95f9da",
+    "cgroup_v2_load_stats.o": "443b0ee60e0a8d5fd352a3847ec72278bb82665dd317da3bbbcf0f7ac7c0b5c3",
+    "netdev_hw.o": "7f75d7950fd112c6dc64a6254a2aa067ea0661aaaa9570f3f05c81d57d5bb46e",
+    "memory_reclaim_events.o": "5a9d4771c1e6a337320edcc38d233ad380f3dce185e0aea6832e4a5d2e3e9195",
+    "memory_reclaim.o": "6c31c3abceeca8aedee98708fd08e84bfdef8e295fbaa921c452899e62cdbb4f",
+    "hungtask.o": "98ec8ac67d48c3ca4aa4c3f4466f3b7ee353d01c7461c1b4b33e9e5fe8a56379",
+    "dropwatch.o": "f9c5291ca876b4240a7715fe4e16cfe5ba552478ddab4d37b6b00c422835e202",
+    "native_virtual_alloc.o": "89ad248c349282963813373fd8453622cb1a052712bb25d9ee3f14fc2081efb7",
+    "memory_oom_kill.o": "97a1d908dbf94e0889ffc8766c28829d582ffb08890179560043781dd5bf8355",
+    "oom.o": "d3c9a1cf3e5d5d0e9f34c4d16b13cf566a4dfa331f30aaffd5955b48d8d39367",
+    "sched_tick.o": "d76415c32bbc28807a314c2073922b3e8a09b23e5b8a18e2caf8984b8896a522",
+    "system_softirq.o": "4d581099b03adc750924e9cf6e7fde68a50abab13d585fc27cb8ef061dbe5ff5",
+    "cgroup_css_events.o": "ed4c49f25c3c01d23d7910c23ab5d15f2ee71726efef0efaa895590b9f87aeff",
+    "native_physical_usage.o": "ebb342e5033aa8ffd7d02ac16763043b7c6824f72af06bb2aa0d45f6cb1e13de",
+    "native_offcpu_profiler.o": "f895a1b0a7e8425ac59189f5a1804ca426b9942084b8186f76e64861932613d5",
+    "native_memory_origins.o": "5d0825c8de6afccce95a0b6a82cfb7fc65ce4e206d29ae51bf97a3b760ed0ea4",
+    "native_physical_alloc.o": "9dbc7848db3ad7e3c6c91794b62410f8d9f459b6cfe7c14d71097a4b75c7c546",
+    "irqtracing.o": "383900ac13b4424950d54f55d00f48e7ebf16c27ffd198f610f1610a3a23c930",
+    "iotracing.o": "fec4ad01240492fc8960c0d4dab0cb58adbc04f13df30a5d546b6dd001d0f68e",
+    "netdev_bonding_lacp.o": "58c918e1ff9118c841dca662917d5fbe4b6db2524f934aad7bbb1ad236f2484c",
+    "system_hungtask.o": "805e77bb3afd287acc7c3129b4c95e421986bc8aaa7d5d8dfafcd35ce0586c29",
+    "native_physical_usage_thp.o": "bd0f7576965b7127714fcfc7b18fd2d1630dc366a010bd82005ac5d863e4fbef",
+    "perf.o": "6a9f8083c913ba479325a1dd8e354c60d5610a4012630f5facfa33e42cd5a730"
+  },
+  "status": "PASS",
+  "audit_status": "PASS",
+  "phase_count": 78,
+  "work_requests": {
+    "go": 2846,
+    "java": 2840,
+    "python": 2835
+  },
+  "state_updates_and_reads": {
+    "go": 1409,
+    "java": 1403,
+    "python": 1361
+  },
+  "unexpected_agent_log_count": 0,
+  "business_error_count": 0,
+  "performance_evaluated": false,
+  "all_exception_paths_proven": false,
+  "cases": [
+    {
+      "name": "go/agent-off",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 7,
+          "seq_after": 22,
+          "tick_before": 17,
+          "tick_after": 47,
+          "total": 3289,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 4,
+          "seq_after": 18,
+          "tick_before": 11,
+          "tick_after": 41,
+          "total": 2223,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1,
+          "seq_after": 16,
+          "tick_before": 4,
+          "tick_after": 34,
+          "total": 1768,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/blacklist",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 22,
+          "seq_after": 38,
+          "tick_before": 47,
+          "tick_after": 76,
+          "total": 9633,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 18,
+          "seq_after": 35,
+          "tick_before": 41,
+          "tick_after": 74,
+          "total": 8190,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 16,
+          "seq_after": 32,
+          "tick_before": 34,
+          "tick_after": 67,
+          "total": 6864,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/plain-agent",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 39,
+          "seq_after": 54,
+          "tick_before": 78,
+          "tick_after": 105,
+          "total": 19305,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 36,
+          "seq_after": 51,
+          "tick_before": 76,
+          "tick_after": 106,
+          "total": 17238,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 34,
+          "seq_after": 48,
+          "tick_before": 70,
+          "tick_after": 100,
+          "total": 15288,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/instrumented-control",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 56,
+          "seq_after": 70,
+          "tick_before": 107,
+          "tick_after": 134,
+          "total": 32305,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 52,
+          "seq_after": 67,
+          "tick_before": 109,
+          "tick_after": 139,
+          "total": 29614,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 50,
+          "seq_after": 64,
+          "tick_before": 102,
+          "tick_after": 132,
+          "total": 27040,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/permission",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "read Go runtime metadata: read runtime.mbuckets head: operation not permitted",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 72,
+          "seq_after": 87,
+          "tick_before": 136,
+          "tick_after": 162,
+          "total": 49764,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 68,
+          "seq_after": 83,
+          "tick_before": 142,
+          "tick_after": 171,
+          "total": 45318,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 66,
+          "seq_after": 81,
+          "tick_before": 135,
+          "tick_after": 165,
+          "total": 43173,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/permission-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 88,
+          "seq_after": 103,
+          "tick_before": 164,
+          "tick_after": 191,
+          "total": 69628,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 84,
+          "seq_after": 99,
+          "tick_before": 174,
+          "tick_after": 204,
+          "total": 64350,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 82,
+          "seq_after": 97,
+          "tick_before": 167,
+          "tick_after": 197,
+          "total": 61789,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/efault",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "read Go runtime metadata: read runtime.mbuckets head: bad address",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 104,
+          "seq_after": 119,
+          "tick_before": 193,
+          "tick_after": 219,
+          "total": 92820,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 100,
+          "seq_after": 115,
+          "tick_before": 207,
+          "tick_after": 237,
+          "total": 86710,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 98,
+          "seq_after": 113,
+          "tick_before": 200,
+          "tick_after": 230,
+          "total": 83733,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/efault-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 5,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 5
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 120,
+          "seq_after": 135,
+          "tick_before": 222,
+          "tick_after": 248,
+          "total": 119340,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 116,
+          "seq_after": 131,
+          "tick_before": 239,
+          "tick_after": 269,
+          "total": 112398,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 114,
+          "seq_after": 129,
+          "tick_before": 233,
+          "tick_after": 263,
+          "total": 109005,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/short",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "read Go runtime metadata: read runtime.mbuckets head: short process memory read: got 7, want 8",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 137,
+          "seq_after": 151,
+          "tick_before": 250,
+          "tick_after": 277,
+          "total": 149188,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 132,
+          "seq_after": 147,
+          "tick_before": 272,
+          "tick_after": 302,
+          "total": 141414,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 130,
+          "seq_after": 145,
+          "tick_before": 265,
+          "tick_after": 295,
+          "total": 137605,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/short-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 5,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 5
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 153,
+          "seq_after": 168,
+          "tick_before": 279,
+          "tick_after": 305,
+          "total": 184548,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 149,
+          "seq_after": 163,
+          "tick_before": 304,
+          "tick_after": 334,
+          "total": 173758,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 146,
+          "seq_after": 161,
+          "tick_before": 298,
+          "tick_after": 328,
+          "total": 169533,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/panic",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "runtime snapshot panic: test-only runtime snapshot panic",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 169,
+          "seq_after": 184,
+          "tick_before": 308,
+          "tick_after": 334,
+          "total": 221260,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 165,
+          "seq_after": 180,
+          "tick_before": 337,
+          "tick_after": 367,
+          "total": 211770,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 162,
+          "seq_after": 177,
+          "tick_before": 330,
+          "tick_after": 360,
+          "total": 204789,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/panic-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 185,
+          "seq_after": 200,
+          "tick_before": 336,
+          "tick_after": 362,
+          "total": 261300,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 181,
+          "seq_after": 196,
+          "tick_before": 370,
+          "tick_after": 400,
+          "total": 250978,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 178,
+          "seq_after": 193,
+          "tick_before": 363,
+          "tick_after": 393,
+          "total": 243373,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/cancel",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context canceled",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 201,
+          "seq_after": 216,
+          "tick_before": 365,
+          "tick_after": 391,
+          "total": 304668,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 197,
+          "seq_after": 212,
+          "tick_before": 402,
+          "tick_after": 432,
+          "total": 293514,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 195,
+          "seq_after": 209,
+          "tick_before": 396,
+          "tick_after": 426,
+          "total": 285285,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/cancel-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 217,
+          "seq_after": 232,
+          "tick_before": 394,
+          "tick_after": 420,
+          "total": 351364,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 213,
+          "seq_after": 228,
+          "tick_before": 435,
+          "tick_after": 465,
+          "total": 339378,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 211,
+          "seq_after": 226,
+          "tick_before": 428,
+          "tick_after": 458,
+          "total": 333463,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/delay",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context deadline exceeded",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 234,
+          "seq_after": 265,
+          "tick_before": 422,
+          "tick_after": 482,
+          "total": 458185,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 229,
+          "seq_after": 261,
+          "tick_before": 468,
+          "tick_after": 531,
+          "total": 444483,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 227,
+          "seq_after": 258,
+          "tick_before": 461,
+          "tick_after": 524,
+          "total": 434343,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/delay-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 266,
+          "seq_after": 281,
+          "tick_before": 484,
+          "tick_after": 510,
+          "total": 515073,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 262,
+          "seq_after": 277,
+          "tick_before": 533,
+          "tick_after": 563,
+          "total": 500539,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 259,
+          "seq_after": 274,
+          "tick_before": 527,
+          "tick_after": 557,
+          "total": 489775,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/block",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 282,
+          "seq_after": 309,
+          "tick_before": 512,
+          "tick_after": 561,
+          "total": 622635,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 278,
+          "seq_after": 304,
+          "tick_before": 566,
+          "tick_after": 619,
+          "total": 602680,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 275,
+          "seq_after": 301,
+          "tick_before": 559,
+          "tick_after": 612,
+          "total": 590863,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/block-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 6,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 6
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 310,
+          "seq_after": 325,
+          "tick_before": 563,
+          "tick_after": 590,
+          "total": 688675,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 306,
+          "seq_after": 320,
+          "tick_before": 621,
+          "tick_after": 651,
+          "total": 667680,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 303,
+          "seq_after": 318,
+          "tick_before": 615,
+          "tick_after": 645,
+          "total": 659373,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/kill_after_read",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 51,
+          "scheduled": 51,
+          "completed": 51,
+          "seq_before": 326,
+          "seq_after": 351,
+          "tick_before": 592,
+          "tick_after": 639,
+          "total": 803088,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 50,
+          "scheduled": 50,
+          "completed": 50,
+          "seq_before": 322,
+          "seq_after": 347,
+          "tick_before": 654,
+          "tick_after": 704,
+          "total": 784914,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 50,
+          "scheduled": 50,
+          "completed": 50,
+          "seq_before": 319,
+          "seq_after": 344,
+          "tick_before": 647,
+          "tick_after": 698,
+          "total": 771420,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/kill_after_read-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 5,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 5
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 352,
+          "seq_after": 367,
+          "tick_before": 641,
+          "tick_after": 667,
+          "total": 877864,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 348,
+          "seq_after": 363,
+          "tick_before": 707,
+          "tick_after": 737,
+          "total": 858858,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 345,
+          "seq_after": 360,
+          "tick_before": 700,
+          "tick_after": 730,
+          "total": 844740,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/restart",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 38,
+          "scheduled": 38,
+          "completed": 38,
+          "seq_before": 369,
+          "seq_after": 388,
+          "tick_before": 670,
+          "tick_after": 704,
+          "total": 981058,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 38,
+          "scheduled": 38,
+          "completed": 38,
+          "seq_before": 364,
+          "seq_after": 383,
+          "tick_before": 740,
+          "tick_after": 778,
+          "total": 955968,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 39,
+          "scheduled": 39,
+          "completed": 39,
+          "seq_before": 361,
+          "seq_after": 380,
+          "tick_before": 733,
+          "tick_after": 771,
+          "total": 941070,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/restart-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 4,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 4
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 389,
+          "seq_after": 404,
+          "tick_before": 706,
+          "tick_after": 733,
+          "total": 1063530,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 384,
+          "seq_after": 399,
+          "tick_before": 780,
+          "tick_after": 810,
+          "total": 1037400,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 381,
+          "seq_after": 396,
+          "tick_before": 774,
+          "tick_after": 804,
+          "total": 1021878,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/storage_full",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 405,
+          "seq_after": 420,
+          "tick_before": 735,
+          "tick_after": 761,
+          "total": 1149330,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 401,
+          "seq_after": 415,
+          "tick_before": 813,
+          "tick_after": 843,
+          "total": 1122160,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 397,
+          "seq_after": 412,
+          "tick_before": 807,
+          "tick_after": 837,
+          "total": 1106014,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/storage_full-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 5,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 5
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 421,
+          "seq_after": 436,
+          "tick_before": 763,
+          "tick_after": 790,
+          "total": 1238458,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 417,
+          "seq_after": 432,
+          "tick_before": 846,
+          "tick_after": 876,
+          "total": 1215864,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 414,
+          "seq_after": 428,
+          "tick_before": 839,
+          "tick_after": 869,
+          "total": 1193478,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/invalid_config",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 437,
+          "seq_after": 452,
+          "tick_before": 792,
+          "tick_after": 822,
+          "total": 1330914,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 433,
+          "seq_after": 448,
+          "tick_before": 878,
+          "tick_after": 908,
+          "total": 1307488,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 430,
+          "seq_after": 444,
+          "tick_before": 872,
+          "tick_after": 902,
+          "total": 1284270,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "go/invalid_config-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 5,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 5
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 452,
+          "seq_after": 467,
+          "tick_before": 822,
+          "tick_after": 848,
+          "total": 1420614,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 448,
+          "seq_after": 463,
+          "tick_before": 909,
+          "tick_after": 938,
+          "total": 1396408,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 445,
+          "seq_after": 459,
+          "tick_before": 902,
+          "tick_after": 932,
+          "total": 1372410,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/agent-off",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 468,
+          "seq_after": 483,
+          "tick_before": 851,
+          "tick_after": 881,
+          "total": 1519518,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 464,
+          "seq_after": 479,
+          "tick_before": 941,
+          "tick_after": 971,
+          "total": 1494480,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 461,
+          "seq_after": 476,
+          "tick_before": 935,
+          "tick_after": 965,
+          "total": 1475838,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/blacklist",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 483,
+          "seq_after": 500,
+          "tick_before": 881,
+          "tick_after": 913,
+          "total": 1628250,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 32,
+          "scheduled": 32,
+          "completed": 32,
+          "seq_before": 479,
+          "seq_after": 495,
+          "tick_before": 971,
+          "tick_after": 997,
+          "total": 1595880,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 32,
+          "scheduled": 32,
+          "completed": 32,
+          "seq_before": 476,
+          "seq_after": 492,
+          "tick_before": 965,
+          "tick_after": 997,
+          "total": 1576614,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/plain-agent",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 501,
+          "seq_after": 516,
+          "tick_before": 916,
+          "tick_after": 946,
+          "total": 1734018,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 496,
+          "seq_after": 511,
+          "tick_before": 998,
+          "tick_after": 1021,
+          "total": 1700608,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 493,
+          "seq_after": 508,
+          "tick_before": 1000,
+          "tick_after": 1030,
+          "total": 1680718,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/instrumented-control",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 517,
+          "seq_after": 532,
+          "tick_before": 948,
+          "tick_after": 978,
+          "total": 1843114,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 512,
+          "seq_after": 527,
+          "tick_before": 1022,
+          "tick_after": 1046,
+          "total": 1808664,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 509,
+          "seq_after": 524,
+          "tick_before": 1033,
+          "tick_after": 1063,
+          "total": 1788150,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/permission",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "external HotSpot heap scan failed: operation not permitted",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 533,
+          "seq_after": 548,
+          "tick_before": 981,
+          "tick_after": 1011,
+          "total": 1955538,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 529,
+          "seq_after": 544,
+          "tick_before": 1048,
+          "tick_after": 1072,
+          "total": 1927120,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 525,
+          "seq_after": 540,
+          "tick_before": 1065,
+          "tick_after": 1095,
+          "total": 1898910,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/permission-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 549,
+          "seq_after": 564,
+          "tick_before": 1013,
+          "tick_after": 1043,
+          "total": 2071290,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 545,
+          "seq_after": 560,
+          "tick_before": 1073,
+          "tick_after": 1097,
+          "total": 2042040,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 541,
+          "seq_after": 556,
+          "tick_before": 1098,
+          "tick_after": 1128,
+          "total": 2012998,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/efault",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "external HotSpot heap scan failed: bad address",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 566,
+          "seq_after": 581,
+          "tick_before": 1046,
+          "tick_after": 1076,
+          "total": 2197923,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 561,
+          "seq_after": 576,
+          "tick_before": 1099,
+          "tick_after": 1122,
+          "total": 2160288,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 558,
+          "seq_after": 572,
+          "tick_before": 1131,
+          "tick_after": 1161,
+          "total": 2130414,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/efault-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 582,
+          "seq_after": 597,
+          "tick_before": 1078,
+          "tick_after": 1108,
+          "total": 2320539,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 577,
+          "seq_after": 592,
+          "tick_before": 1123,
+          "tick_after": 1147,
+          "total": 2281864,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 574,
+          "seq_after": 588,
+          "tick_before": 1163,
+          "tick_after": 1193,
+          "total": 2251158,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/short",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "external HotSpot heap scan failed: short HotSpot memory read: got 7, want 8",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 598,
+          "seq_after": 613,
+          "tick_before": 1111,
+          "tick_after": 1141,
+          "total": 2446483,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 593,
+          "seq_after": 608,
+          "tick_before": 1148,
+          "tick_after": 1172,
+          "total": 2406768,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 590,
+          "seq_after": 605,
+          "tick_before": 1196,
+          "tick_after": 1226,
+          "total": 2383095,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/short-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "HotSpot GC ran during the external heap scan; values may span heap states; bounded HotSpot sample scanned 33550024 of 40455880 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "HotSpot GC ran during the external heap scan; values may span heap states; bounded HotSpot sample scanned 33550024 of 40455880 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 614,
+          "seq_after": 629,
+          "tick_before": 1144,
+          "tick_after": 1174,
+          "total": 2575755,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 610,
+          "seq_after": 624,
+          "tick_before": 1173,
+          "tick_after": 1197,
+          "total": 2535000,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 606,
+          "seq_after": 621,
+          "tick_before": 1229,
+          "tick_after": 1259,
+          "total": 2510703,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/panic",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "runtime snapshot panic: test-only runtime snapshot panic",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 631,
+          "seq_after": 645,
+          "tick_before": 1176,
+          "tick_after": 1206,
+          "total": 2708355,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 626,
+          "seq_after": 641,
+          "tick_before": 1198,
+          "tick_after": 1222,
+          "total": 2674893,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 622,
+          "seq_after": 637,
+          "tick_before": 1262,
+          "tick_after": 1292,
+          "total": 2641639,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/panic-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "bounded HotSpot sample scanned 33551128 of 37552760 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "bounded HotSpot sample scanned 33551128 of 37552760 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 647,
+          "seq_after": 662,
+          "tick_before": 1209,
+          "tick_after": 1239,
+          "total": 2852889,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 642,
+          "seq_after": 657,
+          "tick_before": 1223,
+          "tick_after": 1247,
+          "total": 2809989,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 638,
+          "seq_after": 653,
+          "tick_before": 1294,
+          "tick_after": 1324,
+          "total": 2775903,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/cancel",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context canceled",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 663,
+          "seq_after": 678,
+          "tick_before": 1241,
+          "tick_after": 1271,
+          "total": 2992353,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 658,
+          "seq_after": 673,
+          "tick_before": 1248,
+          "tick_after": 1272,
+          "total": 2948413,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 654,
+          "seq_after": 669,
+          "tick_before": 1327,
+          "tick_after": 1357,
+          "total": 2913495,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/cancel-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "bounded HotSpot sample scanned 33552384 of 34772680 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "bounded HotSpot sample scanned 33552384 of 34772680 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 679,
+          "seq_after": 694,
+          "tick_before": 1274,
+          "tick_after": 1304,
+          "total": 3135145,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 674,
+          "seq_after": 689,
+          "tick_before": 1273,
+          "tick_after": 1297,
+          "total": 3090165,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 670,
+          "seq_after": 685,
+          "tick_before": 1360,
+          "tick_after": 1390,
+          "total": 3054415,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/delay",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context deadline exceeded",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 695,
+          "seq_after": 727,
+          "tick_before": 1306,
+          "tick_after": 1369,
+          "total": 3440164,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 690,
+          "seq_after": 722,
+          "tick_before": 1298,
+          "tick_after": 1355,
+          "total": 3393039,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 687,
+          "seq_after": 718,
+          "tick_before": 1392,
+          "tick_after": 1455,
+          "total": 3355573,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/delay-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 728,
+          "seq_after": 743,
+          "tick_before": 1371,
+          "tick_after": 1401,
+          "total": 3593148,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 723,
+          "seq_after": 738,
+          "tick_before": 1357,
+          "tick_after": 1380,
+          "total": 3544983,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 719,
+          "seq_after": 734,
+          "tick_before": 1458,
+          "tick_after": 1488,
+          "total": 3506685,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/block",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 744,
+          "seq_after": 770,
+          "tick_before": 1404,
+          "tick_after": 1457,
+          "total": 3858855,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 739,
+          "seq_after": 765,
+          "tick_before": 1382,
+          "tick_after": 1429,
+          "total": 3808935,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 735,
+          "seq_after": 761,
+          "tick_before": 1491,
+          "tick_after": 1543,
+          "total": 3769233,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/block-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 772,
+          "seq_after": 786,
+          "tick_before": 1459,
+          "tick_after": 1489,
+          "total": 4020783,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 767,
+          "seq_after": 781,
+          "tick_before": 1430,
+          "tick_after": 1453,
+          "total": 3969823,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 762,
+          "seq_after": 777,
+          "tick_before": 1546,
+          "tick_after": 1576,
+          "total": 3929289,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/kill_after_read",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 788,
+          "seq_after": 814,
+          "tick_before": 1492,
+          "tick_after": 1545,
+          "total": 4312165,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 783,
+          "seq_after": 809,
+          "tick_before": 1455,
+          "tick_after": 1501,
+          "total": 4259385,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 779,
+          "seq_after": 805,
+          "tick_before": 1579,
+          "tick_after": 1632,
+          "total": 4217395,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/kill_after_read-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "bounded HotSpot sample scanned 33550312 of 38579688 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "bounded HotSpot sample scanned 33550312 of 38579688 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 815,
+          "seq_after": 830,
+          "tick_before": 1547,
+          "tick_after": 1577,
+          "total": 4483245,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 810,
+          "seq_after": 825,
+          "tick_before": 1502,
+          "tick_after": 1526,
+          "total": 4429425,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 806,
+          "seq_after": 821,
+          "tick_before": 1634,
+          "tick_after": 1664,
+          "total": 4386603,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/restart",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 44,
+          "scheduled": 44,
+          "completed": 44,
+          "seq_before": 832,
+          "seq_after": 853,
+          "tick_before": 1580,
+          "tick_after": 1623,
+          "total": 4735003,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 43,
+          "scheduled": 43,
+          "completed": 43,
+          "seq_before": 827,
+          "seq_after": 848,
+          "tick_before": 1527,
+          "tick_after": 1565,
+          "total": 4679688,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 43,
+          "scheduled": 43,
+          "completed": 43,
+          "seq_before": 822,
+          "seq_after": 844,
+          "tick_before": 1667,
+          "tick_after": 1711,
+          "total": 4635670,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/restart-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "bounded HotSpot sample scanned 33551984 of 36240048 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "bounded HotSpot sample scanned 33551984 of 36240048 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 854,
+          "seq_after": 869,
+          "tick_before": 1626,
+          "tick_after": 1656,
+          "total": 4914195,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 849,
+          "seq_after": 864,
+          "tick_before": 1566,
+          "tick_after": 1590,
+          "total": 4857840,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 845,
+          "seq_after": 860,
+          "tick_before": 1713,
+          "tick_after": 1743,
+          "total": 4812990,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/storage_full",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 871,
+          "seq_after": 886,
+          "tick_before": 1658,
+          "tick_after": 1688,
+          "total": 5108233,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 866,
+          "seq_after": 880,
+          "tick_before": 1591,
+          "tick_after": 1615,
+          "total": 5039320,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 861,
+          "seq_after": 876,
+          "tick_before": 1746,
+          "tick_after": 1776,
+          "total": 4993638,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/storage_full-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "bounded HotSpot sample scanned 33554432 of 34973512 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "bounded HotSpot sample scanned 33554432 of 34973512 ordinary used bytes; ordinary values are estimates; external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 887,
+          "seq_after": 902,
+          "tick_before": 1691,
+          "tick_after": 1721,
+          "total": 5294289,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 882,
+          "seq_after": 897,
+          "tick_before": 1616,
+          "tick_after": 1640,
+          "total": 5235789,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 877,
+          "seq_after": 892,
+          "tick_before": 1779,
+          "tick_after": 1809,
+          "total": 5177614,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/invalid_config",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 903,
+          "seq_after": 918,
+          "tick_before": 1723,
+          "tick_after": 1753,
+          "total": 5483673,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 898,
+          "seq_after": 913,
+          "tick_before": 1642,
+          "tick_after": 1672,
+          "total": 5424133,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 893,
+          "seq_after": 908,
+          "tick_before": 1811,
+          "tick_after": 1841,
+          "total": 5364918,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "java/invalid_config-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "external HotSpot scan ran concurrently with the target VM",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "external HotSpot scan ran concurrently with the target VM",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 918,
+          "seq_after": 933,
+          "tick_before": 1753,
+          "tick_after": 1783,
+          "total": 5664243,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 913,
+          "seq_after": 928,
+          "tick_before": 1672,
+          "tick_after": 1696,
+          "total": 5603728,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 908,
+          "seq_after": 923,
+          "tick_before": 1841,
+          "tick_after": 1871,
+          "total": 5543538,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/agent-off",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 934,
+          "seq_after": 949,
+          "tick_before": 1786,
+          "tick_after": 1816,
+          "total": 5860075,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 929,
+          "seq_after": 944,
+          "tick_before": 1697,
+          "tick_after": 1727,
+          "total": 5798520,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 925,
+          "seq_after": 939,
+          "tick_before": 1874,
+          "tick_after": 1904,
+          "total": 5737290,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/blacklist",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 949,
+          "seq_after": 966,
+          "tick_before": 1816,
+          "tick_after": 1849,
+          "total": 6071793,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 944,
+          "seq_after": 960,
+          "tick_before": 1727,
+          "tick_after": 1760,
+          "total": 5996640,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 33,
+          "scheduled": 33,
+          "completed": 33,
+          "seq_before": 939,
+          "seq_after": 955,
+          "tick_before": 1904,
+          "tick_after": 1933,
+          "total": 5934370,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/plain-agent",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 967,
+          "seq_after": 982,
+          "tick_before": 1851,
+          "tick_after": 1881,
+          "total": 6274489,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 962,
+          "seq_after": 977,
+          "tick_before": 1762,
+          "tick_after": 1792,
+          "total": 6210789,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 956,
+          "seq_after": 969,
+          "tick_before": 1934,
+          "tick_after": 1960,
+          "total": 6109545,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/instrumented-control",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 983,
+          "seq_after": 998,
+          "tick_before": 1884,
+          "tick_after": 1914,
+          "total": 6480513,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 978,
+          "seq_after": 993,
+          "tick_before": 1795,
+          "tick_after": 1825,
+          "total": 6415773,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 970,
+          "seq_after": 983,
+          "tick_before": 1962,
+          "tick_after": 1987,
+          "total": 6287268,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/permission",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "locate CPython _PyRuntime: read Py_Version: operation not permitted",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 999,
+          "seq_after": 1014,
+          "tick_before": 1916,
+          "tick_after": 1946,
+          "total": 6689865,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 994,
+          "seq_after": 1009,
+          "tick_before": 1828,
+          "tick_after": 1858,
+          "total": 6624085,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 985,
+          "seq_after": 998,
+          "tick_before": 1989,
+          "tick_after": 2015,
+          "total": 6480513,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/permission-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1015,
+          "seq_after": 1030,
+          "tick_before": 1949,
+          "tick_after": 1979,
+          "total": 6902545,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1010,
+          "seq_after": 1025,
+          "tick_before": 1860,
+          "tick_after": 1890,
+          "total": 6835725,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1000,
+          "seq_after": 1013,
+          "tick_before": 2017,
+          "tick_after": 2043,
+          "total": 6676683,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/efault",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "locate CPython _PyRuntime: read Py_Version: bad address",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 1032,
+          "seq_after": 1047,
+          "tick_before": 1982,
+          "tick_after": 2012,
+          "total": 7132164,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1027,
+          "seq_after": 1041,
+          "tick_before": 1893,
+          "tick_after": 1924,
+          "total": 7050693,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1015,
+          "seq_after": 1028,
+          "tick_before": 2045,
+          "tick_after": 2071,
+          "total": 6875778,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/efault-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1048,
+          "seq_after": 1063,
+          "tick_before": 2014,
+          "tick_after": 2044,
+          "total": 7351708,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1043,
+          "seq_after": 1058,
+          "tick_before": 1926,
+          "tick_after": 1956,
+          "total": 7282743,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1029,
+          "seq_after": 1042,
+          "tick_before": 2073,
+          "tick_after": 2098,
+          "total": 7064239,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/short",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "locate CPython _PyRuntime: read Py_Version: short CPython process memory read: got 3, want 4",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1064,
+          "seq_after": 1079,
+          "tick_before": 2047,
+          "tick_after": 2077,
+          "total": 7574580,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1059,
+          "seq_after": 1074,
+          "tick_before": 1959,
+          "tick_after": 1989,
+          "total": 7504575,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1044,
+          "seq_after": 1057,
+          "tick_before": 2100,
+          "tick_after": 2126,
+          "total": 7268989,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/short-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1080,
+          "seq_after": 1095,
+          "tick_before": 2079,
+          "tick_after": 2109,
+          "total": 7800780,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1075,
+          "seq_after": 1090,
+          "tick_before": 1992,
+          "tick_after": 2022,
+          "total": 7729735,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1059,
+          "seq_after": 1072,
+          "tick_before": 2128,
+          "tick_after": 2153,
+          "total": 7476664,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/panic",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "runtime snapshot panic: test-only runtime snapshot panic",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1097,
+          "seq_after": 1111,
+          "tick_before": 2112,
+          "tick_after": 2142,
+          "total": 8030308,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1091,
+          "seq_after": 1106,
+          "tick_before": 2024,
+          "tick_after": 2054,
+          "total": 7958223,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1073,
+          "seq_after": 1086,
+          "tick_before": 2155,
+          "tick_after": 2181,
+          "total": 7673133,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/panic-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1113,
+          "seq_after": 1128,
+          "tick_before": 2145,
+          "tick_after": 2174,
+          "total": 8277828,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1108,
+          "seq_after": 1122,
+          "tick_before": 2057,
+          "tick_after": 2087,
+          "total": 8190039,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1088,
+          "seq_after": 1101,
+          "tick_before": 2183,
+          "tick_after": 2208,
+          "total": 7886463,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/cancel",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context canceled",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1129,
+          "seq_after": 1144,
+          "tick_before": 2177,
+          "tick_after": 2207,
+          "total": 8514220,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1124,
+          "seq_after": 1139,
+          "tick_before": 2090,
+          "tick_after": 2120,
+          "total": 8439990,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1103,
+          "seq_after": 1116,
+          "tick_before": 2210,
+          "tick_after": 2236,
+          "total": 8102718,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/cancel-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1145,
+          "seq_after": 1160,
+          "tick_before": 2210,
+          "tick_after": 2240,
+          "total": 8753940,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 1140,
+          "seq_after": 1155,
+          "tick_before": 2123,
+          "tick_after": 2153,
+          "total": 8678670,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 31,
+          "scheduled": 31,
+          "completed": 31,
+          "seq_before": 1118,
+          "seq_after": 1131,
+          "tick_before": 2238,
+          "tick_after": 2263,
+          "total": 8321898,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/delay",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {
+        "status": "failed",
+        "reason": "snapshot process runtime: context deadline exceeded",
+        "entries": 0
+      },
+      "business": {
+        "go": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 1162,
+          "seq_after": 1193,
+          "tick_before": 2243,
+          "tick_after": 2305,
+          "total": 9258873,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 62,
+          "scheduled": 62,
+          "completed": 62,
+          "seq_before": 1156,
+          "seq_after": 1187,
+          "tick_before": 2156,
+          "tick_after": 2218,
+          "total": 9166014,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 63,
+          "scheduled": 63,
+          "completed": 63,
+          "seq_before": 1132,
+          "seq_after": 1161,
+          "tick_before": 2265,
+          "tick_after": 2324,
+          "total": 8769033,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/delay-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "failed",
+            "reason": "CPython interpreter GC generations are invalid",
+            "entries": 0
+          },
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 36,
+          "scheduled": 36,
+          "completed": 36,
+          "seq_before": 1194,
+          "seq_after": 1212,
+          "tick_before": 2308,
+          "tick_after": 2344,
+          "total": 9556014,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 36,
+          "scheduled": 36,
+          "completed": 36,
+          "seq_before": 1189,
+          "seq_after": 1207,
+          "tick_before": 2221,
+          "tick_after": 2257,
+          "total": 9477364,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 36,
+          "scheduled": 36,
+          "completed": 36,
+          "seq_before": 1163,
+          "seq_after": 1178,
+          "tick_before": 2325,
+          "tick_after": 2353,
+          "total": 9027603,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/block",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 50,
+          "scheduled": 50,
+          "completed": 50,
+          "seq_before": 1213,
+          "seq_after": 1238,
+          "tick_before": 2347,
+          "tick_after": 2397,
+          "total": 9970233,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 51,
+          "scheduled": 51,
+          "completed": 51,
+          "seq_before": 1208,
+          "seq_after": 1233,
+          "tick_before": 2260,
+          "tick_after": 2311,
+          "total": 9889893,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 51,
+          "scheduled": 51,
+          "completed": 51,
+          "seq_before": 1180,
+          "seq_after": 1204,
+          "tick_before": 2355,
+          "tick_after": 2401,
+          "total": 9430330,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/block-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1240,
+          "seq_after": 1255,
+          "tick_before": 2399,
+          "tick_after": 2429,
+          "total": 10245820,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1234,
+          "seq_after": 1249,
+          "tick_before": 2313,
+          "tick_after": 2343,
+          "total": 10148125,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1205,
+          "seq_after": 1218,
+          "tick_before": 2403,
+          "tick_after": 2428,
+          "total": 9650823,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/kill_after_read",
+      "status": "PASS",
+      "fault_hits": 1,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 1256,
+          "seq_after": 1282,
+          "tick_before": 2432,
+          "tick_after": 2485,
+          "total": 10691239,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 1251,
+          "seq_after": 1277,
+          "tick_before": 2346,
+          "tick_after": 2399,
+          "total": 10608039,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 53,
+          "scheduled": 53,
+          "completed": 53,
+          "seq_before": 1220,
+          "seq_after": 1245,
+          "tick_before": 2430,
+          "tick_after": 2479,
+          "total": 10083255,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/kill_after_read-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1284,
+          "seq_after": 1298,
+          "tick_before": 2488,
+          "tick_after": 2517,
+          "total": 10959663,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1278,
+          "seq_after": 1293,
+          "tick_before": 2402,
+          "tick_after": 2432,
+          "total": 10875423,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1246,
+          "seq_after": 1259,
+          "tick_before": 2481,
+          "tick_after": 2507,
+          "total": 10311210,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/restart",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 43,
+          "scheduled": 43,
+          "completed": 43,
+          "seq_before": 1300,
+          "seq_after": 1321,
+          "tick_before": 2520,
+          "tick_after": 2563,
+          "total": 11351353,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 43,
+          "scheduled": 43,
+          "completed": 43,
+          "seq_before": 1294,
+          "seq_after": 1316,
+          "tick_before": 2435,
+          "tick_after": 2478,
+          "total": 11265618,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 43,
+          "scheduled": 43,
+          "completed": 43,
+          "seq_before": 1260,
+          "seq_after": 1281,
+          "tick_before": 2508,
+          "tick_after": 2547,
+          "total": 10674573,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/restart-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": true,
+        "normal_attempts": [
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1323,
+          "seq_after": 1337,
+          "tick_before": 2566,
+          "tick_after": 2596,
+          "total": 11627889,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1317,
+          "seq_after": 1332,
+          "tick_before": 2480,
+          "tick_after": 2510,
+          "total": 11541114,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1282,
+          "seq_after": 1295,
+          "tick_before": 2549,
+          "tick_after": 2575,
+          "total": 10909080,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/storage_full",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1339,
+          "seq_after": 1354,
+          "tick_before": 2598,
+          "tick_after": 2628,
+          "total": 11925355,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1333,
+          "seq_after": 1348,
+          "tick_before": 2513,
+          "tick_after": 2543,
+          "total": 11819938,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1297,
+          "seq_after": 1311,
+          "tick_before": 2576,
+          "tick_after": 2602,
+          "total": 11180208,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/storage_full-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "partial",
+        "reason": "GC generation changed during external census",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "partial",
+            "reason": "GC generation changed during external census",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1355,
+          "seq_after": 1370,
+          "tick_before": 2631,
+          "tick_after": 2661,
+          "total": 12208755,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1350,
+          "seq_after": 1365,
+          "tick_before": 2546,
+          "tick_after": 2576,
+          "total": 12119835,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1312,
+          "seq_after": 1326,
+          "tick_before": 2604,
+          "tick_after": 2630,
+          "total": 11437413,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/invalid_config",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {},
+      "business": {
+        "go": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1371,
+          "seq_after": 1386,
+          "tick_before": 2664,
+          "tick_after": 2694,
+          "total": 12495483,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1366,
+          "seq_after": 1381,
+          "tick_before": 2579,
+          "tick_after": 2609,
+          "total": 12405523,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 30,
+          "scheduled": 30,
+          "completed": 30,
+          "seq_before": 1327,
+          "seq_after": 1342,
+          "tick_before": 2632,
+          "tick_after": 2662,
+          "total": 11714989,
+          "assertion_errors": []
+        }
+      }
+    },
+    {
+      "name": "python/invalid_config-recovery",
+      "status": "PASS",
+      "fault_hits": 0,
+      "snapshot": {
+        "status": "complete",
+        "reason": "",
+        "entries": 7,
+        "recovery_same_agent": false,
+        "normal_attempts": [
+          {
+            "status": "failed",
+            "reason": "CPython interpreter GC generations are invalid",
+            "entries": 0
+          },
+          {
+            "status": "complete",
+            "reason": "",
+            "entries": 7
+          }
+        ]
+      },
+      "business": {
+        "go": {
+          "samples": 43,
+          "scheduled": 43,
+          "completed": 43,
+          "seq_before": 1386,
+          "seq_after": 1407,
+          "tick_before": 2694,
+          "tick_after": 2736,
+          "total": 12876864,
+          "assertion_errors": []
+        },
+        "java": {
+          "samples": 42,
+          "scheduled": 42,
+          "completed": 42,
+          "seq_before": 1381,
+          "seq_after": 1402,
+          "tick_before": 2609,
+          "tick_after": 2651,
+          "total": 12785539,
+          "assertion_errors": []
+        },
+        "python": {
+          "samples": 42,
+          "scheduled": 42,
+          "completed": 42,
+          "seq_before": 1342,
+          "seq_after": 1360,
+          "tick_before": 2662,
+          "tick_after": 2695,
+          "total": 12031240,
+          "assertion_errors": []
+        }
+      }
+    }
+  ],
+  "raw_evidence_sha256": "36b7b3e32f2a2f807bae0ad272b0de7ed8ea3f90c3e0e44f3a926979114b3347"
+}
