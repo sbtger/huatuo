@@ -329,3 +329,52 @@ Example (some common fields omitted):
 | `virtual_bytes` / `rss_bytes` | Virtual memory / RSS |
 | `rss_anon_bytes` / `rss_file_bytes` / `rss_shmem_bytes` | Anonymous / file-backed / shared memory in RSS |
 | `swap_bytes` / `page_table_bytes` | Swap space / page table memory |
+
+### Host user and total CPU burst triggers
+
+Configuration fields and defaults are listed in the
+[configuration reference](../configuration/huatuo-bamai-configuration_en.md).
+
+| Trigger | Numerator |
+| --- | --- |
+| Existing system | `system` |
+| User | `user + nice` |
+| Total executing | `user + nice + system + irq + softirq` |
+
+`cpusys` can additionally trigger on host user CPU or total executing CPU.
+It reuses the existing `/proc/stat` sampling loop, the CPU profiling tool
+selected by `AutoTracing.CPUSys.Tool` (`perf` by default, or `profiler`),
+and the `cpusys` storage record. No new tracer, probe or periodic reader is added.
+
+```toml
+[AutoTracing.CPUSys]
+UserThreshold = 75
+DeltaUserThreshold = 45
+UsageThreshold = 90
+DeltaUsageThreshold = 55
+```
+
+Existing system thresholds, sampling interval, capture duration and cooldown
+remain unchanged. The four user/total thresholds default to 0; a positive
+`UserThreshold` or `UsageThreshold` enables the corresponding trigger, as in
+the example above. Omitted settings preserve system-only triggering.
+Each trigger requires both the percentage and its increase from the
+previous interval to **exceed** their thresholds. This detects bursts, not every
+case of sustained high usage. The first percentage sample establishes a baseline.
+
+The denominator sums the first eight `/proc/stat` CPU counters. Guest time is
+already included in user/nice and is not counted twice. Idle, iowait and steal
+are excluded from total executing time: local on-CPU profiling cannot explain
+waiting or time stolen by a hypervisor. This is whole-machine utilization,
+including container work, not a container's quota-normalized utilization.
+
+All three triggers share one capture and cooldown. Simultaneous crossings do
+not launch repeated captures. `container_id` stays empty. Existing system JSON fields
+are preserved. Records also include `user_percent*`, `total_percent*` and
+`trigger_reasons` (`user`, `total`, `system`); zero-valued additional fields are omitted.
+
+Regression coverage: `integration/test_autotracing_cpusys.sh` uses controlled
+`/proc/stat` samples and fixture perf output with the standard daemon and local
+store. It checks independent user/total triggers, event fields, one capture and
+cooldown suppression. `test_autotracing_cpusys_live.sh` separately exercises a
+real CPU workload in a disposable VM.

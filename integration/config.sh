@@ -600,3 +600,41 @@ write_config_bamai_toolstream_receiver() {
 	write_config_bamai_auth "integration-node-token"
 	write_config_storage_local "${HUATUO_BAMAI_TEST_TMPDIR}/events"
 }
+
+# Isolate the component under test from unrelated tracing workloads.
+write_config_bamai_observability() {
+	local component
+	local components=(sched-blame iocost blk_throtl io_health arp ascend_npu cpu_stat cpu_util cpuidle cpusys diskio dload
+		dropwatch hungtask iolatency iotracing irqtracing loadavg memburst
+		memory_buddyinfo memory_events memory_free memory_others memory_reclaim
+		memory_reclaim_events memory_threshold_snapshot memory_vmstat metax_gpu
+		mountpoint_perm mthreads_gpu mthreads_xid net_rx_latency netdev
+		netdev_bonding_lacp netdev_dcb netdev_events netdev_hw netdev_qdisc
+		netdev_rdma_link netdev_txqueue_timeout netstat memory_oom_kill ras runqlat
+		sched_tick sockstat softirq softlockup tcp_memory tcp_retransmit)
+	{
+		printf 'BlackList = ['
+		for component in "${components[@]}"; do
+			if [[ "${component}" != "${observability_component}" ]]; then
+				printf '"%s",' "${component}"
+			fi
+		done
+		printf ']\n'
+		cat << EOF
+[HTTPServer.Auth]
+    BearerToken = "integration-node-token"
+[Storage.LocalFile]
+    Path = "${HUATUO_BAMAI_TEST_TMPDIR}/events"
+[AutoTracing.CPUSys]
+    Interval = 1
+    IntervalTracing = 180
+    RunTracingToolTimeout = 1
+    SysThreshold = 100
+    DeltaSysThreshold = 100
+    UserThreshold = 10
+    DeltaUserThreshold = 5
+    UsageThreshold = 10
+    DeltaUsageThreshold = 5
+EOF
+	}
+}

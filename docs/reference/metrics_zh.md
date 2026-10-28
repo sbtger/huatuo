@@ -116,6 +116,7 @@ huatuo_bamai_runqlat_container_latency{container_host="coredns-855c4dd65d-8v5kg"
 | `memory_free_allocpages_stall` | 宿主机直接回收累计耗时 | 毫秒 | 宿主机 | eBPF | — |
 | `memory_free_compaction_stall` | 宿主机内存规整累计耗时 | 毫秒 | 宿主机 | eBPF | — |
 | `memory_reclaim_container_directstall` | 容器直接回收事件次数 | 计数 | 容器 | eBPF | — |
+| `memory_reclaim_events_unresolved_suppressed_total` | 一秒输出冷却期间抑制的未归属 reclaim 事件（Counter） | 计数 | 宿主机 | 事件采集器 | — |
 
 `memory_others_container_directstall_time`、`memory_others_container_asyncreclaim_time`、`memory_others_container_local_direct_reclaim_time` 依赖滴滴定制内核的 `memory.directstall_stat`、`memory.asynreclaim_stat`、`memory.local_direct_reclaim_time` 接口。
 
@@ -241,6 +242,35 @@ huatuo_bamai_runqlat_container_latency{container_host="coredns-855c4dd65d-8v5kg"
 | 指标 | 说明 | 单位 | 范围 | 来源 | 附加标签 |
 | --- | --- | --- | --- | --- | --- |
 | `memory_buddyinfo_blocks` | 指定 NUMA 节点、内存区域和阶数的空闲块数 | 块 | 宿主机 | procfs | node, order, zone |
+
+<a id="add-container-reclaim-and-compaction-stall-times"></a>
+
+### 容器直接回收与内存规整累计耗时
+
+|指标|意义|单位|对象|取值| 标签 |
+|---|---|---|---|---|---|
+|memory_free_container_allocpages_stall|容器任务参与全局直接回收的累计耗时| 毫秒|容器| eBPF | container_host, container_hostnamespace, container_level, container_name, container_type, host, region|
+|memory_free_container_compaction_stall|容器任务参与直接内存规整的累计耗时| 毫秒|容器| eBPF | 同上|
+
+主机两项原本就导出毫秒，名称、数值缩放与 Gauge 类型不变。主机总量（包含容器工作）与容器累计量共用一张以 memory CSS 地址为 key 的 per-CPU Hash，key 0 在探针挂载前预留给主机。容器归属复用现有 CSS 缓存；操作开始、结束的 memory CSS 不同时，仅保留主机耗时，省略归属不明确的容器耗时。两项表示任务承受的全局直接回收/规整耗时，不是 memcg 限额回收次数。
+
+仅导出存在 BPF 记录且能匹配已发现普通容器的 stall 数据，不为缺失记录补零。容器发现失败仍保留主机输出；异常记录报告错误，不丢弃其他有效记录。共享计时 LRU 最多 10240 条，支持跨 CPU 完成；统计 Hash 容纳 10240 个 CSS 及预留的主机 key，按需分配 per-CPU 值。容量满时新容器统计可能丢失，主机累计继续更新。CSS 释放时清理容器统计，CSS 替换或 BPF 重载会重置累计值，计算增量需处理重置。除既有回收/规整探针外，增加 `mem_cgroup_css_released` 清理探针；容器路径不可用时回退为主机采集。
+
+两张 per-CPU 统计表活跃 key 数相同时，计数值合计为 `24 × possible CPU 数 × 活跃 CSS key 数` 字节，另有 Hash/分配器开销和共享计时表。1000 个活跃 CSS、64 个 possible CPU 的计数值约 1.46 MiB；10240 个 CSS、256 CPU 时约 60 MiB。按需分配避免启动时为全部容量分配计数值，但活跃 CSS 多时仍需评估内存开销。
+
+本地 BPF 统计主体微基准对比基线 `bbeca42e3` 与当前实现，环境为 openEuler 24.03、6.6.0 内核、4 个 possible/online CPU。临时 raw tracepoint 驱动经 `BPF_PROG_TEST_RUN` 每批调用生产统计主体 32 次，候选统计表的额外 CSS key 数为 0/1000，基线 stall 表按原生产设计仅保留主机条目。1000 个额外 key 时，单 worker 的 stall 开始/结束约为 290/407 ns（基线/当前），memcg 计数约为 65/81 ns；4 worker 共享一个 CSS 时分别约为 442/413 ns、199/80 ns。规整分支的单 worker 约为 336/443 ns，4 worker 约为 435/408 ns。memcg 计数与调用次数一致，主机与容器 stall 耗时一致。这仅覆盖稳态统计主体，不包含探针分发、真实规整负载、key 高频增删失败、实际事件率及支持内核矩阵，不能替代完整 Update 分配测试或运行时验收。
+
+<a id="add-a-host-wide-memcg-reclaim-count"></a>
+
+### 主机 memcg 回收累计次数
+
+|指标|意义|单位|对象|取值| 标签 |
+|---|---|---|---|---|---|
+|memory_reclaim_directstall|整台主机 memcg 限额回收累计次数| 计数| 物理机| eBPF | host, region|
+
+`memory_reclaim_directstall` 与容器计数共用 `mm_vmscan_memcg_reclaim_begin`，均排除 kswapd；在容器 CSS 匹配前累加 per-CPU 主机计数，采集时求和。它覆盖整台主机上的 memcg 回收（包括未被发现为普通容器的 cgroup），不是容器指标求和，也不是全局直接回收次数或耗时；没有 memcg 回收时为零。主机计数不受容器删除或容器计数表容量影响，BPF 重载归零。沿用 Gauge 类型及现有挂点要求，不新增探针、不调整默认过滤配置；主机和容器采集失败相互隔离，失败的一侧不伪造零值。
+
+memcg reclaim 缺失记录不补零，因为无法区分未发生事件与统计写入失败。CSS 归属沿用地址匹配与释放清理，generation 校验另行处理。
 
 ## 网络
 
@@ -667,6 +697,20 @@ NVMe 证据包括 `critical_warning`、`media_errors_total`，以及最多八条
 | 指标 | 说明 | 单位 | 范围 | 来源 | 附加标签 |
 | --- | --- | --- | --- | --- | --- |
 | `hungtask_total` | 系统 hungtask 事件计数 | 计数 | 宿主机 | eBPF | — |
+
+<a id="attribute-hungtask-events-and-counts-to-containers"></a>
+
+### HungTask 容器归属与计数
+
+|指标|意义|单位|对象|取值| 标签 |
+|---|---|---|---|---|---|
+|hungtask_container_total|已归属容器的阻塞任务事件计数|计数|容器|BPF + CSS 缓存|container_host, container_hostnamespace, container_level, container_name, container_type, host, region|
+
+容器归属通过 `sched_process_hang` raw tracepoint，仅读取实际阻塞任务（不是 `khungtaskd`）的直接 CPU CSS 地址。用户态调用一次 `ContainerByCSS`，复用已有普通容器缓存完成事件与 Pod 信息组装；内核不判断容器环境。不查找祖先，子 cgroup 地址未匹配时保留主机输出，也不事后查询 `/proc/<tid>/cgroup`。
+
+容器元数据消失、身份读取失败，或 CSS 地址无法匹配时，只保留主机总计，缺失容器不补零。raw tracepoint 加载或挂载失败时，清理后重试原有普通 tracepoint，仅采集主机事件并告警；不回退到可能误归属的 TID 查询。主机路径本身仍需要原有 BPF/BTF 和 hungtask tracepoint 支持。事件身份更精确不代表容器元数据发现一定成功，诊断堆栈仍是主机范围。
+
+两项均保留 Counter 语义，计数发生在追踪退避之前；追踪仍沿用主机级退避和全机栈快照，已匹配的记录附带 `ContainerID`，不表示栈已按容器过滤。容器指标使用生命周期内累计计数，成功发现容器退出后清理，进程重启归零。发现故障不丢主机指标，也不清空已累计的容器状态。主机与容器计数不能相加，重复上报同一阻塞线程仍按多次事件计数。
 
 ## GPU
 

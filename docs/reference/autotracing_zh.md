@@ -329,3 +329,31 @@ CPU 示例使用 `perf`。使用 `profiler` 时，事件保留触发指标，pro
 | `virtual_bytes` / `rss_bytes` | 虚拟内存 / RSS |
 | `rss_anon_bytes` / `rss_file_bytes` / `rss_shmem_bytes` | RSS 中的匿名页 / 文件页 / 共享内存 |
 | `swap_bytes` / `page_table_bytes` | 交换空间 / 页表内存 |
+
+### 主机 user 和总执行 CPU 突增触发
+
+参数名与默认值统一见[配置参考](../configuration/huatuo-bamai-configuration_zh.md)。
+
+| 触发类型 | CPU 时间分子 |
+| --- | --- |
+| 原有 system | `system` |
+| user | `user + nice` |
+| 总执行 CPU | `user + nice + system + irq + softirq` |
+
+启用 `cpusys` 后，可通过下列配置额外检测主机 user 和总执行 CPU 突增，复用原有 `/proc/stat` 采样、`AutoTracing.CPUSys.Tool` 配置的 CPU 采集工具（默认 `perf`，也支持 `profiler`）、`cpusys` 存储格式与共享冷却，不增加 tracer、探针或周期读取。四个新增阈值默认均为 0；`UserThreshold` 或 `UsageThreshold` 为正值时才启用对应触发，未配置时保持原有仅 system 触发的行为。
+
+```toml
+[AutoTracing.CPUSys]
+UserThreshold = 75
+DeltaUserThreshold = 45
+UsageThreshold = 90
+DeltaUsageThreshold = 55
+```
+
+每组都要求占用率及相对上次采样的增量**同时超过**对应阈值；检测的是突增，不是所有持续高使用率。首个使用率样本只建立基线，原 system 阈值、采样间隔、抓取时长与冷却保持不变。
+
+分母为 `/proc/stat` 前八个 CPU 时间计数器之和的增量；guest 已包含在 user/nice 中，不重复累计。总执行时间排除 idle、iowait 和 steal，因为本机 on-CPU 抓取无法解释等待或被虚拟机管理器占用的时间。口径是包含容器工作的整机占用率，不是按容器配额归一化的使用率。
+
+三组同时越线只抓取一次，共享冷却。`container_id` 仍为空，保留原 system JSON 字段，新增 `user_percent*`、`total_percent*` 和 `trigger_reasons`（`user`、`total`、`system`），零值新增字段省略。
+
+回归测试：`integration/test_autotracing_cpusys.sh` 使用可控 `/proc/stat` 样本和 perf 输出夹具，经标准 daemon 与本地存储验证 user/total 独立触发、事件字段、单次抓取及冷却抑制；`test_autotracing_cpusys_live.sh` 另在专用 VM 中验证真实 CPU 负载。

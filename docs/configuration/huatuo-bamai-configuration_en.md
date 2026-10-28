@@ -445,7 +445,7 @@ To view profiler results, open the Continuous Profiling host or container dashbo
 - `Included` only: Monitor only matching containers.
 - Both: Monitor containers that match `Included` and do not match `Excluded`.
 
-#### 7.2 Host system CPU spikes
+#### 7.2 Host CPU bursts
 
 ```toml
 # cpusys
@@ -495,7 +495,20 @@ To view profiler results, open the Continuous Profiling host or container dashbo
 | `IntervalTracing` | Minimum interval between traces, in seconds. Default: `1800`. |
 | `RunTracingToolTimeout` | Collection duration in seconds. Default: `10`. |
 
-**Trigger conditions**: Once the tracing interval has elapsed, tracing starts when system-mode CPU utilization strictly exceeds `SysThreshold` and its increase strictly exceeds `DeltaSysThreshold`.
+**Trigger conditions**: Once the shared cooldown has elapsed, profiling starts when any enabled system/user/total threshold pair is exceeded. System-only behavior remains the default; optional user/total triggers are described below.
+
+
+User/total triggers are optional and share the system trigger's profiling tool
+and cooldown. Each requires both utilization and its positive increase to
+strictly exceed its thresholds. Utilization is percent; delta is percentage
+points. All four values must be in [0, 100].
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `UserThreshold` | `0` | User CPU utilization; zero disables this trigger. |
+| `DeltaUserThreshold` | `0` | User utilization increase; zero still requires a positive increase. |
+| `UsageThreshold` | `0` | Total executing CPU utilization; zero disables this trigger. |
+| `DeltaUsageThreshold` | `0` | Total utilization increase; zero still requires a positive increase. |
 
 #### 7.3 Container D-state load
 
@@ -850,6 +863,12 @@ This section configures collection conditions for scheduling, memory reclaim, ne
 | Field | Description |
 | --- | --- |
 | `BlockedThreshold` | Memory reclaim blocking threshold in nanoseconds. Default: `900000000` (900 ms). An event is reported with context when a process is blocked by memory reclaim for longer than this threshold. |
+
+Unresolved slow direct-reclaim events are retained in the host stream with
+`container_attribution="unresolved"`; an empty ID does not prove host-only origin.
+Known containers emit one container event. Unresolved output is limited to one
+event per second per tracer, with excess counted in
+`huatuo_bamai_memory_reclaim_events_unresolved_suppressed_total`.
 
 #### 8.3 Network receive latency
 

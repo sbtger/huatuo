@@ -116,6 +116,7 @@ Memory reclaim and compaction can block tasks. These metrics record host cumulat
 | `memory_free_allocpages_stall` | Cumulative host direct-reclaim duration | Milliseconds | Host | eBPF | — |
 | `memory_free_compaction_stall` | Cumulative host memory-compaction duration | Milliseconds | Host | eBPF | — |
 | `memory_reclaim_container_directstall` | Container direct-reclaim event count | Count | Container | eBPF | — |
+| `memory_reclaim_events_unresolved_suppressed_total` | Unresolved reclaim events suppressed by the one-second output cooldown (Counter) | Count | Host | Event collector | — |
 
 `memory_others_container_directstall_time`, `memory_others_container_asyncreclaim_time`, and `memory_others_container_local_direct_reclaim_time` depend on DiDi custom-kernel interfaces `memory.directstall_stat`, `memory.asynreclaim_stat`, and `memory.local_direct_reclaim_time`.
 
@@ -241,6 +242,43 @@ Shows free block counts by NUMA node, memory zone, and order. `order=n` means ea
 | Metric | Description | Unit | Scope | Source | Additional Labels |
 | --- | --- | --- | --- | --- | --- |
 | `memory_buddyinfo_blocks` | Free blocks for the specified NUMA node, zone, and order | Blocks | Host | procfs | node, order, zone |
+
+### add container reclaim and compaction stall times
+
+|Metric|Description|Unit|Target|Source|Labels|
+|---|---|---|---|---|---|
+|memory_free_container_allocpages_stall|Container task time in global direct reclaim| milliseconds|Container| eBPF | container_host, container_hostnamespace, container_level, container_name, container_type, host, region|
+|memory_free_container_compaction_stall|Container task time in direct compaction| milliseconds|Container| eBPF | same container labels|
+
+Host values already used milliseconds; names, scaling and Gauge types are unchanged. Host-wide totals (including container work) and container totals share one per-CPU hash keyed by memory CSS address; key zero is reserved for the host before probe attachment. Container values match the existing CSS cache. Operations whose memory CSS changes between begin and end retain their host duration but omit ambiguous container attribution. These measure task time in global reclaim/compaction, not memcg limit reclaim counts.
+
+Only BPF records matching discovered normal containers are exported; absent stall records are not zero-filled. Container discovery errors preserve host output. Malformed rows report an error without discarding other valid rows. The shared timing LRU holds at most 10240 operations and works across CPU migration. The statistics hash holds 10240 CSS keys plus the reserved host key, with per-CPU values allocated on demand; a full map drops new container aggregates while host totals continue. CSS release deletes container aggregates; CSS replacement and BPF reload reset their totals. Handle resets when computing deltas. The existing reclaim/compaction probes are supplemented by `mem_cgroup_css_released` for cleanup; unsupported container attachment falls back to host-only collection.
+
+With equal active-key counts, the two per-CPU statistics maps use 24 bytes of counter payload per possible CPU per active CSS (plus hash/allocator overhead and the shared timing map). For 1000 active CSS keys and 64 possible CPUs, the counter payload is about 1.46 MiB; at 10240 keys and 256 CPUs it is about 60 MiB. Values are allocated on demand, not for every configured key at startup.
+
+A local body-only BPF microbenchmark compared base `bbeca42e3` with the
+current implementation on openEuler 24.03, kernel 6.6.0, four possible/online
+CPUs. A temporary raw-tracepoint driver invoked the production accounting
+bodies in batches of 32 via `BPF_PROG_TEST_RUN`, with 0/1000 extra CSS keys in the candidate. The baseline stall map stayed
+host-only, as in production.
+At 1000 extra keys, single-worker stall begin/end cost was about 290/407 ns
+(base/current), and memcg accounting 65/81 ns. Four workers sharing one CSS
+measured about 442/413 ns and 199/80 ns respectively. The compaction branch
+measured about 336/443 ns with one worker and 435/408 ns with four. Memcg counts matched
+invocations; host/container stall durations agreed. These measurements cover
+steady-state accounting, not probe dispatch, compaction workloads, key-churn
+failures, actual event rates or the supported kernel matrix. They do not
+replace full Update allocation measurements or runtime acceptance.
+
+### add a host-wide memcg reclaim count
+
+|Metric|Description|Unit|Target|Source|Labels|
+|---|---|---|---|---|---|
+|memory_reclaim_directstall|Cumulative host-wide memcg limit reclaim events| count| Host| eBPF | host, region|
+
+`memory_reclaim_directstall` shares `mm_vmscan_memcg_reclaim_begin` and the kswapd exclusion with the container count. A per-CPU host count is incremented before CSS attribution and summed at collection. It includes cgroups not discovered as normal containers, rather than summing exported container metrics. It is neither a global direct reclaim count nor a duration; without memcg reclaim events it remains zero. Container deletion and container map capacity do not affect the host count; BPF reload resets it. The Gauge type, existing hook requirements and default filters are unchanged, with no additional probes. Host and container collection failures are isolated; failed reads do not emit fabricated zeros.
+
+Missing memcg reclaim rows are omitted: absence cannot distinguish no events from a failed map insertion. CSS attribution uses address matching and release cleanup; generation validation is deferred to a separate change.
 
 ## Network
 
@@ -694,6 +732,18 @@ Records hung-task events detected by the kernel.
 | Metric | Description | Unit | Scope | Source | Additional Labels |
 | --- | --- | --- | --- | --- | --- |
 | `hungtask_total` | System hung-task event count | Count | Host | eBPF | — |
+
+### attribute hungtask events and counts to containers
+
+|Metric|Description|Unit|Target|Source|Labels|
+|---|---|---|---|---|---|
+|hungtask_container_total|Events attributed to blocked container tasks|count|Container|BPF + CSS cache|container_host, container_hostnamespace, container_level, container_name, container_type, host, region|
+
+Container attribution reads the direct CPU CSS address of the actual blocked task through the `sched_process_hang` raw tracepoint. Userspace calls `ContainerByCSS` once and assembles the event using the existing normal-container cache. Kernel code does not resolve containers or Pod metadata. There is no ancestor lookup; an unmatched child cgroup retains host output. No post-event `/proc/<tid>/cgroup` lookup is needed.
+
+Missing metadata, failed identity reads or an unmatched CSS address leave events in the host total only. If raw tracepoint loading or attachment fails, the collector retries the original tracepoint with host-only counting and a warning; it does not fall back to TID lookup. The host path still requires the original BPF/BTF and hungtask tracepoint support. Event-time identity does not guarantee successful container discovery.
+
+Both metrics are Counters updated before trace backoff. Tracing keeps host-wide backoff and system-wide stack snapshots; matched records carry `ContainerID`, without filtering stacks to that container. Container counts last for the observed container lifetime, are removed after successful discovery confirms exit, and reset on agent restart. Discovery failure retains the host metric and cached container counts. Do not add host and container counts; repeated reports for the same blocked task are separate events.
 
 ## GPU
 
