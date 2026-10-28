@@ -68,6 +68,9 @@ func (c *Container) InitPidOrInitnsPid() int {
 func containersByTypeQos(typeMask ContainerType, minLevel ContainerQos) (map[string]*Container, error) {
 	containerView.mu.RLock()
 	defer containerView.mu.RUnlock()
+	if len(containerView.records) == 0 {
+		return nil, nil
+	}
 	res := make(map[string]*Container)
 	for _, record := range containerView.records {
 		c := record.container
@@ -165,7 +168,7 @@ func GetCSSToContainerID(subsys string) (map[uint64]string, error) {
 func BuildCssContainersID(containers map[string]*Container, subsys string) map[uint64]string {
 	cssToContainerMap := make(map[uint64]string, len(containers))
 	for _, container := range containers {
-		if addr, ok := container.CgroupCss[subsys]; ok {
+		if addr, ok := container.CgroupCss[subsys]; ok && addr != 0 {
 			cssToContainerMap[addr] = container.ID
 		}
 	}
@@ -176,7 +179,7 @@ func BuildCssContainersID(containers map[string]*Container, subsys string) map[u
 func BuildCssContainers(containers map[string]*Container, subsys string) map[uint64]*Container {
 	cssToContainerMap := make(map[uint64]*Container, len(containers))
 	for _, container := range containers {
-		if addr, ok := container.CgroupCss[subsys]; ok {
+		if addr, ok := container.CgroupCss[subsys]; ok && addr != 0 {
 			cssToContainerMap[addr] = container
 		}
 	}
