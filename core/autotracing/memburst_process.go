@@ -39,17 +39,20 @@ const (
 // topMemoryProcesses returns the top N processes consuming the most memory
 // (For example: memory, resident shared pages) which is assigned by MemoryMetric.
 func topMemoryProcesses(topN int, metric memoryType) ([]*processMemInfo, error) {
-	procs, err := process.Processes()
+	pids, err := process.Pids()
 	if err != nil {
 		return nil, err
 	}
 
 	var infos []*processMemInfo
-	for _, p := range procs {
-		identity, err := memsnapshot.ReadProcessInstanceID(int(p.Pid))
+	for _, pid := range pids {
+		identity, err := memsnapshot.ReadProcessInstanceID(int(pid))
 		if err != nil {
 			continue
 		}
+		// Process.NewProcess opens a pidfd that this gopsutil version leaves to GC.
+		// The start-time checks here already validate this PID without that handle.
+		p := &process.Process{Pid: pid}
 		var val uint64
 		switch metric {
 		case memoryRSS:
