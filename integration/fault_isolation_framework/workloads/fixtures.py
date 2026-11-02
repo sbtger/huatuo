@@ -6,7 +6,7 @@ from ..core.util import require, run
 from .http_probe import EXPECTED, request_http
 
 
-def launch_services(environment, output, languages, java_home, python):
+def launch_services(environment, output, languages, java_home, python, go_heap_mib=32):
     output = Path(output)
     targets = []
     workloads = Path(__file__).parent / "services"
@@ -47,7 +47,7 @@ def launch_services(environment, output, languages, java_home, python):
             )
             args += ["-v", str(config) + ":" + str(config) + ":ro"]
         cmd = {
-            "go": ["/business-go"],
+            "go": ["/business-go", str(go_heap_mib)],
             "java": [
                 java_home + "/bin/java",
                 "-Xms64m",

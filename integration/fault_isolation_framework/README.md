@@ -214,3 +214,16 @@ See the [follow-up validation report](RELIABILITY_VALIDATION.md),
 [failure diagnosis](RELIABILITY_DIAGNOSIS.md) for the preserved outcomes.
 Pressure-control values are published by atomic replacement so readers cannot
 observe an empty value between truncation and write.
+
+## Performance experiments
+
+The separate opt-in [performance plan](PERFORMANCE_PLAN.md) adds plain-Agent
+idle and matched-pressure comparisons for memburst and threshold snapshots.
+See the [short validation](PERFORMANCE_VALIDATION.md) and
+[structured results](PERFORMANCE_RESULTS.json).
+Run `performance.py --help` for individual experiments and
+`performance_matrix.py --help` for explicit sequential matrices/rate sweeps.
+Raw requests, process/cgroup observations, real capture events and source hashes
+are retained. `VALIDATION_PASS` confirms a valid measurement workflow; it does
+not establish production SLOs or a universal overhead limit. Performance results
+remain separate from the reliability verdicts above.

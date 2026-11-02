@@ -3,7 +3,7 @@
 from pathlib import Path
 
 
-def command(binary, config, output, bpf_dir, region="fault-isolation"):
+def command(binary, config, output, bpf_dir, region="fault-isolation", debug=True):
     return [
         str(binary),
         "--config-dir",
@@ -16,8 +16,7 @@ def command(binary, config, output, bpf_dir, region="fault-isolation"):
         str(Path(bpf_dir).resolve()),
         "--tools-bin-dir",
         str(output),
-        "--log-debug",
-    ]
+    ] + (["--log-debug"] if debug else [])
 
 
 def verify_build(directory):

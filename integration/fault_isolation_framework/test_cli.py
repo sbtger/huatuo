@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 
 class CLITest(unittest.TestCase):
     def test_unknown_adapter_fails_before_creating_output(self):
@@ -77,3 +79,46 @@ from fault_isolation_framework.core import models,runner,evidence,audit,document
             stderr=subprocess.PIPE,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_performance_rejects_bad_configuration_before_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(__file__).resolve().parent / "performance.py"
+            help_result = subprocess.run([sys.executable, str(script), "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.assertEqual(help_result.returncode, 0, help_result.stderr)
+            for option in (["--qps", "0"], ["--sample-interval", "0"], ["--repeats", "0"]):
+                output = Path(tmp)/"output"
+                result = subprocess.run([sys.executable, str(script), "--module", "memburst",
+                                         "--build", tmp, "--bpf-dir", tmp, "--output", str(output)] + option,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertFalse(output.exists())
+
+    def test_performance_can_run_agent_without_debug_logging(self):
+        from fault_isolation_framework.adapters.huatuo.agent import command
+        self.assertNotIn("--log-debug", command("/agent", "/conf", "/out", "/bpf", debug=False))
+        self.assertIn("--log-debug", command("/agent", "/conf", "/out", "/bpf"))
+
+    def test_performance_integrity_rejects_tampered_raw_data(self):
+        import json
+        from fault_isolation_framework.performance import seal, audit
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root/"results.json").write_text(json.dumps({"trials": []}))
+            (root/"supervisor.json").write_text("{}")
+            (root/"requests.jsonl").write_text('{"ok":true}\n')
+            seal(root)
+            self.assertEqual(audit(root)["status"], "PASS")
+            (root/"requests.jsonl").write_text('{"ok":false}\n')
+            self.assertEqual(audit(root)["status"], "FAIL")
+
+    def test_performance_plan_has_no_side_effects_and_repeats_random_order(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(__file__).resolve().parent / "performance.py"
+            command = [sys.executable, str(script), "--module", "memburst", "--experiment", "pulse",
+                       "--build", tmp, "--bpf-dir", tmp, "--output", str(Path(tmp)/"run"), "--plan"]
+            first = subprocess.run(command, capture_output=True, text=True, check=True)
+            second = subprocess.run(command, capture_output=True, text=True, check=True)
+            self.assertEqual(first.stdout, second.stdout)
+            self.assertTrue(all(sorted(r["groups"]) == ["A", "B", "D"] for r in json.loads(first.stdout)["schedule"]))
+            self.assertFalse((Path(tmp)/"run").exists())

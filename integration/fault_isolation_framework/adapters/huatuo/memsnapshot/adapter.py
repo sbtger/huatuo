@@ -189,7 +189,7 @@ class MemsnapshotAdapter:
         self.evidence.register(logfile.name, "agent_log")
         self.logpath = logfile
         binary = self.build / ("agent" if plain else "agent-fault")
-        cmd = agent_command(binary, conf, self.out, self.a.bpf_dir)
+        cmd = agent_command(binary, conf, self.out, self.a.bpf_dir, debug=getattr(self.a, "log_debug", True))
         if permission:
             cmd = [str(self.build / "deny-readv")] + cmd
         self.agent = self.process.start(
@@ -237,12 +237,15 @@ class MemsnapshotAdapter:
             "tracing status disagrees with configured switch",
         )
         if not disabled and self.tracer_name == TRACER:
-            for t in self.targets:
+            for t in self.watch_targets():
                 wait_for(
                     "registered threshold watch " + t["language"],
                     lambda t=t: self.trigger.watch_ready(t),
                     timeout=35,
                 )
+
+    def watch_targets(self):
+        return self.targets
 
     def stop_agent(self, kill=False):
         if self.agent:

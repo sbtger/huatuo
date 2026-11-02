@@ -1,0 +1,4289 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "purpose": "short workflow validation, not production overhead acceptance",
+  "performance_acceptance": "NOT_EVALUATED",
+  "qps_per_loaded_business": 5,
+  "loaded_businesses": 4,
+  "registered_containers": 3,
+  "repeats_per_case": 1,
+  "seconds": {
+    "warmup": 3,
+    "baseline": 4,
+    "hold": 12,
+    "recovery": 4
+  },
+  "source_sha256": {
+    "test_audit.py": "289cfe8a312d51f535b414678edd7367a185d85619bb83fb7e302cb1175e3c1e",
+    "stability.py": "b6809cb881d51d664945f0071772bf834d5f0155f3b23692eb8a1665da08cecb",
+    "test_contract.py": "90dacef2680f0e967e657f1b9bb35091f81c7893ce54c018ef7109ed0d936bc7",
+    "support.py": "40ac158dd2a275a8eb987d43e31dc3d32eee5c398677f6236899036575163271",
+    "test_resources.py": "d869c7c4738b2bd20c2f3810249e64da77c2f370837ae637e0738d4ba7c079eb",
+    "test_adapter_policy.py": "8bf393eb69a34e03219e2739ebca8316084fb26a0450dd27c3284a5327b6eba7",
+    "test_business.py": "783910f234c9ee659f07c271cd9232a066e7f29703e34dd72949e1cc10bb7ded",
+    "performance_matrix.py": "ea3e322cc0e0eea0865421d6292b9c9812b6f40e1658ec7a73bd5eb8276e617f",
+    "cli.py": "6b13726085c98872c4be3455ff54d274c38c17eeda02a9143fa8945ee8a937d1",
+    "audit.py": "8af38f26dd4196036fe594b7af760dd7a1b0dff91eac077819eba4229c9779dd",
+    "build.py": "7c398f39c32472c2aaa4d698ee59c42cbdda6b3a2a63b34b0c5b13a2afaf60b2",
+    "log_policy.py": "e53dd9543addae81561165b9628814b1feb0012d084150a9567697029e535d81",
+    "run.py": "29ef3817c6361fc51b3732ccfc1d6a50ba960b506ce9bf97b00b6dcf8c69eba2",
+    "test_cli.py": "56bd7ac8ec20789d82fedef760db76afdae1af1b3ebe4849b785129a752fb7b7",
+    "contract.py": "d85193ad5ecb4f164f69ee5bc65269b22527548702be3e5da41d93449c023ef5",
+    "test_logs.py": "a8c26c1bef27c3cca3fa650f92d29e123f048e0b9ea5366de2c417d8da1e350b",
+    "test_core.py": "5c1eb8f53d20da8079796e0832f4046179900e805baac557d390cd7f940b48fe",
+    "performance.py": "67958423c78d66c8c133bc053090907ecfd32221b0adfbd2fbecfe894d709063",
+    "__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d",
+    "core/stability.py": "70db05b6a77d696b26617b9072c052f8c9e0883cfa3cc96ef41597e0d8f50d8c",
+    "core/evidence.py": "0f1aa5af671805affd15eebe6b3d7af2d66d53aec8a4b3b715c75c153d313edb",
+    "core/business_audit.py": "20d789d7c88986deddb7f537f806d8be8c5fcd13e5661f1f0395d6785051b227",
+    "core/audit.py": "31d18a476c507839d3f2028fa60926b7e2adea7e4bff4e30ab57284d9c87b28a",
+    "core/util.py": "6e2240ca24c53b70b2bc263270243e660fd582d2a2108d6d118e2a4c7aa29e86",
+    "core/models.py": "196c27560fa3fc3860193cc634440af4f9ce8b349b90163d688f376d9f6e734e",
+    "core/runner.py": "352ba52353891f1109b5529097883364623bec154dd7b39cffc8d3b15e7ffb45",
+    "core/performance.py": "e8d8bb9b209480c3b657d9a653979f47965d1a5877242858bf92528aace2f121",
+    "core/__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d",
+    "core/documents.py": "83494a9af3bfd7c0257ed31fb6de61beffa289796b8088bfbeacd415e7b6c67d",
+    "workloads/http_probe.py": "04b35ab73a3db083b0e4c8b48ce5143bcd1f8ce5627d6408ec7db872902bc297",
+    "workloads/performance_load.py": "62e1baf90c76eea4787fb7f4a002515c264ee63f09c984fcae25d84ebd4f1d72",
+    "workloads/fixtures.py": "fe6523491576731fe243264234e81cafae88151197ef9885875fc8612556eb19",
+    "workloads/__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d",
+    "environments/supervisor.py": "c6c5fdea69cc9e11eebaef94a738377b31e147a2a0dc348f6bc5f7e22a0ac025",
+    "environments/docker.py": "76207e0f3910565026a269352d33891ccf1169157176f8c4274dc9f58bf0ca74",
+    "environments/linux.py": "dc1424b7eb235d23a026668613924551ac7df91728473c9d2ec8280860f02164",
+    "environments/resources.py": "e79168b1a49d58876f8bd2b777eb89be37f19d45817d532e21ca8d1534a36139",
+    "environments/performance.py": "51f5307255055df4c9b7c1ff01ed22991209de7fc0f09357da8b804c1e12dcb0",
+    "environments/__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d",
+    "adapters/__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d",
+    "workloads/services/python_service.py": "32cf57bf544ec81bcb639310553eafe56ba8e5520d636435ca9a1f87aa75a5cf",
+    "adapters/huatuo/agent.py": "1e1564b7b02a44abbcf05a19dabb654ba35c5ddbd95d6aeaec4b6f542426c6c4",
+    "adapters/huatuo/performance.py": "6af1807650ab7c601d68e363c92c9e6ce536349f135ea941d40b28c0cd37abc5",
+    "adapters/huatuo/discovery.py": "110672a3cf0e65c7f354ef8b36f3fafd938bad436515248970dad0d65c80b4ae",
+    "adapters/huatuo/__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d",
+    "adapters/huatuo/memsnapshot/adapter.py": "57d94192ddc57ab95fb20e5c2727e79d60a79e6c95bf56d123580cc0fca90c0f",
+    "adapters/huatuo/memsnapshot/assertions.py": "6dd9981d5b1a14182b164667f790691a81474de1c727c452ca7a777133a45734",
+    "adapters/huatuo/memsnapshot/trigger.py": "a90c87ecf05be550e42ae50d6faa29b72bc5706a657e336b2f90e9e07174fd00",
+    "adapters/huatuo/memsnapshot/build.py": "78018c611a0f59c4ee2cc5477b640b4a261c3d00e692b3863dcac8e54af86e6c",
+    "adapters/huatuo/memsnapshot/log_policy.py": "caf74118eb030a7b1e5127b3144351c6aa89554feef296998394ecd2df87646b",
+    "adapters/huatuo/memsnapshot/legacy_audit.py": "2d67a394e9a84d34cb87b433013f82a87c63d2b74146d51e0673bd318398381c",
+    "adapters/huatuo/memsnapshot/faults.py": "f444b1c7dc15e0173abcc64252b9847ed7134e836109f0c609bf8b49076a3560",
+    "adapters/huatuo/memsnapshot/policy.py": "e6f0710863d954cd125a199beedbca4fd1a805b84a8e6cc543f3b069dd6c4473",
+    "adapters/huatuo/memsnapshot/__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d",
+    "adapters/huatuo/stability/adapter.py": "04ec07b6dbf28c7901b38741b88cc07adf07c88b6df9d9aa2586b6d4926cf462",
+    "adapters/huatuo/stability/resource_faults.py": "b5b6eeb7f148b8998565cd0952beff21f1d5af4f6ab46b4926b77d2ae30cbc87",
+    "adapters/huatuo/stability/reliability.py": "913df8465f2bce0aca33e5ce6982d0cb0ca7892047e31ef9548f1233b6ae319b",
+    "adapters/huatuo/stability/trigger.py": "56836e2d2e47f2e67525d06cb488c66877717a2ff23200ab557a88e80da2b933",
+    "adapters/huatuo/stability/policy.py": "2b95e6335223e1b848b9a3dab5d8169b5669bccbe45d772006bf7050002f262e",
+    "adapters/huatuo/stability/diagnostics.py": "6d281bd57fba01bbb6b80aa6590c55818747f385f5bbe4ca248723a68fa587e8",
+    "adapters/huatuo/stability/__init__.py": "ac4c058dd3972ea7d4756657adfc81f23f214fae2890abda0674bb01695e931d"
+  },
+  "cases": [
+    {
+      "id": "P01",
+      "module": "memory_threshold_snapshot",
+      "experiment": "idle",
+      "pressure_targets": 3,
+      "pressure_mib": 500,
+      "measurement_status": "VALIDATION_PASS",
+      "evidence_audit_status": "PASS",
+      "totals": {
+        "requests": 1380,
+        "resource_samples": 670,
+        "captures": 0
+      },
+      "valid_pair_counts": [
+        {
+          "enabled": "C",
+          "baseline": "B",
+          "pairs": 1
+        },
+        {
+          "enabled": "C",
+          "baseline": "A",
+          "pairs": 1
+        }
+      ],
+      "trials": [
+        {
+          "group": "C",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.3751210006157635,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 188,
+            "errors": 0,
+            "cpu_seconds": 0.010000000000000009,
+            "cpu_average_cores": 0.0005000000000000004,
+            "sampled_agent_tree_rss_peak_bytes": 91975680,
+            "agent_fd_peak": 39,
+            "agent_thread_peak": 22,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.43000000000000005,
+                "minor_faults": 3250,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 12087296
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.41999999999999993,
+                "minor_faults": 6665,
+                "major_faults": 0,
+                "voluntary_switches": 423,
+                "involuntary_switches": 13,
+                "rss_peak_bytes": 71499776
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7000000000000001,
+                "minor_faults": 5531,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 115257344
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.32000000000000006,
+                "minor_faults": 3979,
+                "major_faults": 0,
+                "voluntary_switches": 339,
+                "involuntary_switches": 58,
+                "rss_peak_bytes": 55341056
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.833200999200926,
+                "p95": null,
+                "p99": null,
+                "max": 9.847354000157793
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6799009988753824,
+                "p95": null,
+                "p99": null,
+                "max": 4.076711000379873
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.144102000282146,
+                "p95": null,
+                "p99": null,
+                "max": 6.676675999187864
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.765173000327195,
+                "p95": null,
+                "p99": null,
+                "max": 10.514448000321863
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7608179985254537,
+                "p95": null,
+                "p99": null,
+                "max": 2.0963569986633956
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.921084999295999,
+                "p95": null,
+                "p99": null,
+                "max": 9.879188000923023
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.491839999900549,
+                "p95": null,
+                "p99": null,
+                "max": 8.96557399937592
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5277539985399926,
+                "p95": null,
+                "p99": null,
+                "max": 2.643236999574583
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.893550001521362,
+                "p95": null,
+                "p99": null,
+                "max": 8.439040000666864
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.824559999178746,
+                "p95": null,
+                "p99": null,
+                "max": 9.963926999262185
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5589259981206851,
+                "p95": null,
+                "p99": null,
+                "max": 5.164223999599926
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.282109999621753,
+                "p95": null,
+                "p99": null,
+                "max": 7.738739999695099
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.010000000000000009,
+            "sampled_agent_tree_rss_peak_bytes": 91975680,
+            "neighbor-go.cpu_seconds": 0.43000000000000005,
+            "neighbor-go.minor_faults": 3250,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 12087296,
+            "target-000-go.cpu_seconds": 0.41999999999999993,
+            "target-000-go.minor_faults": 6665,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 423,
+            "target-000-go.involuntary_switches": 13,
+            "target-000-go.rss_peak_bytes": 71499776,
+            "target-000-java.cpu_seconds": 0.7000000000000001,
+            "target-000-java.minor_faults": 5531,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 115257344,
+            "target-000-python.cpu_seconds": 0.32000000000000006,
+            "target-000-python.minor_faults": 3979,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 339,
+            "target-000-python.involuntary_switches": 58,
+            "target-000-python.rss_peak_bytes": 55341056,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "A",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.4786380013683811,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 192,
+            "errors": 0,
+            "cpu_seconds": 0,
+            "cpu_average_cores": 0.0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "agent_fd_peak": 0,
+            "agent_thread_peak": 0,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.43000000000000005,
+                "minor_faults": 2840,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11747328
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.4,
+                "minor_faults": 7121,
+                "major_faults": 0,
+                "voluntary_switches": 612,
+                "involuntary_switches": 37,
+                "rss_peak_bytes": 73302016
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7200000000000001,
+                "minor_faults": 6241,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 116391936
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.32000000000000006,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 340,
+                "involuntary_switches": 41,
+                "rss_peak_bytes": 55308288
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.831791000469821,
+                "p95": null,
+                "p99": null,
+                "max": 7.701307000388624
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.49443299940321594,
+                "p95": null,
+                "p99": null,
+                "max": 1.525419000245165
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.189889999906882,
+                "p95": null,
+                "p99": null,
+                "max": 7.1086819989432115
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.656631001329515,
+                "p95": null,
+                "p99": null,
+                "max": 14.696690001073875
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8025600000109989,
+                "p95": null,
+                "p99": null,
+                "max": 1.551633000417496
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.881885000941111,
+                "p95": null,
+                "p99": null,
+                "max": 13.511290999304038
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.636995001419564,
+                "p95": null,
+                "p99": null,
+                "max": 6.913709001310053
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6485020003310638,
+                "p95": null,
+                "p99": null,
+                "max": 2.021415999479359
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.842922000330873,
+                "p95": null,
+                "p99": null,
+                "max": 5.824938998557627
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.911474999971688,
+                "p95": null,
+                "p99": null,
+                "max": 9.272023999074008
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.49366700113750994,
+                "p95": null,
+                "p99": null,
+                "max": 1.4693790017190622
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.300702999898931,
+                "p95": null,
+                "p99": null,
+                "max": 9.041033999892534
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "neighbor-go.cpu_seconds": 0.43000000000000005,
+            "neighbor-go.minor_faults": 2840,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11747328,
+            "target-000-go.cpu_seconds": 0.4,
+            "target-000-go.minor_faults": 7121,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 612,
+            "target-000-go.involuntary_switches": 37,
+            "target-000-go.rss_peak_bytes": 73302016,
+            "target-000-java.cpu_seconds": 0.7200000000000001,
+            "target-000-java.minor_faults": 6241,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 116391936,
+            "target-000-python.cpu_seconds": 0.32000000000000006,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 340,
+            "target-000-python.involuntary_switches": 41,
+            "target-000-python.rss_peak_bytes": 55308288,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "B",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.5158410003787139,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 188,
+            "errors": 0,
+            "cpu_seconds": 0.020000000000000018,
+            "cpu_average_cores": 0.0010000000000000009,
+            "sampled_agent_tree_rss_peak_bytes": 90877952,
+            "agent_fd_peak": 33,
+            "agent_thread_peak": 21,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.41000000000000003,
+                "minor_faults": 3407,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11870208
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.41000000000000003,
+                "minor_faults": 6631,
+                "major_faults": 0,
+                "voluntary_switches": 457,
+                "involuntary_switches": 33,
+                "rss_peak_bytes": 70901760
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7200000000000001,
+                "minor_faults": 5603,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 116199424
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.35,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 336,
+                "involuntary_switches": 74,
+                "rss_peak_bytes": 55345152
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.778082000484574,
+                "p95": null,
+                "p99": null,
+                "max": 7.504109000365133
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5678180004906608,
+                "p95": null,
+                "p99": null,
+                "max": 1.7415610000171
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.1919399991456885,
+                "p95": null,
+                "p99": null,
+                "max": 6.74315699870931
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.8542070000839885,
+                "p95": null,
+                "p99": null,
+                "max": 10.726581000199076
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8274009996966925,
+                "p95": null,
+                "p99": null,
+                "max": 1.674226999966777
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.016604000047664,
+                "p95": null,
+                "p99": null,
+                "max": 10.031910000179778
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.98544999936712,
+                "p95": null,
+                "p99": null,
+                "max": 8.094025000900729
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7234990007418673,
+                "p95": null,
+                "p99": null,
+                "max": 2.404848000878701
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.145605998928659,
+                "p95": null,
+                "p99": null,
+                "max": 7.011060000877478
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.925734001517412,
+                "p95": null,
+                "p99": null,
+                "max": 8.678291000251193
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.4613640012394171,
+                "p95": null,
+                "p99": null,
+                "max": 1.8148159997508628
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.426538998814067,
+                "p95": null,
+                "p99": null,
+                "max": 8.181313000022783
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.020000000000000018,
+            "sampled_agent_tree_rss_peak_bytes": 90877952,
+            "neighbor-go.cpu_seconds": 0.41000000000000003,
+            "neighbor-go.minor_faults": 3407,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11870208,
+            "target-000-go.cpu_seconds": 0.41000000000000003,
+            "target-000-go.minor_faults": 6631,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 457,
+            "target-000-go.involuntary_switches": 33,
+            "target-000-go.rss_peak_bytes": 70901760,
+            "target-000-java.cpu_seconds": 0.7200000000000001,
+            "target-000-java.minor_faults": 5603,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 116199424,
+            "target-000-python.cpu_seconds": 0.35,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 336,
+            "target-000-python.involuntary_switches": 74,
+            "target-000-python.rss_peak_bytes": 55345152,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "P02",
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "pressure_targets": 3,
+      "pressure_mib": 500,
+      "measurement_status": "INVALID_OR_FAILED",
+      "evidence_audit_status": "PASS",
+      "totals": {
+        "requests": 1380,
+        "resource_samples": 652,
+        "captures": 1
+      },
+      "valid_pair_counts": [
+        {
+          "enabled": "D",
+          "baseline": "B",
+          "pairs": 0
+        },
+        {
+          "enabled": "D",
+          "baseline": "A",
+          "pairs": 0
+        }
+      ],
+      "trials": [
+        {
+          "group": "D",
+          "valid": false,
+          "errors": [
+            "invalid load or business errors: target-000-go",
+            "invalid load or business errors: target-000-java",
+            "invalid load or business errors: target-000-python",
+            "invalid load or business errors: neighbor-go"
+          ],
+          "max_measured_dispatch_lag_ms": 147.93592099886155,
+          "matching_requested_target_captures": [
+            {
+              "language": "go",
+              "status": "complete",
+              "entries": 3,
+              "duration_ms": 170,
+              "truncated": false,
+              "successful": true
+            }
+          ],
+          "total_selected_process_records": 1,
+          "resources": {
+            "samples": 177,
+            "errors": 0,
+            "cpu_seconds": 0.29,
+            "cpu_average_cores": 0.014499999999999999,
+            "sampled_agent_tree_rss_peak_bytes": 92618752,
+            "agent_fd_peak": 40,
+            "agent_thread_peak": 18,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 1.0499999999999998,
+                "minor_faults": 2342,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11755520
+              },
+              "target-000-go": {
+                "cpu_seconds": 10.18,
+                "minor_faults": 135129,
+                "major_faults": 0,
+                "voluntary_switches": 368,
+                "involuntary_switches": 46,
+                "rss_peak_bytes": 597311488
+              },
+              "target-000-java": {
+                "cpu_seconds": 13.09,
+                "minor_faults": 6876,
+                "major_faults": 128000,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 642211840
+              },
+              "target-000-python": {
+                "cpu_seconds": 9.459999999999999,
+                "minor_faults": 4174,
+                "major_faults": 128000,
+                "voluntary_switches": 999,
+                "involuntary_switches": 55,
+                "rss_peak_bytes": 580517888
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 6.350860001475667,
+                "p95": null,
+                "p99": null,
+                "max": 336.25383199978387
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7549050005764002,
+                "p95": null,
+                "p99": null,
+                "max": 148.03906099950837
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.566659001488006,
+                "p95": null,
+                "p99": null,
+                "max": 335.9708620009769
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 7.4830979992839275,
+                "p95": null,
+                "p99": null,
+                "max": 447.93739700071455
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.9770779997779755,
+                "p95": null,
+                "p99": null,
+                "max": 150.45957300026203
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 6.481532998805051,
+                "p95": null,
+                "p99": null,
+                "max": 446.83894000081636
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 6.383947000358603,
+                "p95": null,
+                "p99": null,
+                "max": 1115.2206389997446
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7287080006790347,
+                "p95": null,
+                "p99": null,
+                "max": 149.5222229987121
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.512223999176058,
+                "p95": null,
+                "p99": null,
+                "max": 1107.5055439996504
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.669517999194795,
+                "p95": null,
+                "p99": null,
+                "max": 260.814062999998
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7590450004499871,
+                "p95": null,
+                "p99": null,
+                "max": 149.99399000043923
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.876192000665469,
+                "p95": null,
+                "p99": null,
+                "max": 160.08603699992818
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.29,
+            "sampled_agent_tree_rss_peak_bytes": 92618752,
+            "neighbor-go.cpu_seconds": 1.0499999999999998,
+            "neighbor-go.minor_faults": 2342,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11755520,
+            "target-000-go.cpu_seconds": 10.18,
+            "target-000-go.minor_faults": 135129,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 368,
+            "target-000-go.involuntary_switches": 46,
+            "target-000-go.rss_peak_bytes": 597311488,
+            "target-000-java.cpu_seconds": 13.09,
+            "target-000-java.minor_faults": 6876,
+            "target-000-java.major_faults": 128000,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 642211840,
+            "target-000-python.cpu_seconds": 9.459999999999999,
+            "target-000-python.minor_faults": 4174,
+            "target-000-python.major_faults": 128000,
+            "target-000-python.voluntary_switches": 999,
+            "target-000-python.involuntary_switches": 55,
+            "target-000-python.rss_peak_bytes": 580517888,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "A",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.3444190006121062,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 191,
+            "errors": 0,
+            "cpu_seconds": 0,
+            "cpu_average_cores": 0.0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "agent_fd_peak": 0,
+            "agent_thread_peak": 0,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.43000000000000005,
+                "minor_faults": 2010,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11927552
+              },
+              "target-000-go": {
+                "cpu_seconds": 1.0299999999999998,
+                "minor_faults": 134855,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 596426752
+              },
+              "target-000-java": {
+                "cpu_seconds": 1.92,
+                "minor_faults": 7864,
+                "major_faults": 128000,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 642371584
+              },
+              "target-000-python": {
+                "cpu_seconds": 1.09,
+                "minor_faults": 3993,
+                "major_faults": 128000,
+                "voluntary_switches": 347,
+                "involuntary_switches": 57,
+                "rss_peak_bytes": 579575808
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.948466001224006,
+                "p95": null,
+                "p99": null,
+                "max": 7.764217001749785
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.4387920016597491,
+                "p95": null,
+                "p99": null,
+                "max": 1.7184530006488785
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.3497609985934105,
+                "p95": null,
+                "p99": null,
+                "max": 7.0302270014508395
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.769289002273581,
+                "p95": null,
+                "p99": null,
+                "max": 13.492463000147836
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8015670009626774,
+                "p95": null,
+                "p99": null,
+                "max": 2.0592790006048745
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.97102700137475,
+                "p95": null,
+                "p99": null,
+                "max": 12.985458999537514
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.63298999966355,
+                "p95": null,
+                "p99": null,
+                "max": 22.29409199935617
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.563597001018934,
+                "p95": null,
+                "p99": null,
+                "max": 2.438283001538366
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.975129000536981,
+                "p95": null,
+                "p99": null,
+                "max": 21.426151999548892
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.184723000638769,
+                "p95": null,
+                "p99": null,
+                "max": 8.180254999388126
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6979459994909121,
+                "p95": null,
+                "p99": null,
+                "max": 2.129423000951647
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.310608999730903,
+                "p95": null,
+                "p99": null,
+                "max": 7.9609189997427166
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "neighbor-go.cpu_seconds": 0.43000000000000005,
+            "neighbor-go.minor_faults": 2010,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11927552,
+            "target-000-go.cpu_seconds": 1.0299999999999998,
+            "target-000-go.minor_faults": 134855,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 0,
+            "target-000-go.involuntary_switches": 0,
+            "target-000-go.rss_peak_bytes": 596426752,
+            "target-000-java.cpu_seconds": 1.92,
+            "target-000-java.minor_faults": 7864,
+            "target-000-java.major_faults": 128000,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 642371584,
+            "target-000-python.cpu_seconds": 1.09,
+            "target-000-python.minor_faults": 3993,
+            "target-000-python.major_faults": 128000,
+            "target-000-python.voluntary_switches": 347,
+            "target-000-python.involuntary_switches": 57,
+            "target-000-python.rss_peak_bytes": 579575808,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "B",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 36.48426399922755,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 182,
+            "errors": 0,
+            "cpu_seconds": 0.05999999999999994,
+            "cpu_average_cores": 0.002999999999999997,
+            "sampled_agent_tree_rss_peak_bytes": 83210240,
+            "agent_fd_peak": 33,
+            "agent_thread_peak": 22,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 1.13,
+                "minor_faults": 2400,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11919360
+              },
+              "target-000-go": {
+                "cpu_seconds": 2.07,
+                "minor_faults": 135285,
+                "major_faults": 0,
+                "voluntary_switches": 642,
+                "involuntary_switches": 76,
+                "rss_peak_bytes": 597282816
+              },
+              "target-000-java": {
+                "cpu_seconds": 2.36,
+                "minor_faults": 6898,
+                "major_faults": 128000,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 640012288
+              },
+              "target-000-python": {
+                "cpu_seconds": 1.11,
+                "minor_faults": 3993,
+                "major_faults": 128000,
+                "voluntary_switches": 332,
+                "involuntary_switches": 42,
+                "rss_peak_bytes": 579567616
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.05465300011565,
+                "p95": null,
+                "p99": null,
+                "max": 575.4193869997835
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.45780300024489406,
+                "p95": null,
+                "p99": null,
+                "max": 21.29103200059035
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.546820000541629,
+                "p95": null,
+                "p99": null,
+                "max": 573.8724090006144
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.937830999755533,
+                "p95": null,
+                "p99": null,
+                "max": 143.89588800077036
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8333670011779759,
+                "p95": null,
+                "p99": null,
+                "max": 34.58895100084192
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.14238300092984,
+                "p95": null,
+                "p99": null,
+                "max": 143.67790799951763
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.921546000332455,
+                "p95": null,
+                "p99": null,
+                "max": 122.5579710007878
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.663591001284658,
+                "p95": null,
+                "p99": null,
+                "max": 38.03837499981455
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.129797000132385,
+                "p95": null,
+                "p99": null,
+                "max": 102.23438600041845
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.025129001296591,
+                "p95": null,
+                "p99": null,
+                "max": 151.4617190005083
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5909870014875196,
+                "p95": null,
+                "p99": null,
+                "max": 36.599011000362225
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.365707000033581,
+                "p95": null,
+                "p99": null,
+                "max": 150.58822599894484
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.05999999999999994,
+            "sampled_agent_tree_rss_peak_bytes": 83210240,
+            "neighbor-go.cpu_seconds": 1.13,
+            "neighbor-go.minor_faults": 2400,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11919360,
+            "target-000-go.cpu_seconds": 2.07,
+            "target-000-go.minor_faults": 135285,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 642,
+            "target-000-go.involuntary_switches": 76,
+            "target-000-go.rss_peak_bytes": 597282816,
+            "target-000-java.cpu_seconds": 2.36,
+            "target-000-java.minor_faults": 6898,
+            "target-000-java.major_faults": 128000,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 640012288,
+            "target-000-python.cpu_seconds": 1.11,
+            "target-000-python.minor_faults": 3993,
+            "target-000-python.major_faults": 128000,
+            "target-000-python.voluntary_switches": 332,
+            "target-000-python.involuntary_switches": 42,
+            "target-000-python.rss_peak_bytes": 579567616,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "P03",
+      "module": "memburst",
+      "experiment": "idle",
+      "pressure_targets": 3,
+      "pressure_mib": 500,
+      "measurement_status": "VALIDATION_PASS",
+      "evidence_audit_status": "PASS",
+      "totals": {
+        "requests": 1380,
+        "resource_samples": 670,
+        "captures": 0
+      },
+      "valid_pair_counts": [
+        {
+          "enabled": "C",
+          "baseline": "B",
+          "pairs": 1
+        },
+        {
+          "enabled": "C",
+          "baseline": "A",
+          "pairs": 1
+        }
+      ],
+      "trials": [
+        {
+          "group": "C",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.39200800165417604,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 188,
+            "errors": 0,
+            "cpu_seconds": 0.030000000000000027,
+            "cpu_average_cores": 0.0015000000000000013,
+            "sampled_agent_tree_rss_peak_bytes": 91549696,
+            "agent_fd_peak": 34,
+            "agent_thread_peak": 21,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.45999999999999996,
+                "minor_faults": 2667,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11780096
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.41000000000000003,
+                "minor_faults": 6690,
+                "major_faults": 0,
+                "voluntary_switches": 289,
+                "involuntary_switches": 29,
+                "rss_peak_bytes": 71024640
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7300000000000001,
+                "minor_faults": 6431,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 117108736
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.32000000000000006,
+                "minor_faults": 3978,
+                "major_faults": 0,
+                "voluntary_switches": 334,
+                "involuntary_switches": 41,
+                "rss_peak_bytes": 55336960
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.814277999685146,
+                "p95": null,
+                "p99": null,
+                "max": 9.63580800089403
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6359590006468352,
+                "p95": null,
+                "p99": null,
+                "max": 2.9084340003464604
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.212047999317292,
+                "p95": null,
+                "p99": null,
+                "max": 9.41121799951361
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.8130659999733325,
+                "p95": null,
+                "p99": null,
+                "max": 10.333704000004218
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6764959998690756,
+                "p95": null,
+                "p99": null,
+                "max": 2.957005999633111
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.00918300167541,
+                "p95": null,
+                "p99": null,
+                "max": 9.661322999818367
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.853958998864982,
+                "p95": null,
+                "p99": null,
+                "max": 7.5230360016576014
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6046010003046831,
+                "p95": null,
+                "p99": null,
+                "max": 1.8693889996939106
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.9962329992704326,
+                "p95": null,
+                "p99": null,
+                "max": 6.547385000885697
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.998502001399174,
+                "p95": null,
+                "p99": null,
+                "max": 9.079441999347182
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5461240016302327,
+                "p95": null,
+                "p99": null,
+                "max": 1.8982250003318768
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.381623000881518,
+                "p95": null,
+                "p99": null,
+                "max": 7.565075000457
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.030000000000000027,
+            "sampled_agent_tree_rss_peak_bytes": 91549696,
+            "neighbor-go.cpu_seconds": 0.45999999999999996,
+            "neighbor-go.minor_faults": 2667,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11780096,
+            "target-000-go.cpu_seconds": 0.41000000000000003,
+            "target-000-go.minor_faults": 6690,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 289,
+            "target-000-go.involuntary_switches": 29,
+            "target-000-go.rss_peak_bytes": 71024640,
+            "target-000-java.cpu_seconds": 0.7300000000000001,
+            "target-000-java.minor_faults": 6431,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 117108736,
+            "target-000-python.cpu_seconds": 0.32000000000000006,
+            "target-000-python.minor_faults": 3978,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 334,
+            "target-000-python.involuntary_switches": 41,
+            "target-000-python.rss_peak_bytes": 55336960,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "A",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.3841959987767041,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 192,
+            "errors": 0,
+            "cpu_seconds": 0,
+            "cpu_average_cores": 0.0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "agent_fd_peak": 0,
+            "agent_thread_peak": 0,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.41000000000000003,
+                "minor_faults": 2771,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11964416
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.38,
+                "minor_faults": 7211,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 73375744
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7200000000000001,
+                "minor_faults": 6242,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 118198272
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.32000000000000006,
+                "minor_faults": 3981,
+                "major_faults": 0,
+                "voluntary_switches": 325,
+                "involuntary_switches": 48,
+                "rss_peak_bytes": 55209984
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.110592999699293,
+                "p95": null,
+                "p99": null,
+                "max": 7.895961000031093
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.735239000277943,
+                "p95": null,
+                "p99": null,
+                "max": 2.123516000210657
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.243987999871024,
+                "p95": null,
+                "p99": null,
+                "max": 6.5378789986425545
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.906795000555576,
+                "p95": null,
+                "p99": null,
+                "max": 13.874299998860806
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7191599997895537,
+                "p95": null,
+                "p99": null,
+                "max": 2.0421369990799576
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.181132999496185,
+                "p95": null,
+                "p99": null,
+                "max": 12.848696998844389
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.982234999260982,
+                "p95": null,
+                "p99": null,
+                "max": 7.59016199845064
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.624168000285863,
+                "p95": null,
+                "p99": null,
+                "max": 1.995180999074364
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.267749998689396,
+                "p95": null,
+                "p99": null,
+                "max": 7.267216000400367
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.285380999339395,
+                "p95": null,
+                "p99": null,
+                "max": 7.077913998728036
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7798329988872865,
+                "p95": null,
+                "p99": null,
+                "max": 1.7403869987901999
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.366503000710509,
+                "p95": null,
+                "p99": null,
+                "max": 6.4114580000023125
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "neighbor-go.cpu_seconds": 0.41000000000000003,
+            "neighbor-go.minor_faults": 2771,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11964416,
+            "target-000-go.cpu_seconds": 0.38,
+            "target-000-go.minor_faults": 7211,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 0,
+            "target-000-go.involuntary_switches": 0,
+            "target-000-go.rss_peak_bytes": 73375744,
+            "target-000-java.cpu_seconds": 0.7200000000000001,
+            "target-000-java.minor_faults": 6242,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 118198272,
+            "target-000-python.cpu_seconds": 0.32000000000000006,
+            "target-000-python.minor_faults": 3981,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 325,
+            "target-000-python.involuntary_switches": 48,
+            "target-000-python.rss_peak_bytes": 55209984,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "B",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.45744800081592984,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 188,
+            "errors": 0,
+            "cpu_seconds": 0.010000000000000009,
+            "cpu_average_cores": 0.0005000000000000004,
+            "sampled_agent_tree_rss_peak_bytes": 93974528,
+            "agent_fd_peak": 33,
+            "agent_thread_peak": 18,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.44000000000000006,
+                "minor_faults": 2349,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11964416
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.39,
+                "minor_faults": 6686,
+                "major_faults": 0,
+                "voluntary_switches": 241,
+                "involuntary_switches": 1,
+                "rss_peak_bytes": 71593984
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7500000000000001,
+                "minor_faults": 6365,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 116559872
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.33000000000000007,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 341,
+                "involuntary_switches": 59,
+                "rss_peak_bytes": 55394304
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.077497000456788,
+                "p95": null,
+                "p99": null,
+                "max": 8.241223000368336
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7280280005943496,
+                "p95": null,
+                "p99": null,
+                "max": 1.63954600066063
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.274648999853525,
+                "p95": null,
+                "p99": null,
+                "max": 7.943795999381109
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 6.027422999977716,
+                "p95": null,
+                "p99": null,
+                "max": 10.812990001795697
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8093550004559802,
+                "p95": null,
+                "p99": null,
+                "max": 1.9464760007394943
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.2964850001444574,
+                "p95": null,
+                "p99": null,
+                "max": 9.999860001698835
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.162559000382316,
+                "p95": null,
+                "p99": null,
+                "max": 7.172962999902666
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6396250009856885,
+                "p95": null,
+                "p99": null,
+                "max": 1.6921980004553916
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.231075999996392,
+                "p95": null,
+                "p99": null,
+                "max": 6.527382000058424
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.965026000718353,
+                "p95": null,
+                "p99": null,
+                "max": 9.33442899986403
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5099980007798877,
+                "p95": null,
+                "p99": null,
+                "max": 1.9678600001498125
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.315366999435355,
+                "p95": null,
+                "p99": null,
+                "max": 8.650928000861313
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.010000000000000009,
+            "sampled_agent_tree_rss_peak_bytes": 93974528,
+            "neighbor-go.cpu_seconds": 0.44000000000000006,
+            "neighbor-go.minor_faults": 2349,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11964416,
+            "target-000-go.cpu_seconds": 0.39,
+            "target-000-go.minor_faults": 6686,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 241,
+            "target-000-go.involuntary_switches": 1,
+            "target-000-go.rss_peak_bytes": 71593984,
+            "target-000-java.cpu_seconds": 0.7500000000000001,
+            "target-000-java.minor_faults": 6365,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 116559872,
+            "target-000-python.cpu_seconds": 0.33000000000000007,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 341,
+            "target-000-python.involuntary_switches": 59,
+            "target-000-python.rss_peak_bytes": 55394304,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "P04",
+      "module": "memburst",
+      "experiment": "pulse",
+      "pressure_targets": 3,
+      "pressure_mib": 500,
+      "measurement_status": "INVALID_OR_FAILED",
+      "evidence_audit_status": "PASS",
+      "totals": {
+        "requests": 1380,
+        "resource_samples": 666,
+        "captures": 3
+      },
+      "valid_pair_counts": [
+        {
+          "enabled": "D",
+          "baseline": "B",
+          "pairs": 0
+        },
+        {
+          "enabled": "D",
+          "baseline": "A",
+          "pairs": 0
+        }
+      ],
+      "trials": [
+        {
+          "group": "D",
+          "valid": false,
+          "errors": [
+            "invalid load or business errors: target-000-go",
+            "invalid load or business errors: target-000-java",
+            "invalid load or business errors: target-000-python",
+            "invalid load or business errors: neighbor-go"
+          ],
+          "max_measured_dispatch_lag_ms": 193.12536699908378,
+          "matching_requested_target_captures": [
+            {
+              "language": "python",
+              "status": "complete",
+              "entries": 10,
+              "duration_ms": 49,
+              "truncated": true,
+              "successful": true
+            },
+            {
+              "language": "go",
+              "status": "complete",
+              "entries": 4,
+              "duration_ms": 12,
+              "truncated": false,
+              "successful": true
+            },
+            {
+              "language": "java",
+              "status": "partial",
+              "entries": 10,
+              "duration_ms": 81,
+              "truncated": true,
+              "successful": true
+            }
+          ],
+          "total_selected_process_records": 3,
+          "resources": {
+            "samples": 185,
+            "errors": 0,
+            "cpu_seconds": 0.22999999999999998,
+            "cpu_average_cores": 0.0115,
+            "sampled_agent_tree_rss_peak_bytes": 97746944,
+            "agent_fd_peak": 34,
+            "agent_thread_peak": 21,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.77,
+                "minor_faults": 2799,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 12247040
+              },
+              "target-000-go": {
+                "cpu_seconds": 1.3800000000000001,
+                "minor_faults": 135187,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 596799488
+              },
+              "target-000-java": {
+                "cpu_seconds": 5.640000000000001,
+                "minor_faults": 7085,
+                "major_faults": 128000,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 643092480
+              },
+              "target-000-python": {
+                "cpu_seconds": 1.48,
+                "minor_faults": 3993,
+                "major_faults": 128000,
+                "voluntary_switches": 346,
+                "involuntary_switches": 58,
+                "rss_peak_bytes": 579534848
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.168449999473523,
+                "p95": null,
+                "p99": null,
+                "max": 225.59289899800206
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5558489992836257,
+                "p95": null,
+                "p99": null,
+                "max": 197.0558009979868
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.595349999362952,
+                "p95": null,
+                "p99": null,
+                "max": 112.34386599971913
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.997740998282097,
+                "p95": null,
+                "p99": null,
+                "max": 398.82742400004645
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8982599993032636,
+                "p95": null,
+                "p99": null,
+                "max": 193.20110799890244
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.139771999893128,
+                "p95": null,
+                "p99": null,
+                "max": 397.80989900100394
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.22634799926891,
+                "p95": null,
+                "p99": null,
+                "max": 200.26021399826277
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.771521998103708,
+                "p95": null,
+                "p99": null,
+                "max": 194.13401799829444
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.316025999287376,
+                "p95": null,
+                "p99": null,
+                "max": 112.4637500015524
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": false,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.151772000317578,
+                "p95": null,
+                "p99": null,
+                "max": 235.80781700002262
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5948630005150335,
+                "p95": null,
+                "p99": null,
+                "max": 193.90525899871136
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.513088999374304,
+                "p95": null,
+                "p99": null,
+                "max": 235.2129539995076
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.22999999999999998,
+            "sampled_agent_tree_rss_peak_bytes": 97746944,
+            "neighbor-go.cpu_seconds": 0.77,
+            "neighbor-go.minor_faults": 2799,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 12247040,
+            "target-000-go.cpu_seconds": 1.3800000000000001,
+            "target-000-go.minor_faults": 135187,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 0,
+            "target-000-go.involuntary_switches": 0,
+            "target-000-go.rss_peak_bytes": 596799488,
+            "target-000-java.cpu_seconds": 5.640000000000001,
+            "target-000-java.minor_faults": 7085,
+            "target-000-java.major_faults": 128000,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 643092480,
+            "target-000-python.cpu_seconds": 1.48,
+            "target-000-python.minor_faults": 3993,
+            "target-000-python.major_faults": 128000,
+            "target-000-python.voluntary_switches": 346,
+            "target-000-python.involuntary_switches": 58,
+            "target-000-python.rss_peak_bytes": 579534848,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "A",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.3012429988302756,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 192,
+            "errors": 0,
+            "cpu_seconds": 0,
+            "cpu_average_cores": 0.0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "agent_fd_peak": 0,
+            "agent_thread_peak": 0,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.44999999999999996,
+                "minor_faults": 2811,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11931648
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.84,
+                "minor_faults": 134656,
+                "major_faults": 0,
+                "voluntary_switches": 454,
+                "involuntary_switches": 45,
+                "rss_peak_bytes": 595181568
+              },
+              "target-000-java": {
+                "cpu_seconds": 1.69,
+                "minor_faults": 6379,
+                "major_faults": 128000,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 639688704
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.8400000000000001,
+                "minor_faults": 3993,
+                "major_faults": 128000,
+                "voluntary_switches": 344,
+                "involuntary_switches": 58,
+                "rss_peak_bytes": 579821568
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.867465999268461,
+                "p95": null,
+                "p99": null,
+                "max": 7.734713999525411
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5975009989924729,
+                "p95": null,
+                "p99": null,
+                "max": 1.6580279989284463
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.332034999606549,
+                "p95": null,
+                "p99": null,
+                "max": 6.931979000000865
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.815580998387304,
+                "p95": null,
+                "p99": null,
+                "max": 10.112544998264639
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.701627999660559,
+                "p95": null,
+                "p99": null,
+                "max": 1.6212139998970088
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.180129999644123,
+                "p95": null,
+                "p99": null,
+                "max": 9.234597999238758
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.392353999719489,
+                "p95": null,
+                "p99": null,
+                "max": 10.638724997988902
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.45488899922929704,
+                "p95": null,
+                "p99": null,
+                "max": 2.066505998300272
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.745681999134831,
+                "p95": null,
+                "p99": null,
+                "max": 10.314047998690512
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.808596999282599,
+                "p95": null,
+                "p99": null,
+                "max": 8.095343999229954
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5922689979342977,
+                "p95": null,
+                "p99": null,
+                "max": 2.068969999527326
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.270965999239706,
+                "p95": null,
+                "p99": null,
+                "max": 7.553477000328712
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "neighbor-go.cpu_seconds": 0.44999999999999996,
+            "neighbor-go.minor_faults": 2811,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11931648,
+            "target-000-go.cpu_seconds": 0.84,
+            "target-000-go.minor_faults": 134656,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 454,
+            "target-000-go.involuntary_switches": 45,
+            "target-000-go.rss_peak_bytes": 595181568,
+            "target-000-java.cpu_seconds": 1.69,
+            "target-000-java.minor_faults": 6379,
+            "target-000-java.major_faults": 128000,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 639688704,
+            "target-000-python.cpu_seconds": 0.8400000000000001,
+            "target-000-python.minor_faults": 3993,
+            "target-000-python.major_faults": 128000,
+            "target-000-python.voluntary_switches": 344,
+            "target-000-python.involuntary_switches": 58,
+            "target-000-python.rss_peak_bytes": 579821568,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "B",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.4802250005013775,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 187,
+            "errors": 0,
+            "cpu_seconds": 0.020000000000000018,
+            "cpu_average_cores": 0.0010000000000000009,
+            "sampled_agent_tree_rss_peak_bytes": 92524544,
+            "agent_fd_peak": 33,
+            "agent_thread_peak": 21,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.42000000000000004,
+                "minor_faults": 2782,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 12247040
+              },
+              "target-000-go": {
+                "cpu_seconds": 1.1,
+                "minor_faults": 134667,
+                "major_faults": 0,
+                "voluntary_switches": 713,
+                "involuntary_switches": 59,
+                "rss_peak_bytes": 595861504
+              },
+              "target-000-java": {
+                "cpu_seconds": 1.8699999999999997,
+                "minor_faults": 6680,
+                "major_faults": 128000,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 641728512
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.99,
+                "minor_faults": 3992,
+                "major_faults": 128000,
+                "voluntary_switches": 365,
+                "involuntary_switches": 65,
+                "rss_peak_bytes": 579731456
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.132881000463385,
+                "p95": null,
+                "p99": null,
+                "max": 175.69817999901716
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.48645400056557264,
+                "p95": null,
+                "p99": null,
+                "max": 3.6885209992760792
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.543885001112358,
+                "p95": null,
+                "p99": null,
+                "max": 175.2394169998297
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 6.0080400016886415,
+                "p95": null,
+                "p99": null,
+                "max": 138.75476000066556
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8819700015010312,
+                "p95": null,
+                "p99": null,
+                "max": 2.6856370004679775
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.211423000218929,
+                "p95": null,
+                "p99": null,
+                "max": 137.65834699916013
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.884396001216373,
+                "p95": null,
+                "p99": null,
+                "max": 138.15274100124952
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6304639991867589,
+                "p95": null,
+                "p99": null,
+                "max": 3.0446590008068597
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.0228870002465555,
+                "p95": null,
+                "p99": null,
+                "max": 137.62855599998147
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.169019001186825,
+                "p95": null,
+                "p99": null,
+                "max": 8.309341999847675
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.691372999426676,
+                "p95": null,
+                "p99": null,
+                "max": 1.6405250007665018
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.350944998805062,
+                "p95": null,
+                "p99": null,
+                "max": 8.024814000236802
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.020000000000000018,
+            "sampled_agent_tree_rss_peak_bytes": 92524544,
+            "neighbor-go.cpu_seconds": 0.42000000000000004,
+            "neighbor-go.minor_faults": 2782,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 12247040,
+            "target-000-go.cpu_seconds": 1.1,
+            "target-000-go.minor_faults": 134667,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 713,
+            "target-000-go.involuntary_switches": 59,
+            "target-000-go.rss_peak_bytes": 595861504,
+            "target-000-java.cpu_seconds": 1.8699999999999997,
+            "target-000-java.minor_faults": 6680,
+            "target-000-java.major_faults": 128000,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 641728512,
+            "target-000-python.cpu_seconds": 0.99,
+            "target-000-python.minor_faults": 3992,
+            "target-000-python.major_faults": 128000,
+            "target-000-python.voluntary_switches": 365,
+            "target-000-python.involuntary_switches": 65,
+            "target-000-python.rss_peak_bytes": 579731456,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "P05",
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "pressure_targets": 1,
+      "pressure_mib": 500,
+      "measurement_status": "VALIDATION_PASS",
+      "evidence_audit_status": "PASS",
+      "totals": {
+        "requests": 1380,
+        "resource_samples": 670,
+        "captures": 1
+      },
+      "valid_pair_counts": [
+        {
+          "enabled": "D",
+          "baseline": "B",
+          "pairs": 1
+        },
+        {
+          "enabled": "D",
+          "baseline": "A",
+          "pairs": 1
+        }
+      ],
+      "trials": [
+        {
+          "group": "D",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.3488530001050094,
+          "matching_requested_target_captures": [
+            {
+              "language": "go",
+              "status": "complete",
+              "entries": 3,
+              "duration_ms": 7,
+              "truncated": false,
+              "successful": true
+            }
+          ],
+          "total_selected_process_records": 1,
+          "resources": {
+            "samples": 188,
+            "errors": 0,
+            "cpu_seconds": 0.030000000000000027,
+            "cpu_average_cores": 0.0015000000000000013,
+            "sampled_agent_tree_rss_peak_bytes": 95322112,
+            "agent_fd_peak": 40,
+            "agent_thread_peak": 22,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.44000000000000006,
+                "minor_faults": 2664,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11898880
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.75,
+                "minor_faults": 134626,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 595230720
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7300000000000001,
+                "minor_faults": 6615,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 118951936
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.31000000000000005,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 333,
+                "involuntary_switches": 40,
+                "rss_peak_bytes": 55312384
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.810452999663539,
+                "p95": null,
+                "p99": null,
+                "max": 7.655651001186925
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6269339992286405,
+                "p95": null,
+                "p99": null,
+                "max": 1.7387099996994948
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.211827001199708,
+                "p95": null,
+                "p99": null,
+                "max": 7.256136999785667
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.783884000265971,
+                "p95": null,
+                "p99": null,
+                "max": 10.758726000858587
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7772690005367622,
+                "p95": null,
+                "p99": null,
+                "max": 2.855665999959456
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.892965000180993,
+                "p95": null,
+                "p99": null,
+                "max": 10.065532000226085
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.6486930004903115,
+                "p95": null,
+                "p99": null,
+                "max": 9.76117299978796
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5718650008930126,
+                "p95": null,
+                "p99": null,
+                "max": 3.744218998690485
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.9769779996277066,
+                "p95": null,
+                "p99": null,
+                "max": 8.73763500021596
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.731490000267513,
+                "p95": null,
+                "p99": null,
+                "max": 10.17873799901281
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5092450010124594,
+                "p95": null,
+                "p99": null,
+                "max": 3.8734000008844305
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.1530099988449365,
+                "p95": null,
+                "p99": null,
+                "max": 9.747018999405554
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.030000000000000027,
+            "sampled_agent_tree_rss_peak_bytes": 95322112,
+            "neighbor-go.cpu_seconds": 0.44000000000000006,
+            "neighbor-go.minor_faults": 2664,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11898880,
+            "target-000-go.cpu_seconds": 0.75,
+            "target-000-go.minor_faults": 134626,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 0,
+            "target-000-go.involuntary_switches": 0,
+            "target-000-go.rss_peak_bytes": 595230720,
+            "target-000-java.cpu_seconds": 0.7300000000000001,
+            "target-000-java.minor_faults": 6615,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 118951936,
+            "target-000-python.cpu_seconds": 0.31000000000000005,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 333,
+            "target-000-python.involuntary_switches": 40,
+            "target-000-python.rss_peak_bytes": 55312384,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "A",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.3792429997702129,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 192,
+            "errors": 0,
+            "cpu_seconds": 0,
+            "cpu_average_cores": 0.0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "agent_fd_peak": 0,
+            "agent_thread_peak": 0,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.43000000000000005,
+                "minor_faults": 3930,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11960320
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.78,
+                "minor_faults": 134910,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 596418560
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7400000000000001,
+                "minor_faults": 6392,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 116826112
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.31000000000000005,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 341,
+                "involuntary_switches": 44,
+                "rss_peak_bytes": 55308288
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.051658999946085,
+                "p95": null,
+                "p99": null,
+                "max": 8.3225609978399
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5689639983756933,
+                "p95": null,
+                "p99": null,
+                "max": 1.9264809980086284
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.238223000356811,
+                "p95": null,
+                "p99": null,
+                "max": 6.839349000074435
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.981551998047507,
+                "p95": null,
+                "p99": null,
+                "max": 11.473114998807432
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.8690799986652564,
+                "p95": null,
+                "p99": null,
+                "max": 1.9601469994086074
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.07517899859522,
+                "p95": null,
+                "p99": null,
+                "max": 10.037232999820844
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.771751999214757,
+                "p95": null,
+                "p99": null,
+                "max": 6.9472449977183715
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6584479997400194,
+                "p95": null,
+                "p99": null,
+                "max": 1.7511389996798243
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.045964999022544,
+                "p95": null,
+                "p99": null,
+                "max": 6.352350999804912
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.99894799941103,
+                "p95": null,
+                "p99": null,
+                "max": 7.38874199851125
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6812679985159775,
+                "p95": null,
+                "p99": null,
+                "max": 1.7787279994081473
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.1751600001589395,
+                "p95": null,
+                "p99": null,
+                "max": 6.845767999038799
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "neighbor-go.cpu_seconds": 0.43000000000000005,
+            "neighbor-go.minor_faults": 3930,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11960320,
+            "target-000-go.cpu_seconds": 0.78,
+            "target-000-go.minor_faults": 134910,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 0,
+            "target-000-go.involuntary_switches": 0,
+            "target-000-go.rss_peak_bytes": 596418560,
+            "target-000-java.cpu_seconds": 0.7400000000000001,
+            "target-000-java.minor_faults": 6392,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 116826112,
+            "target-000-python.cpu_seconds": 0.31000000000000005,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 341,
+            "target-000-python.involuntary_switches": 44,
+            "target-000-python.rss_peak_bytes": 55308288,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "B",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.4281609999452485,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 188,
+            "errors": 0,
+            "cpu_seconds": 0.020000000000000018,
+            "cpu_average_cores": 0.0010000000000000009,
+            "sampled_agent_tree_rss_peak_bytes": 92696576,
+            "agent_fd_peak": 33,
+            "agent_thread_peak": 21,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.44999999999999996,
+                "minor_faults": 2402,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11927552
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.78,
+                "minor_faults": 135083,
+                "major_faults": 0,
+                "voluntary_switches": 412,
+                "involuntary_switches": 21,
+                "rss_peak_bytes": 597524480
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7500000000000001,
+                "minor_faults": 5713,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 115998720
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.32000000000000006,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 338,
+                "involuntary_switches": 67,
+                "rss_peak_bytes": 55246848
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.076069999631727,
+                "p95": null,
+                "p99": null,
+                "max": 9.214419000272756
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5532349987333873,
+                "p95": null,
+                "p99": null,
+                "max": 3.5976100007246714
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.323574999943958,
+                "p95": null,
+                "p99": null,
+                "max": 7.200775000455906
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 6.24653699924238,
+                "p95": null,
+                "p99": null,
+                "max": 11.728311998012941
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7979149995662738,
+                "p95": null,
+                "p99": null,
+                "max": 1.516426000307547
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.489338000188582,
+                "p95": null,
+                "p99": null,
+                "max": 10.45906599938462
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.85535099869594,
+                "p95": null,
+                "p99": null,
+                "max": 7.568506998723024
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6084459982957924,
+                "p95": null,
+                "p99": null,
+                "max": 1.9410969980526716
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.125522000322235,
+                "p95": null,
+                "p99": null,
+                "max": 6.622875998800737
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.076206998637645,
+                "p95": null,
+                "p99": null,
+                "max": 8.394706997933099
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6744189995515626,
+                "p95": null,
+                "p99": null,
+                "max": 1.6571969990764046
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.333892000431661,
+                "p95": null,
+                "p99": null,
+                "max": 7.465590999345295
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.020000000000000018,
+            "sampled_agent_tree_rss_peak_bytes": 92696576,
+            "neighbor-go.cpu_seconds": 0.44999999999999996,
+            "neighbor-go.minor_faults": 2402,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11927552,
+            "target-000-go.cpu_seconds": 0.78,
+            "target-000-go.minor_faults": 135083,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 412,
+            "target-000-go.involuntary_switches": 21,
+            "target-000-go.rss_peak_bytes": 597524480,
+            "target-000-java.cpu_seconds": 0.7500000000000001,
+            "target-000-java.minor_faults": 5713,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 115998720,
+            "target-000-python.cpu_seconds": 0.32000000000000006,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 338,
+            "target-000-python.involuntary_switches": 67,
+            "target-000-python.rss_peak_bytes": 55246848,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "P06",
+      "module": "memburst",
+      "experiment": "pulse",
+      "pressure_targets": 1,
+      "pressure_mib": 500,
+      "measurement_status": "VALIDATION_PASS",
+      "evidence_audit_status": "PASS",
+      "totals": {
+        "requests": 1380,
+        "resource_samples": 672,
+        "captures": 1
+      },
+      "valid_pair_counts": [
+        {
+          "enabled": "D",
+          "baseline": "B",
+          "pairs": 1
+        },
+        {
+          "enabled": "D",
+          "baseline": "A",
+          "pairs": 1
+        }
+      ],
+      "trials": [
+        {
+          "group": "D",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.40002400055527687,
+          "matching_requested_target_captures": [
+            {
+              "language": "go",
+              "status": "complete",
+              "entries": 4,
+              "duration_ms": 6,
+              "truncated": false,
+              "successful": true
+            }
+          ],
+          "total_selected_process_records": 3,
+          "resources": {
+            "samples": 189,
+            "errors": 0,
+            "cpu_seconds": 0.12,
+            "cpu_average_cores": 0.006,
+            "sampled_agent_tree_rss_peak_bytes": 96591872,
+            "agent_fd_peak": 34,
+            "agent_thread_peak": 19,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.44999999999999996,
+                "minor_faults": 2556,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 12173312
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.75,
+                "minor_faults": 134823,
+                "major_faults": 0,
+                "voluntary_switches": 449,
+                "involuntary_switches": 29,
+                "rss_peak_bytes": 595841024
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7500000000000001,
+                "minor_faults": 6306,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 117616640
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.30000000000000004,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 331,
+                "involuntary_switches": 46,
+                "rss_peak_bytes": 55373824
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.851841000345303,
+                "p95": null,
+                "p99": null,
+                "max": 8.108280999294948
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6926570003997767,
+                "p95": null,
+                "p99": null,
+                "max": 2.516463999199914
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.205078999802936,
+                "p95": null,
+                "p99": null,
+                "max": 7.586627998534823
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.900100000872044,
+                "p95": null,
+                "p99": null,
+                "max": 10.573132001809427
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6244810010684887,
+                "p95": null,
+                "p99": null,
+                "max": 2.4678480003785808
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.188750999877811,
+                "p95": null,
+                "p99": null,
+                "max": 10.06805799988797
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.861172001255909,
+                "p95": null,
+                "p99": null,
+                "max": 8.35591700160876
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6869019998703152,
+                "p95": null,
+                "p99": null,
+                "max": 4.825746000278741
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.9782490002835402,
+                "p95": null,
+                "p99": null,
+                "max": 6.651341998804128
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.858890000832616,
+                "p95": null,
+                "p99": null,
+                "max": 8.725467001568177
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5587400009972043,
+                "p95": null,
+                "p99": null,
+                "max": 1.945478999914485
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.240856998876552,
+                "p95": null,
+                "p99": null,
+                "max": 7.488044000638183
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.12,
+            "sampled_agent_tree_rss_peak_bytes": 96591872,
+            "neighbor-go.cpu_seconds": 0.44999999999999996,
+            "neighbor-go.minor_faults": 2556,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 12173312,
+            "target-000-go.cpu_seconds": 0.75,
+            "target-000-go.minor_faults": 134823,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 449,
+            "target-000-go.involuntary_switches": 29,
+            "target-000-go.rss_peak_bytes": 595841024,
+            "target-000-java.cpu_seconds": 0.7500000000000001,
+            "target-000-java.minor_faults": 6306,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 117616640,
+            "target-000-python.cpu_seconds": 0.30000000000000004,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 331,
+            "target-000-python.involuntary_switches": 46,
+            "target-000-python.rss_peak_bytes": 55373824,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "A",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.24375199973292183,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 192,
+            "errors": 0,
+            "cpu_seconds": 0,
+            "cpu_average_cores": 0.0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "agent_fd_peak": 0,
+            "agent_thread_peak": 0,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.44999999999999996,
+                "minor_faults": 2613,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11567104
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.77,
+                "minor_faults": 134675,
+                "major_faults": 0,
+                "voluntary_switches": 660,
+                "involuntary_switches": 19,
+                "rss_peak_bytes": 595472384
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7300000000000001,
+                "minor_faults": 5756,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 116043776
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.29000000000000004,
+                "minor_faults": 3981,
+                "major_faults": 0,
+                "voluntary_switches": 335,
+                "involuntary_switches": 26,
+                "rss_peak_bytes": 55377920
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.78904000010516,
+                "p95": null,
+                "p99": null,
+                "max": 7.56517499939946
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.4717370011348976,
+                "p95": null,
+                "p99": null,
+                "max": 1.4741270006197738
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.072022000400466,
+                "p95": null,
+                "p99": null,
+                "max": 7.277111000803416
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.705511999622104,
+                "p95": null,
+                "p99": null,
+                "max": 10.668743998394348
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7284980001713848,
+                "p95": null,
+                "p99": null,
+                "max": 2.0642849995056167
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 5.023712999900454,
+                "p95": null,
+                "p99": null,
+                "max": 10.044853999715997
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.521942000792478,
+                "p95": null,
+                "p99": null,
+                "max": 7.500290999814752
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5806270000903169,
+                "p95": null,
+                "p99": null,
+                "max": 1.3577989993791562
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.858108999338583,
+                "p95": null,
+                "p99": null,
+                "max": 6.653540000115754
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.160222999620601,
+                "p95": null,
+                "p99": null,
+                "max": 7.8909149997343775
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.7304859991563717,
+                "p95": null,
+                "p99": null,
+                "max": 1.8804800001817057
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.3092619998787995,
+                "p95": null,
+                "p99": null,
+                "max": 7.616130998940207
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0,
+            "sampled_agent_tree_rss_peak_bytes": 0,
+            "neighbor-go.cpu_seconds": 0.44999999999999996,
+            "neighbor-go.minor_faults": 2613,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11567104,
+            "target-000-go.cpu_seconds": 0.77,
+            "target-000-go.minor_faults": 134675,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 660,
+            "target-000-go.involuntary_switches": 19,
+            "target-000-go.rss_peak_bytes": 595472384,
+            "target-000-java.cpu_seconds": 0.7300000000000001,
+            "target-000-java.minor_faults": 5756,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 116043776,
+            "target-000-python.cpu_seconds": 0.29000000000000004,
+            "target-000-python.minor_faults": 3981,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 335,
+            "target-000-python.involuntary_switches": 26,
+            "target-000-python.rss_peak_bytes": 55377920,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        },
+        {
+          "group": "B",
+          "valid": true,
+          "errors": [],
+          "max_measured_dispatch_lag_ms": 0.3932759991585044,
+          "matching_requested_target_captures": [],
+          "total_selected_process_records": 0,
+          "resources": {
+            "samples": 189,
+            "errors": 0,
+            "cpu_seconds": 0.010000000000000009,
+            "cpu_average_cores": 0.0005000000000000004,
+            "sampled_agent_tree_rss_peak_bytes": 94191616,
+            "agent_fd_peak": 33,
+            "agent_thread_peak": 21,
+            "cpu_accounting": "sampled delta; excludes child work outside observation",
+            "business": {
+              "neighbor-go": {
+                "cpu_seconds": 0.43000000000000005,
+                "minor_faults": 2457,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 11612160
+              },
+              "target-000-go": {
+                "cpu_seconds": 0.74,
+                "minor_faults": 134838,
+                "major_faults": 0,
+                "voluntary_switches": 368,
+                "involuntary_switches": 29,
+                "rss_peak_bytes": 596074496
+              },
+              "target-000-java": {
+                "cpu_seconds": 0.7400000000000001,
+                "minor_faults": 6266,
+                "major_faults": 0,
+                "voluntary_switches": 0,
+                "involuntary_switches": 0,
+                "rss_peak_bytes": 117055488
+              },
+              "target-000-python": {
+                "cpu_seconds": 0.31000000000000005,
+                "minor_faults": 3980,
+                "major_faults": 0,
+                "voluntary_switches": 334,
+                "involuntary_switches": 59,
+                "rss_peak_bytes": 55640064
+              }
+            }
+          },
+          "load": {
+            "target-000-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.852121999647352,
+                "p95": null,
+                "p99": null,
+                "max": 8.221392999985255
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.5173330009711208,
+                "p95": null,
+                "p99": null,
+                "max": 4.1094829994108295
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.183633000138798,
+                "p95": null,
+                "p99": null,
+                "max": 7.456526000169106
+              },
+              "error_reasons": []
+            },
+            "target-000-java": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 5.856585999936215,
+                "p95": null,
+                "p99": null,
+                "max": 10.548227999606752
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6662059986410895,
+                "p95": null,
+                "p99": null,
+                "max": 2.1687909993488574
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.971343998477096,
+                "p95": null,
+                "p99": null,
+                "max": 9.901732999423984
+              },
+              "error_reasons": []
+            },
+            "target-000-python": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.757732000143733,
+                "p95": null,
+                "p99": null,
+                "max": 6.792592999772751
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6911090003995923,
+                "p95": null,
+                "p99": null,
+                "max": 2.523019000364002
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 3.9892679997137748,
+                "p95": null,
+                "p99": null,
+                "max": 5.681259999619215
+              },
+              "error_reasons": []
+            },
+            "neighbor-go": {
+              "scheduled": 100,
+              "recorded": 100,
+              "missing": 0,
+              "sent": 100,
+              "success": 100,
+              "errors": 0,
+              "success_rps": 5.0,
+              "valid_load": true,
+              "latency_ms": {
+                "n": 100,
+                "p50": 4.96903699968243,
+                "p95": null,
+                "p99": null,
+                "max": 8.216932999857818
+              },
+              "send_delay_ms": {
+                "n": 100,
+                "p50": 0.6031840002833633,
+                "p95": null,
+                "p99": null,
+                "max": 1.885849998870981
+              },
+              "service_ms": {
+                "n": 100,
+                "p50": 4.327275999457925,
+                "p95": null,
+                "p99": null,
+                "max": 7.418028000756749
+              },
+              "error_reasons": []
+            }
+          },
+          "metrics": {
+            "cpu_seconds": 0.010000000000000009,
+            "sampled_agent_tree_rss_peak_bytes": 94191616,
+            "neighbor-go.cpu_seconds": 0.43000000000000005,
+            "neighbor-go.minor_faults": 2457,
+            "neighbor-go.major_faults": 0,
+            "neighbor-go.voluntary_switches": 0,
+            "neighbor-go.involuntary_switches": 0,
+            "neighbor-go.rss_peak_bytes": 11612160,
+            "target-000-go.cpu_seconds": 0.74,
+            "target-000-go.minor_faults": 134838,
+            "target-000-go.major_faults": 0,
+            "target-000-go.voluntary_switches": 368,
+            "target-000-go.involuntary_switches": 29,
+            "target-000-go.rss_peak_bytes": 596074496,
+            "target-000-java.cpu_seconds": 0.7400000000000001,
+            "target-000-java.minor_faults": 6266,
+            "target-000-java.major_faults": 0,
+            "target-000-java.voluntary_switches": 0,
+            "target-000-java.involuntary_switches": 0,
+            "target-000-java.rss_peak_bytes": 117055488,
+            "target-000-python.cpu_seconds": 0.31000000000000005,
+            "target-000-python.minor_faults": 3980,
+            "target-000-python.major_faults": 0,
+            "target-000-python.voluntary_switches": 334,
+            "target-000-python.involuntary_switches": 59,
+            "target-000-python.rss_peak_bytes": 55640064,
+            "target-000-go.rps": 5.0,
+            "target-000-go.p99_ms": null,
+            "target-000-java.rps": 5.0,
+            "target-000-java.p99_ms": null,
+            "target-000-python.rps": 5.0,
+            "target-000-python.p99_ms": null,
+            "neighbor-go.rps": 5.0,
+            "neighbor-go.p99_ms": null
+          }
+        }
+      ]
+    }
+  ],
+  "environment": {
+    "kernel": "5.10.0-cache-ext-vm-nokmem-8780cdccc1e2",
+    "machine": "x86_64",
+    "cgroup": "v1",
+    "cpu_count": 16,
+    "load_generator": "co-located stdlib fixed-arrival",
+    "java": "openjdk version \"17.0.19\" 2026-04-21\nOpenJDK Runtime Environment (build 17.0.19+10-1-24.04.2-Ubuntu)\nOpenJDK 64-Bit Server VM (build 17.0.19+10-1-24.04.2-Ubuntu, mixed mode, sharing)\n",
+    "python": "Python 3.12.3\n",
+    "binaries": {
+      "agent": "5b4fd01e1a72d8dcdeb268e11e68c7e0a94e662f608baa5f068f2b54823a2807",
+      "business-go": "73a3bf8e0bbb8da8337e119bd200892d0891cbc60268604dd426fca76a6ad03f"
+    },
+    "bpf": {
+      "iocost_tracing.o": "7582aa7902f2b0048da9df20863a3eebcdd7c86b7f6019058fd27df383ac3b5e",
+      "memory_free_compact.o": "64c1505b51cb8399fc900f852ff39ab85aa9cd28aa63bc9c755bd5c08149ff4d",
+      "netdev_txqueue_timeout.o": "a94e4462ec7faa1d8190c0947c860283ace186e4a8d9a8ad8d2f220254d104bc",
+      "system_softlockup.o": "5fa053b68965bc992c517a27568cfbcaf2fa8ada39630f7401fa29d5c6158192",
+      "system_ras.o": "5a361d226689858fe1ab505668ef18fe69399ca5128fd14d426aa88b260c7722",
+      "sched_blame.o": "0e5b6b21b6111b45802c909624426b46b383979a87bd11204c0a5b4e6b4c6769",
+      "net_rx_latency.o": "7927d88056bed6b4d8ca1ba0dbf4deb80e72b55319031fb31586f2f90f14eba2",
+      "iolatency_tracing.o": "9780124a2aa3d3c8554de0dd182b16bbc4c09a58875412ca544ae4ca3567c795",
+      "tcp_retransmit.o": "c17f6a607c58d024f5836724fe55418cf9c1581070e802ed76496119c86927fe",
+      "io_health.o": "ee5fc5353c1eaf24701bee866bec6c97e289d36b314860dd01c57c3062e965f9",
+      "net_dropwatch.o": "6f37e16ddb525596d25358f2cfdcf8acdbff98792fa7534acde77d53d4f460ef",
+      "native_oncpu_profiler.o": "d5a54be56ec695511a1e4eaddcd80921049e2a0a1d7fbd6517f3077f0072cf70",
+      "cgroup_css_sync.o": "5240a26d59babc401e5df11d174231ddb8aa09a521f0b9285e12d0fc36c3b680",
+      "cpu_runqlat_tracing.o": "b8948dd7f775ad6e57cce4ecb8a9e7df11591c6bd3c07360b6540dd84ae790ef",
+      "netdev_hw.o": "00ab47f7e176cf78dcc21dcd27fd8a69ce0ab03f9f29aeab20acc248e258cc4b",
+      "iolatency_probe.o": "8244175bc81d0c3696eaf3c08a146fac9b9c4212c0f93aeacae728710b6790c6",
+      "memory_reclaim_events.o": "a1c131a9eaba74c2f9327783abe0cb6be957312d6477c7bc5b28899087c482dd",
+      "memory_reclaim.o": "3af6f73aa52008e007776a71614bbdb7980bfcb5bcce31faf77820398d706fdf",
+      "native_virtual_alloc.o": "4db2580965d04aff0499eb579b82f9877d5faaa580b58a1a256f0399d66f5d78",
+      "memory_oom_kill.o": "015f931ee2d2bbe84751ec9b6777dbd30ce86c2918c64a91fb504558a084ca4f",
+      "sched_tick.o": "32d2f23ec572ff74abdf080fadac82fc674711f55bfeb9e994568682624036d8",
+      "system_softirq.o": "9bbd4f71b1b321d6708152c211d589527af15f155eb35e81b36dfb7ef0caa5c9",
+      "cgroup_css_events.o": "74b9e96da2d4b5fa9b57d451974447c37ee95edc72999010eaae3933a1d9b201",
+      "native_physical_usage.o": "7a85eb612bb0180e9b61baf571d3cd6ee572cb5ee8451e2e659743055e2b2d46",
+      "native_offcpu_profiler.o": "b809f5554a186f5e62bccaca4c0129e38c5e0c32cb7873485544e04b9456f1a3",
+      "native_physical_alloc.o": "4ef2480602e9e9ab3cd6241594e0e3af95e42a4e4d472885d73c080877d79969",
+      "irqtracing.o": "7db27f0b9933e6e529a0804dd5ecbeba31cf2c256cbba97028cfaa36fa5db85f",
+      "iotracing.o": "b7c39fe09a5bc13cf00adcb103d1994259bd07859fec0b17ef79378b9194dead",
+      "netdev_bonding_lacp.o": "1e2d4f9ede0308a053131284bc632679bb4c957419d601e9c537b66ce84f3f3d",
+      "system_hungtask.o": "e525f114e4560ed8aa2d13edf52548b83d7e696162feb95e3649ad3463cb8ce7",
+      "blk_throtl_tracing.o": "bb780f6ee471a08eb295b3da13b25ca50ac326077a3f45c6529de08092a1ea08",
+      "perf.o": "92a69baa4e2a3688e06bc7cf2fcb425b0893227a704c7205195ef0159380428f"
+    }
+  },
+  "totals": {
+    "requests": 8280,
+    "resource_samples": 4000,
+    "captures": 6
+  },
+  "valid_campaigns": 4,
+  "invalid_campaigns": 2
+}
