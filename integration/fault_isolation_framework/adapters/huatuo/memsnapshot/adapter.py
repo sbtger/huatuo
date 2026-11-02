@@ -1,5 +1,5 @@
 # Copyright 2026 The HuaTuo Authors. Licensed under the Apache License, Version 2.0.
-import hashlib, json, os, sys
+import hashlib, json, os, sys, time
 from pathlib import Path
 from ....core.models import OperationResult, Scenario
 from ....core.util import require, run, wait_for
@@ -12,6 +12,7 @@ from ..discovery import Discovery
 from .trigger import SnapshotTrigger
 from .faults import FaultScenarios
 from .policy import audit_artifacts
+from .worker import publish_worker
 
 TRACER = "memory_threshold_snapshot"
 BLACKLIST = """arp ascend_npu cpu_stat cpu_util cpuidle cpusys diskio dload dropwatch hungtask irqtracing iolatency iotracing loadavg memburst memory_buddyinfo memory_events memory_free memory_others memory_reclaim memory_reclaim_events memory_vmstat metax_gpu mthreads_gpu mountpoint_perm net_rx_latency netdev netdev_bonding_lacp netdev_dcb netdev_events netdev_hw netdev_qdisc netdev_rdma_link netdev_txqueue_timeout netstat memory_oom_kill ras runqlat sched_tick sockstat softirq softlockup tcp_memory tcp_retransmit""".split()
@@ -137,6 +138,8 @@ class MemsnapshotAdapter:
                 ]
             if detail.get("event_file"):
                 artifacts.append(str(Path(detail["event_file"]).relative_to(self.out)))
+            if detail.get("worker_witness"):
+                artifacts.append(detail["worker_witness"])
             return OperationResult(detail=detail, fault_hits=hits, evidence=artifacts)
 
         return Scenario(phase, target["language"], execute, expect_fault=expected)
@@ -188,6 +191,7 @@ class MemsnapshotAdapter:
         logfile = self.out / ("agent-%d.log" % self.number)
         self.evidence.register(logfile.name, "agent_log")
         self.logpath = logfile
+        worker_metadata = publish_worker(self, plain)
         binary = self.build / ("agent" if plain else "agent-fault")
         cmd = agent_command(binary, conf, self.out, self.a.bpf_dir, debug=getattr(self.a, "log_debug", True))
         if permission:
@@ -204,6 +208,7 @@ class MemsnapshotAdapter:
                 dict(
                     pid=self.agent.pid,
                     binary=binary.name,
+                    worker=worker_metadata,
                     sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                     command=cmd,
                 ),
@@ -256,7 +261,7 @@ class MemsnapshotAdapter:
 
     def setfault(self, t, action):
         tmp = self.faultfile.with_suffix(".tmp")
-        tmp.write_text(json.dumps(dict(pid=t["pid"], action=action, id=self.case_name)))
+        tmp.write_text(json.dumps(dict(pid=t["pid"], action=action, id=self.case_name, requested_epoch=time.time())))
         tmp.replace(self.faultfile)
 
     def clearfault(self):

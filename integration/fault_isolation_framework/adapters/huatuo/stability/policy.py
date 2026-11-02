@@ -9,6 +9,7 @@ from ....core.stability import coverage_errors, resource_errors
 from .reliability import audit_check, selected_check_errors
 from ..memsnapshot.trigger import event_after_request
 from ..memsnapshot.assertions import validate_fault
+from ..memsnapshot.worker import capture_metadata_errors, worker_contract_errors, audit_worker_capture
 from ..memsnapshot.log_policy import unexpected_logs
 
 
@@ -86,9 +87,7 @@ def audit_artifacts(output, summary, manifest):
     errors, rejected, allowed = [], {}, {}
     campaign = json.loads((output / "campaign.json").read_text())
     environment = json.loads((output / "environment.json").read_text())
-    errors += selected_check_errors(
-        environment.get("command_line", []), summary["cases"]
-    )
+    errors += selected_check_errors(environment.get("command_line", []), summary["cases"])
     cycles = [
         json.loads(line) for line in (output / "cycles.jsonl").read_text().splitlines()
     ]
@@ -223,7 +222,11 @@ def audit_artifacts(output, summary, manifest):
             )
             if not mode or logs.count(marker) != case["fault_hits"]:
                 errors.append("fault witness attribution mismatch: " + case["name"])
-        if mode in ("block", "kill_after_read"):
+        if detail.get("worker_isolation"):
+            errors += worker_contract_errors(detail, logs)
+            if not detail.get("target_exit_cancelled"):
+                errors += audit_worker_capture(output, detail, case["evidence"])
+        if mode in ("block", "kill_after_read") and not detail.get("worker_isolation"):
             witness = detail.get("witness")
             if (
                 not witness
@@ -275,9 +278,7 @@ def audit_artifacts(output, summary, manifest):
                 )
             used_events.add(key)
             if not event_after_request(records[index], attempt.get("not_before_epoch")):
-                errors.append(
-                    "stale asynchronous event predates healthy capture request"
-                )
+                errors.append("stale asynchronous event predates healthy capture request")
             data = records[index]["tracer_data"]
             if detail["module"] == "memburst":
                 record = next(
@@ -305,12 +306,8 @@ def audit_artifacts(output, summary, manifest):
                     errors.append(
                         "raw memburst ranking/snapshot association is invalid"
                     )
-            if record and (
-                record.get("language")
-                != (attempt.get("target_language") or case["target_id"])
-                or record.get("process_memory", {}).get("rss_bytes", 0) <= 0
-            ):
-                errors.append("raw runtime or process RSS differs from expected target")
+            if record:
+                errors += capture_metadata_errors(record, attempt.get("target_language") or case["target_id"])
             if not record:
                 errors.append("raw target identity mismatch: " + case["name"])
                 continue

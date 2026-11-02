@@ -4,6 +4,7 @@ from ....core.util import write_control, require, wait_for
 from ....core.documents import read_documents
 from ....workloads.http_probe import request_http
 from .assertions import validate_fault
+from .worker import worker_enabled, containment
 
 
 class FaultScenarios:
@@ -63,7 +64,8 @@ class FaultScenarios:
                     lambda: marker in self.owner.logpath.read_text(),
                     timeout=45,
                 )
-                time.sleep(3)
+                worker_detail = containment(self.owner, t) if worker_enabled(self.owner) else {}
+                time.sleep(0 if worker_detail else 3)
                 require(
                     self.owner.agent.poll() is None,
                     "Agent exited before the requested kill",
@@ -74,6 +76,9 @@ class FaultScenarios:
                     ),
                     "Agent HTTP stopped responding during collector stall",
                 )
+                if worker_detail:
+                    worker_detail.update(worker_detail["failed_worker_capture"])
+                    return dict(worker_detail, target_pid=t["pid"], fault_hits=self.owner.hits(), agent_http_responsive=True)
                 require(
                     not read_documents(self.owner.event_path),
                     "blocked capture unexpectedly persisted",
@@ -108,11 +113,9 @@ class FaultScenarios:
         # Restart is mandatory for irreversible seccomp, killed Agent and full storage.
         restart = mode in (
             "permission",
-            "block",
-            "kill_after_read",
             "storage_full",
             "invalid_config",
-        )
+        ) or (mode in ("block", "kill_after_read") and not worker_enabled(self.owner))
 
         def recovery():
             if restart:

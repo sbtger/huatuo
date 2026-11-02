@@ -173,6 +173,21 @@ class FrameworkTest(unittest.TestCase):
         self.assertTrue(feature.cleaned)
         return result
 
+    def test_binary_artifact_is_hashed_without_text_decoding(self):
+        import hashlib
+        self.exercise()
+        binary = self.root / "worker.bin"
+        binary.write_bytes(b"\x7fELF\xff\xfe")
+        artifact = dict(path="worker.bin",role="executable",target_id=None,format="binary",minimum_documents=1)
+        with (self.root / "registrations.jsonl").open("a") as stream:
+            stream.write(json.dumps(artifact)+"\n")
+        manifest = json.loads((self.root / "manifest.json").read_text())
+        manifest["artifacts"].append(dict(artifact,sha256=hashlib.sha256(binary.read_bytes()).hexdigest()))
+        (self.root / "manifest.json").write_text(json.dumps(manifest))
+        self.assertEqual(self.audit.audit(self.root)["status"], "PASS")
+        binary.write_bytes(b"changed")
+        self.assertEqual(self.audit.audit(self.root)["status"], "FAIL")
+
     def test_second_feature_runs_without_snapshot_schema(self):
         result = self.exercise()
         self.assertEqual(result["status"], "PASS")
@@ -278,6 +293,8 @@ class FrameworkTest(unittest.TestCase):
         store = self.evidence.EvidenceStore(self.root)
         with self.assertRaises(ValueError):
             store.register("../foreign.log", "agent_log")
+
+
 
 
 class StabilityControlsTest(unittest.TestCase):
@@ -1013,7 +1030,6 @@ class ReliabilityContractsTest(unittest.TestCase):
                 return_value=[1, 2],
             ):
                 adapter.capture(adapter.targets[0])
-
 
 class ControlPublicationTest(unittest.TestCase):
     def test_existing_reader_never_sees_a_rewritten_pressure_value(self):

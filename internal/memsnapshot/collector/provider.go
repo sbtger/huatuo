@@ -52,6 +52,12 @@ func newProvider(language memsnapshot.Language) provider {
 func snapshotProvider(ctx context.Context, p provider,
 	process memsnapshot.ProcessInstanceID, maxMemoryObjectEntries int,
 ) (snapshot *memsnapshot.Snapshot) {
+	return snapshotProviderSeed(ctx, p, process, maxMemoryObjectEntries, uint64(time.Now().UnixNano()))
+}
+
+func snapshotProviderSeed(ctx context.Context, p provider, process memsnapshot.ProcessInstanceID,
+	maxMemoryObjectEntries int, seed uint64,
+) (snapshot *memsnapshot.Snapshot) {
 	started := time.Now()
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -73,7 +79,7 @@ func snapshotProvider(ctx context.Context, p provider,
 	request := memsnapshot.Request{
 		Process:                process,
 		MaxMemoryObjectEntries: maxMemoryObjectEntries,
-		SamplingSeed:           uint64(started.UnixNano()),
+		SamplingSeed:           seed,
 	}
 	snapshot, err := p.Snapshot(ctx, request)
 	if err != nil {

@@ -6,6 +6,7 @@ from pathlib import Path
 from ....core.documents import read_documents
 from .assertions import validate_fault
 from .log_policy import unexpected_logs
+from .worker import capture_metadata_errors, worker_contract_errors, audit_worker_capture
 
 
 def audit_artifacts(output, summary, manifest):
@@ -71,8 +72,7 @@ def audit_artifacts(output, summary, manifest):
                 if (
                     document["container_id"] == target["cid"]
                     and data["victim_pid"] == target["pid"]
-                    and data["language"] == case["target_id"]
-                    and data["process_memory"]["rss_bytes"] > 0
+                    and not capture_metadata_errors(data, case["target_id"])
                     and all(actual[k] == attempt[k] for k in actual)
                 ):
                     matching.append(actual)
@@ -108,7 +108,10 @@ def audit_artifacts(output, summary, manifest):
                     != "CPython interpreter GC generations are invalid"
                 ):
                     errors.append("unsupported normal capture retry: " + case["name"])
-        if mode in ("block", "kill_after_read"):
+        if detail.get("worker_isolation"):
+            errors += worker_contract_errors(detail, text)
+            errors += audit_worker_capture(output, detail, case["evidence"])
+        if mode in ("block", "kill_after_read") and not detail.get("worker_isolation"):
             if detail.get("exit_signal") != "SIGKILL" or not detail.get(
                 "agent_http_responsive"
             ):

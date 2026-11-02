@@ -8,6 +8,7 @@ from ....core.documents import read_documents
 from ....core.util import write_control, require, wait_for
 from ....environments.linux import identity
 from ..memsnapshot.trigger import SnapshotTrigger, event_after_request
+from ..memsnapshot.worker import capture_metadata_errors
 
 
 def burst_anon_floor(total_kib, baseline_kib):
@@ -97,11 +98,7 @@ class StabilityTrigger(SnapshotTrigger):
             and all(r["pid"] == ranking[i]["PID"] for i, r in enumerate(snapshots)),
             "memburst snapshots differ from the first three ranked processes",
         )
-        require(record["language"] == target["language"], "memburst runtime mismatch")
-        require(
-            record.get("process_memory", {}).get("rss_bytes", 0) > 0,
-            "memburst RSS fallback missing",
-        )
+        require(not capture_metadata_errors(record, target["language"]), "memburst runtime or memory metadata invalid")
         require(
             identity(target["pid"]) == target["identity"], "target identity changed"
         )

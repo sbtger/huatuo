@@ -8,6 +8,7 @@ from ....core.util import write_control, require, wait_for, run
 from ....core.documents import read_documents
 from ....environments.linux import identity
 from ..discovery import PodFixture, parse_timestamp
+from ..memsnapshot.worker import worker_enabled, containment, worker_contract_errors, audit_worker_capture, reaped_worker, worker_witness
 
 
 def contract_errors(name, d):
@@ -43,22 +44,9 @@ def contract_errors(name, d):
         if (
             len(rows) < 3
             or d.get("observed_seconds", 0) < 3
-            or (
-                rows
-                and (
-                    rows[0]["at"]
-                    > d.get(
-                        "observation_started",
-                        d.get("cooldown_deadline", 0) - d.get("observed_seconds", 0),
-                    )
-                    + 1
-                    or rows[-1]["at"] < d.get("cooldown_deadline", 0) - 0.5
-                )
-            )
-            or any(
-                b["at"] - a["at"] > 1 or b["at"] < a["at"]
-                for a, b in zip(rows, rows[1:])
-            )
+            or (rows and (rows[0]["at"] > d.get("observation_started", d.get("cooldown_deadline", 0) - d.get("observed_seconds", 0)) + 1
+                or rows[-1]["at"] < d.get("cooldown_deadline", 0) - 0.5))
+            or any(b["at"] - a["at"] > 1 or b["at"] < a["at"] for a, b in zip(rows, rows[1:]))
             or any(
                 r["events"] != d.get("initial_event_count")
                 or r["at"] > d.get("cooldown_deadline", 0)
@@ -70,48 +58,38 @@ def contract_errors(name, d):
                 "cooldown lacks complete negative observation or positive control"
             )
     elif name == "isolation":
-        healthy = [d.get("healthy_capture", {})] + d.get(
-            "additional_healthy_captures", []
-        )
+        healthy = [d.get("healthy_capture", {})] + d.get("additional_healthy_captures", [])
         if (
             d.get("fault_pid") == d.get("healthy_pid")
             or not d.get("fault_active")
             or not d.get("marker")
             or len({c.get("target_pid") for c in healthy}) != len(healthy)
-            or (
-                "expected_healthy_pids" in d
-                and {c.get("target_pid") for c in healthy}
-                != set(d["expected_healthy_pids"])
-            )
+            or ("expected_healthy_pids" in d and {c.get("target_pid") for c in healthy} != set(d["expected_healthy_pids"]))
             or d.get("agent_before") != d.get("agent_after")
             or not d.get("healthy_capture", {}).get("normal_attempts")
-            or 1 + len(d.get("additional_healthy_captures", []))
-            != d.get("required_healthy_targets", 1)
-            or any(
-                not c.get("normal_attempts")
-                for c in d.get("additional_healthy_captures", [])
-            )
+            or 1 + len(d.get("additional_healthy_captures", [])) != d.get("required_healthy_targets", 1)
+            or any(not c.get("normal_attempts") for c in d.get("additional_healthy_captures", []))
         ):
             errors.append(
                 "cross-target isolation lacks reached fault and same-Agent healthy capture"
             )
-        if d.get("mode") in ("delay", "block"):
+        if d.get("worker_isolation"):
+            errors += worker_contract_errors(d)
+        elif d.get("mode") in ("delay", "block"):
             begin, end = d.get("read_active_ns", 0), d.get("read_end_ns", 0)
-            first, last = d.get("healthy_started_ns", 0), d.get(
-                "healthy_finished_ns", 0
-            )
+            first, last = d.get("healthy_started_ns", 0), d.get("healthy_finished_ns", 0)
             if not (0 < begin <= first <= last and (not end or end >= last)):
-                errors.append(
-                    "healthy capture did not complete during an active fault read"
-                )
+                errors.append("healthy capture did not complete during an active fault read")
     elif name == "target-exit":
         if (
             not d.get("target_gone")
-            or "err=no such process" not in d.get("read_result", "")
+            or ("err=no such process" not in d.get("read_result", "") and not (d.get("target_exit_cancelled") and d.get("worker_isolation") and "capture process memory: context canceled" in d.get("cancellation_log", "")))
             or d.get("agent_before") != d.get("agent_after")
             or not d.get("recovery", {}).get("normal_attempts")
         ):
-            errors.append("target exit lacks actual ESRCH read and same-Agent recovery")
+            errors.append("target exit lacks actual ESRCH/canceled worker and same-Agent recovery")
+        if d.get("target_exit_cancelled"):
+            errors += worker_contract_errors(d)
     return errors
 
 
@@ -123,7 +101,6 @@ def selected_check_errors(command, cases):
             if token.startswith(name + "="):
                 return token.split("=", 1)[1]
         return default
-
     selected = set(argument("--checks", "").split(",")) - {""}
     errors = []
     for check in selected:
@@ -133,14 +110,11 @@ def selected_check_errors(command, cases):
             continue
         d = matching[0]["detail"]
         expected = "isolation" if check.startswith("isolation-") else check
-        if d.get("check") != expected or (
-            expected == "isolation" and d.get("mode") != check[len("isolation-") :]
-        ):
+        if d.get("check") != expected or (expected == "isolation" and d.get("mode") != check[len("isolation-"):]):
             errors.append("executed reliability check differs from selected mode")
         if check == "steady" and (
             d.get("minimum_rounds") != int(argument("--steady-rounds", "20"))
-            or d.get("minimum_seconds") != float(argument("--steady-seconds", "1800"))
-        ):
+            or d.get("minimum_seconds") != float(argument("--steady-seconds", "1800"))):
             errors.append("steady quota differs from requested command line")
     return errors
 
@@ -154,21 +128,28 @@ def audit_check(output, case):
     if d.get("check") in ("isolation", "target-exit"):
         if d.get("marker", "missing") not in logs:
             errors.append("raw fault marker missing for reliability check")
-    if d.get("check") == "target-exit" and d.get("read_result", "missing") not in logs:
+    if d.get("check") == "target-exit" and not d.get("target_exit_cancelled") and d.get("read_result", "missing") not in logs:
         errors.append("raw target-exit syscall result missing")
+    if d.get("worker_isolation"):
+        errors += worker_contract_errors(d, logs)
+        if d.get("target_exit_cancelled"):
+            try:
+                worker_witness(output,d,case["evidence"])
+                line=d.get("cancellation_log", "")
+                require(line and line in logs and d["exit_window"]["cid"] in line, "raw cgroup cancellation missing")
+            except Exception as exc:
+                errors.append("worker cancellation witness: "+str(exc))
+        else:
+            errors += audit_worker_capture(output, d, case["evidence"])
     if d.get("check") == "isolation":
         environment = json.loads((output / "environment.json").read_text())
-        expected = {
-            t["pid"] for t in environment["targets"] if t["pid"] != d["fault_pid"]
-        }
+        expected = {t["pid"] for t in environment["targets"] if t["pid"] != d["fault_pid"]}
         witness = json.loads((output / d["witness"]).read_text())
-        if (
-            witness.get("fault_pid") != d["fault_pid"]
+        if (witness.get("fault_pid") != d["fault_pid"]
             or witness.get("healthy_started_ns") != d.get("healthy_started_ns")
             or witness.get("healthy_finished_ns") != d.get("healthy_finished_ns")
             or witness.get("fault_config_before", {}).get("pid") != d["fault_pid"]
-            or witness.get("fault_config_after") != witness.get("fault_config_before")
-        ):
+            or witness.get("fault_config_after") != witness.get("fault_config_before")):
             errors.append("raw isolation attempt differs from active fault claim")
         if set(d.get("expected_healthy_pids", [])) != expected:
             errors.append("isolation omitted a selected healthy business target")
@@ -182,16 +163,10 @@ def audit_check(output, case):
                 continue
             for doc in read_documents(output / name):
                 data = doc.get("tracer_data", {})
-                records = (
-                    data.get("process_snapshots", [])
-                    if d["module"] == "memburst"
-                    else [data]
-                )
+                records = data.get("process_snapshots", []) if d["module"] == "memburst" else [data]
                 for record in records:
                     pid = record.get("pid", record.get("victim_pid"))
-                    if pid == d["target_pid"] and record.get("snapshot", {}).get(
-                        "status"
-                    ) not in (None, "failed"):
+                    if pid == d["target_pid"] and record.get("snapshot", {}).get("status") not in (None, "failed"):
                         errors.append("dead target has a successful raw snapshot")
     if d.get("check") == "steady":
         raw = [
@@ -267,22 +242,14 @@ def steady(owner):
 def cooldown_boundary(module, document, interval, wall_now, monotonic_now):
     # memburst starts cooldown at enqueue, before the asynchronous snapshot.
     field = "started_timestamp" if module == "memburst" else "uploaded_timestamp"
-    return (
-        monotonic_now
-        + parse_timestamp(document[field]).timestamp()
-        + interval
-        - wall_now
-        - 0.2
-    )
+    return monotonic_now + parse_timestamp(document[field]).timestamp() + interval - wall_now - 0.2
 
 
 def cooldown(owner, target):
     result = owner.capture(target)
     before = len(read_documents(owner.event_path))
     document = read_documents(owner.event_path)[result["event_index"]]
-    deadline = cooldown_boundary(
-        owner.tracer_name, document, owner.a.cooldown, time.time(), time.monotonic()
-    )
+    deadline = cooldown_boundary(owner.tracer_name, document, owner.a.cooldown, time.time(), time.monotonic())
     owner.trigger.release_all()
     owner.trigger.pressure(target)
     started = time.monotonic()
@@ -310,12 +277,8 @@ def cooldown(owner, target):
 
 def read_window(logs, case, pid):
     def timestamp(kind):
-        match = re.search(
-            r"MEMSNAP_READ_%s id=%s pid=%d at=(\d+)" % (kind, re.escape(case), pid),
-            logs,
-        )
+        match = re.search(r"MEMSNAP_READ_%s id=%s pid=%d at=(\d+)" % (kind, re.escape(case), pid), logs)
         return int(match.group(1)) if match else 0
-
     return timestamp("ACTIVE"), timestamp("END")
 
 
@@ -343,19 +306,17 @@ def isolation(owner, target, mode):
     )
     # Respect intentional node cooldown before requesting another target. A
     # delayed/blocked read remains active beyond this wait; EFAULT tests scope.
+    worker_detail = containment(owner, target) if worker_enabled(owner) and mode in ("delay", "block") else {}
+    # Cooldown starts at completion for threshold, not at the first blocked read.
     time.sleep(owner.a.cooldown + 0.5)
     healthy_targets = [t for t in owner.targets if t["pid"] != target["pid"]]
     healthy = healthy_targets[0]
     witness_name = owner.case_name.replace("/", "_") + "-attempt.json"
     witness_path = owner.out / witness_name
     owner.evidence.register(witness_name, "fault_attempt", format="json")
-    attempt = dict(
-        fault_pid=target["pid"],
-        mode=mode,
-        fault_config_before=json.loads(owner.faultfile.read_text()),
-        agent_before=before,
-        expected_healthy_pids=[t["pid"] for t in healthy_targets],
-    )
+    attempt = dict(fault_pid=target["pid"], mode=mode,
+                   fault_config_before=json.loads(owner.faultfile.read_text()),
+                   agent_before=before, expected_healthy_pids=[t["pid"] for t in healthy_targets])
     # This is a capture-isolation assertion, separate from business isolation.
     # Keep the fault installed while another target requests a real capture.
     try:
@@ -366,11 +327,10 @@ def isolation(owner, target, mode):
         result = results[0]
         healthy_finished = time.monotonic_ns()
         attempt["healthy_finished_ns"] = healthy_finished
-        read_begin, read_end = read_window(
-            owner.logpath.read_text(), owner.case_name, target["pid"]
-        )
+        read_begin, read_end = read_window(owner.logpath.read_text(), owner.case_name, target["pid"])
         active = json.loads(owner.faultfile.read_text())
         return dict(
+            worker_detail,
             check="isolation",
             witness=witness_name,
             mode=mode,
@@ -385,23 +345,19 @@ def isolation(owner, target, mode):
             additional_healthy_captures=results[1:],
             required_healthy_targets=len(healthy_targets),
             expected_healthy_pids=[t["pid"] for t in healthy_targets],
-            healthy_started_ns=healthy_started,
-            healthy_finished_ns=healthy_finished,
-            read_active_ns=read_begin,
-            read_end_ns=read_end,
+            healthy_started_ns=healthy_started, healthy_finished_ns=healthy_finished,
+            read_active_ns=read_begin, read_end_ns=read_end,
         )
     except Exception as exc:
         attempt["error"] = repr(exc)
         raise
     finally:
         attempt["attempt_finished_ns"] = time.monotonic_ns()
-        attempt["read_active_ns"], attempt["read_end_ns"] = read_window(
-            owner.logpath.read_text(), owner.case_name, target["pid"]
-        )
+        attempt["read_active_ns"], attempt["read_end_ns"] = read_window(owner.logpath.read_text(), owner.case_name, target["pid"])
         attempt["fault_config_after"] = json.loads(owner.faultfile.read_text())
         witness_path.write_text(json.dumps(attempt, indent=2) + "\n")
         owner.clearfault()
-        if mode == "block":
+        if mode == "block" and not worker_enabled(owner):
             owner.stop_agent(kill=True)
 
 
@@ -457,25 +413,35 @@ def target_exit(owner):
             lambda: not Path("/proc/%d" % target["pid"]).exists(),
             timeout=10,
         )
-        owner.clearfault()
-        prefix = "MEMSNAP_READ_RESULT id=" + owner.case_name
-        line = wait_for(
-            "actual read after target exit",
-            lambda: next(
-                (
-                    line
-                    for line in owner.logpath.read_text().splitlines()
-                    if line.startswith(prefix)
+        worker_detail = {}
+        if worker_enabled(owner) and owner.tracer_name == "memory_threshold_snapshot":
+            cancellation = wait_for("retired cgroup canceled collection", lambda: next((line for line in owner.logpath.read_text().splitlines()
+                if target["cid"] in line and "capture process memory: context canceled" in line), None), timeout=10)
+            worker_detail = reaped_worker(owner, target)
+            worker_detail.update(target_exit_cancelled=True, cancellation_log=cancellation)
+            line = "not attempted: collector canceled before paused syscall resumed"
+            owner.clearfault()
+        else:
+            owner.clearfault()
+            prefix = "MEMSNAP_READ_RESULT id=" + owner.case_name
+            line = wait_for(
+                "actual read after target exit",
+                lambda: next(
+                    (
+                        line
+                        for line in owner.logpath.read_text().splitlines()
+                        if line.startswith(prefix)
+                    ),
+                    None,
                 ),
-                None,
-            ),
-            timeout=30,
-        )
-        require("err=no such process" in line, "target exit did not cause real ESRCH")
+                timeout=30,
+            )
+            require("err=no such process" in line, "target exit did not cause real ESRCH")
         # A failed non-persisted attempt may still consume the node cooldown.
         owner.last_capture = time.monotonic()
         recovered = owner.capture(owner.targets[0])
         return dict(
+            worker_detail,
             check="target-exit",
             target_pid=target["pid"],
             target_gone=True,

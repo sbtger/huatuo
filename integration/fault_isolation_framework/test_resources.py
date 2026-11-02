@@ -346,3 +346,77 @@ class PerformanceTest(unittest.TestCase):
         drive_pressure(owner, args, "A", start, pressure, stop)
         self.assertLess(time.monotonic()-start, .5)
         self.assertFalse(pressure["commands"])
+
+class WorkerResourceTest(unittest.TestCase):
+    def test_worker_resources_count_towards_original_agent_budgets(self):
+        from fault_isolation_framework.environments.resources import combine_worker_resources
+        agent = dict(rss_bytes=10, fds=2, threads=1, inotify_watches=1)
+        children = [dict(rss_bytes=20, fds=1, threads=2, inotify_watches=0),
+                    dict(rss_bytes=30, fds=3, threads=2, inotify_watches=0)]
+        combined = combine_worker_resources(agent, children)
+        self.assertEqual(combined["rss_bytes"], 60)
+        self.assertEqual(combined["agent_rss_bytes"], 10)
+        self.assertEqual(combined["fds"], 6)
+        self.assertEqual(combined["threads"], 5)
+        self.assertEqual(agent["rss_bytes"], 10)
+
+    def test_worker_exiting_during_sample_does_not_kill_observer(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.core.evidence import EvidenceStore
+        from fault_isolation_framework.environments.resources import ResourceMonitor
+        from fault_isolation_framework.core.util import Failure
+        with tempfile.TemporaryDirectory() as tmp:
+            evidence = EvidenceStore(Path(tmp)/"out")
+            owner = SimpleNamespace(out=evidence.output,evidence=evidence,case_name="capture",observe_workers=True,
+                                    agent_transition=False,agent=SimpleNamespace(pid=1,poll=lambda:None),probes=[],extra_processes=[])
+            monitor = ResourceMonitor(owner)
+            def sample(pid):
+                if pid == 2:
+                    raise ProcessLookupError("RSS unavailable for PID 2 state=Z (zombie)")
+                return dict(agent=[1,3],rss_bytes=10,fds=2,threads=1,inotify_watches=0)
+            with patch("fault_isolation_framework.environments.resources.sample_process", side_effect=sample), patch("fault_isolation_framework.environments.performance.descendants", return_value=[2]):
+                row = monitor.record()
+            monitor.stream.close()
+            self.assertNotIn("error", row)
+            self.assertEqual(row["rss_bytes"], 10)
+            self.assertEqual(row["unavailable_workers"][0]["pid"], 2)
+
+
+class VolatileProcessSampleTest(unittest.TestCase):
+    def test_missing_rss_is_explicitly_unavailable(self):
+        from fault_isolation_framework.environments import resources
+        for state in ("Z (zombie)", "R (running)"):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / "status").write_text("State: " + state + "\nThreads: 1\n")
+                with patch.object(resources, "identity", return_value=[42, 1]), \
+                     patch.object(resources, "Path", return_value=root):
+                    with self.assertRaises(ProcessLookupError):
+                        resources.sample_process(42)
+
+    def test_other_missing_fields_are_not_hidden_as_exit(self):
+        from fault_isolation_framework.environments import resources
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "status").write_text("State: S (sleeping)\nVmRSS: 1 kB\n")
+            (root / "fd").mkdir()
+            with patch.object(resources, "identity", return_value=[42, 1]), \
+                 patch.object(resources, "Path", return_value=root):
+                with self.assertRaises(KeyError):
+                    resources.sample_process(42)
+
+    def test_missing_parent_sample_remains_a_failure(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.core.evidence import EvidenceStore
+        from fault_isolation_framework.environments.resources import ResourceMonitor
+        with tempfile.TemporaryDirectory() as tmp:
+            evidence = EvidenceStore(Path(tmp) / "out")
+            owner = SimpleNamespace(out=evidence.output, evidence=evidence,
+                case_name="capture", agent_transition=False, probes=[],
+                agent=SimpleNamespace(pid=1, poll=lambda: None))
+            monitor = ResourceMonitor(owner)
+            with patch("fault_isolation_framework.environments.resources.sample_process",
+                       side_effect=ProcessLookupError("RSS unavailable for PID 1")):
+                row = monitor.record()
+            monitor.stream.close()
+            self.assertIn("error", row)

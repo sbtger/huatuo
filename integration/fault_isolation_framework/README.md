@@ -15,6 +15,8 @@ The first maintained real adapter is `huatuo.memsnapshot`; its configuration,
 discovery, trigger, overlay, snapshot assertions and retry/log policies live
 under `adapters/huatuo/`. See [Architecture](ARCHITECTURE.md)
 and the [recorded validation](VALIDATION.md).
+The [worker boundary](../../docs/memsnapshot-worker.md) describes the contained
+production helper, shared slots and the limits of timeout isolation.
 
 A PASS establishes the assertions below for the recorded runtime, kernel, build,
 traffic and fault window. It does not prove every exception path, every runtime
@@ -53,7 +55,8 @@ python3 integration/fault_isolation_framework/audit.py \
 ```
 
 An amd64 Linux builder may build the Agent and Go fixture separately and transfer
-`agent`, `agent-fault`, `business-go`, `deny-readv` and `build.json`, the BPF objects,
+`agent`, `agent-fault`, `huatuo-memsnapshot-worker`,
+`huatuo-memsnapshot-worker-fault`, `business-go`, `deny-readv` and `build.json`, the BPF objects,
 and this directory to the VM. The audit can be repeated on copied evidence.
 New schema-v2 runs record a full
 phase plan, artifact registration journal, manifest and file hashes. Missing or
@@ -62,7 +65,7 @@ mismatches fail. Feature log policy is mandatory for memsnapshot evidence.
 Historical schema-v1 runs remain supported by the adapter's compatibility audit.
 The builder creates a plain Agent and a separately hashed test Agent using Go's
 `-overlay`. It does **not** edit production or vendor sources. Never distribute
-`agent-fault` as a release binary. The overlay uses checked anchors and fails if
+`agent-fault` or `huatuo-memsnapshot-worker-fault` as release binaries. The overlay uses checked anchors and fails if
 the production source has changed; review it before supporting a new version.
 The C seccomp launcher must be compiled for the execution VM's architecture/libc.
 

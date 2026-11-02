@@ -5,13 +5,11 @@ from ....core.util import write_control, require, wait_for
 from ....environments.linux import identity
 from ....core.documents import read_documents
 from ..discovery import parse_timestamp
+from .worker import capture_metadata_errors
 
 
 def event_after_request(document, not_before):
-    return (
-        not_before is None
-        or parse_timestamp(document["started_timestamp"]).timestamp() >= not_before
-    )
+    return not_before is None or parse_timestamp(document["started_timestamp"]).timestamp() >= not_before
 
 
 class SnapshotTrigger:
@@ -56,8 +54,7 @@ class SnapshotTrigger:
                 (
                     d
                     for d in read_documents(self.owner.event_path)[before:]
-                    if d.get("container_id") == t["cid"]
-                    and event_after_request(d, not_before)
+                    if d.get("container_id") == t["cid"] and event_after_request(d, not_before)
                 ),
                 None,
             ),
@@ -70,10 +67,7 @@ class SnapshotTrigger:
         data = document["tracer_data"]
         snapshot = data["snapshot"]
         require(data["victim_pid"] == t["pid"], "Agent selected a different process")
-        require(data["language"] == t["language"], "runtime detection mismatch")
-        require(
-            data["process_memory"]["rss_bytes"] > 0, "process memory fallback was lost"
-        )
+        require(not capture_metadata_errors(data, t["language"]), "runtime or memory metadata invalid")
         result = dict(
             status=snapshot["status"],
             reason=snapshot.get("status_reason", ""),

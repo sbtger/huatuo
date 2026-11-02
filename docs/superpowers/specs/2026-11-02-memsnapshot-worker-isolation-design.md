@@ -1,8 +1,10 @@
 # Independent memsnapshot worker design
 
-Status: concrete proposal; not implemented or validated. This is separate from
-the PID-enumeration repair. The user selected process isolation as the preferred
-direction; the lifecycle and rollout choices below are implementation proposals.
+Status: implemented with a dedicated helper. Native cgroup v1/v2 integration,
+race checks and short real-Agent isolation acceptance have passed. Full runtime
+fault matrices and the post-change 30-minute threshold run are tracked in the
+implementation plan and validation report. This does not establish real D-state
+termination, production performance or a 72-hour soak result.
 
 ## Problem and guarantee
 

@@ -18,11 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/ccfos/huatuo/cmd/huatuo-bamai/config"
 	"github.com/ccfos/huatuo/cmd/huatuo-bamai/handlers"
 	"github.com/ccfos/huatuo/internal/bpf"
+	"github.com/ccfos/huatuo/internal/log"
+	"github.com/ccfos/huatuo/internal/memsnapshot/collector"
 	nodecloudevents "github.com/ccfos/huatuo/internal/nodeagent/cloudevents"
 	"github.com/ccfos/huatuo/internal/profiling"
 	"github.com/ccfos/huatuo/internal/strutil"
@@ -69,21 +72,35 @@ func startToolstream(d *Daemon) (func(context.Context) error, error) {
 }
 
 func startTracing(d *Daemon) (func(context.Context) error, error) {
+	worker, workerErr := collector.NewWorkerManager(collector.WorkerConfig{
+		Executable: filepath.Join(d.opts.ToolBinDir, "huatuo-memsnapshot-worker"),
+	})
+	restore := collector.UseWorker(worker, workerErr)
+	if workerErr != nil {
+		log.WithError(workerErr).Warn("memory snapshot process isolation unavailable")
+	}
+	closeWorker := func(ctx context.Context) error {
+		defer restore()
+		if worker != nil {
+			return worker.Close(ctx)
+		}
+		return nil
+	}
+
 	mgr, err := tracing.NewManager(config.Get().BlackList)
 	if err != nil {
+		_ = closeWorker(context.Background())
 		return nil, fmt.Errorf("new tracing manager: %w", err)
 	}
 
 	if err := mgr.Start(context.Background()); err != nil {
+		_ = closeWorker(context.Background())
 		return nil, fmt.Errorf("start tracing manager: %w", err)
 	}
 
 	handlers.SetTracingManager(mgr)
 	return func(ctx context.Context) error {
-		if err := mgr.Close(ctx); err != nil {
-			return fmt.Errorf("stop: %w", err)
-		}
-		return nil
+		return errors.Join(mgr.Close(ctx), closeWorker(ctx))
 	}, nil
 }
 

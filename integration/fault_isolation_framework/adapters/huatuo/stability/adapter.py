@@ -20,6 +20,7 @@ from .policy import audit_artifacts
 from .resource_faults import resource_fault
 from . import reliability
 from .diagnostics import capture_failure
+from ..memsnapshot.worker import worker_enabled, containment
 
 
 class StabilityAdapter(MemsnapshotAdapter):
@@ -95,7 +96,8 @@ class StabilityAdapter(MemsnapshotAdapter):
                 timeout=15,
             )
         self.started = time.monotonic()
-        self.monitor = ResourceMonitor(self)
+        self.observe_workers = worker_enabled(self)
+        self.monitor = ResourceMonitor(self, interval=0.1 if self.observe_workers else 2)
         self.monitor.start()
         self.evidence.register("campaign.json", "campaign", format="json")
         self.evidence.register("cycles.jsonl", "cycles", format="jsonl")
@@ -217,6 +219,13 @@ DumpProcessMaxNum = 10
                 artifacts.append(detail["witness"])
             if detail.get("event_file"):
                 artifacts.append(str(Path(detail["event_file"]).relative_to(self.out)))
+            if detail.get("worker_witness"):
+                artifacts.append(detail["worker_witness"])
+                capture = detail.get("failed_worker_capture") or detail.get("recovery")
+                if capture and capture.get("event_file"):
+                    relative = str(Path(capture["event_file"]).relative_to(self.out))
+                    if relative not in artifacts:
+                        artifacts.append(relative)
             return OperationResult(detail, detail.get("fault_hits", 0), artifacts)
 
         return Scenario(phase, target["language"], execute, expected, minimum_seconds=1)
@@ -234,10 +243,7 @@ DumpProcessMaxNum = 10
             try:
                 capture_failure(self, error)
             except Exception as diagnostic_error:
-                print(
-                    "capture diagnostics unavailable: " + repr(diagnostic_error),
-                    flush=True,
-                )
+                print("capture diagnostics unavailable: " + repr(diagnostic_error), flush=True)
             raise
         result["target_language"] = target["language"]
         self.counts["captures"] += 1
@@ -376,7 +382,8 @@ DumpProcessMaxNum = 10
                 lambda: marker in self.logpath.read_text(),
                 timeout=40,
             )
-            time.sleep(3)
+            worker_detail = containment(self, target) if worker_enabled(self) else {}
+            time.sleep(0 if worker_detail else 3)
             metrics = request_http(
                 "http://127.0.0.1:%d" % self.a.agent_port, "/metrics"
             )
@@ -384,6 +391,10 @@ DumpProcessMaxNum = 10
             metrics_name = "blocked-http-%d.txt" % self.number
             self.evidence.register(metrics_name, "agent_metrics")
             (self.out / metrics_name).write_bytes(metrics)
+            if worker_detail:
+                worker_detail.update(worker_detail["failed_worker_capture"])
+                return dict(worker_detail, action=action, target_pid=target["pid"], witness=metrics_name,
+                            agent_http_responsive=True, fault_hits=self.hits())
             require(
                 not read_documents(self.event_path),
                 "blocked capture unexpectedly persisted",
@@ -555,8 +566,7 @@ DumpProcessMaxNum = 10
                 self.a.fd_growth,
                 self.a.rss_limit_mib * 1024 * 1024,
                 self.a.fd_limit,
-                watch_growth=self.a.watch_growth,
-                thread_growth=self.a.thread_growth,
+                watch_growth=self.a.watch_growth, thread_growth=self.a.thread_growth,
             )
         record = dict(
             status="FAIL" if issues else "PASS",
@@ -574,8 +584,7 @@ DumpProcessMaxNum = 10
                 fd_growth=self.a.fd_growth,
                 rss_limit=self.a.rss_limit_mib * 1024 * 1024,
                 fd_limit=self.a.fd_limit,
-                watch_growth=self.a.watch_growth,
-                thread_growth=self.a.thread_growth,
+                watch_growth=self.a.watch_growth, thread_growth=self.a.thread_growth,
             ),
             performance_evaluated=False,
             long_soak_verified=self.a.profile == "soak"

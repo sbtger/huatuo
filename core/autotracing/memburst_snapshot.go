@@ -52,8 +52,6 @@ type burstSnapshotJob struct {
 
 func collectBurstSnapshots(ctx context.Context, processes []*processMemInfo) []burstProcessSnapshot {
 	processes = processes[:min(len(processes), maxBurstSnapshotProcesses)]
-	batchCtx, cancel := context.WithTimeout(ctx, time.Duration(len(processes))*burstProcessSnapshotBudget)
-	defer cancel()
 	out := make([]burstProcessSnapshot, 0, len(processes))
 	for _, process := range processes {
 		if process == nil {
@@ -65,7 +63,7 @@ func collectBurstSnapshots(ctx context.Context, processes []*processMemInfo) []b
 			Language:    memsnapshot.LanguageUnknown,
 			identity:    process.identity,
 		}
-		result, err := captureBurstProcess(batchCtx, process)
+		result, err := captureBurstProcess(ctx, process)
 		if err != nil {
 			record.Snapshot = burstCaptureFailure(err)
 		} else {

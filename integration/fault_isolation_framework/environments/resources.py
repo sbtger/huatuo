@@ -5,15 +5,14 @@ import threading
 import time
 from pathlib import Path
 from .linux import identity
+from ..core.util import Failure
 
 
 def inotify_watch_count(fdinfo):
     count = 0
     for path in Path(fdinfo).iterdir():
         try:
-            count += sum(
-                line.startswith("inotify ") for line in path.read_text().splitlines()
-            )
+            count += sum(line.startswith("inotify ") for line in path.read_text().splitlines())
         except FileNotFoundError:
             # A live Agent may close a descriptor between listing and reading it.
             continue
@@ -28,6 +27,9 @@ def sample_process(pid):
         for line in (root / "status").read_text().splitlines()
         if ":" in line
     )
+    # An exiting/execing userspace task can lose its mm after identity().
+    if "VmRSS" not in status:
+        raise ProcessLookupError("RSS unavailable for PID %d state=%s" % (pid, status.get("State", "unknown").strip()))
     return dict(
         agent=ident,
         rss_bytes=int(status["VmRSS"].split()[0]) * 1024,
@@ -36,6 +38,16 @@ def sample_process(pid):
         inotify_watches=inotify_watch_count(root / "fdinfo"),
         settled=False,
     )
+
+
+def combine_worker_resources(agent, children):
+    combined = dict(agent)
+    combined["workers"] = children
+    for name in ("rss_bytes", "fds", "threads", "inotify_watches"):
+        combined["agent_"+name] = agent[name]
+        combined["worker_"+name] = sum(child[name] for child in children)
+        combined[name] = agent[name]+combined["worker_"+name]
+    return combined
 
 
 class ResourceMonitor:
@@ -61,7 +73,22 @@ class ResourceMonitor:
             ):
                 raise RuntimeError("Agent exited outside a declared replacement")
             if agent is not None and agent.poll() is None:
-                row.update(sample_process(agent.pid))
+                sample = sample_process(agent.pid)
+                if getattr(self.owner, "observe_workers", False):
+                    from .performance import descendants
+                    children = []
+                    unavailable = []
+                    for pid in descendants(agent.pid):
+                        try:
+                            child = sample_process(pid)
+                            child["identity"] = child.pop("agent")
+                            children.append(child)
+                        except (FileNotFoundError, ProcessLookupError, Failure) as exc:
+                            unavailable.append(dict(pid=pid, reason=repr(exc)))
+                            continue
+                    sample = combine_worker_resources(sample, children)
+                    sample["unavailable_workers"] = unavailable
+                row.update(sample)
                 row["settled"] = settled
                 row["baseline"] = baseline
             for process in getattr(self.owner, "extra_processes", []):
@@ -74,7 +101,7 @@ class ResourceMonitor:
                     raise RuntimeError(
                         "business observer thread stopped: " + probe.target_id
                     )
-        except (OSError, ValueError, RuntimeError, KeyError) as exc:
+        except (OSError, ValueError, RuntimeError, KeyError, Failure) as exc:
             if not self.owner.agent_transition:
                 row["error"] = repr(exc)
         with self.lock:

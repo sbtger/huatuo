@@ -16,6 +16,8 @@ package collector
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -42,5 +44,25 @@ func TestSnapshotRejectsInvalidOptions(t *testing.T) {
 		if err == nil || result != nil {
 			t.Fatalf("invalid options %+v accepted: result=%+v err=%v", options, result, err)
 		}
+	}
+}
+
+// A valid prefix must not hide oversized, unknown or trailing protocol data.
+func TestWorkerProtocolRejectsInvalidReplies(t *testing.T) {
+	for _, input := range []string{
+		`{`, `{"version":1,"extra":true}`, `{"version":1} {}`,
+		strings.Repeat(" ", (1<<20)+1),
+	} {
+		var response workerResponse
+		if err := decodeWorkerMessage(strings.NewReader(input), 1<<20, &response); err == nil {
+			t.Fatalf("invalid worker reply accepted: %.80q", input)
+		}
+	}
+}
+
+func TestWorkerRejectsOrdinaryFilesystemContainment(t *testing.T) {
+	_, err := NewWorkerManager(WorkerConfig{Executable: "/bin/sh", CgroupRoot: filepath.Join(t.TempDir(), "huatuo-memsnapshot-worker-test")})
+	if err == nil {
+		t.Fatal("ordinary filesystem accepted as hard memory containment")
 	}
 }

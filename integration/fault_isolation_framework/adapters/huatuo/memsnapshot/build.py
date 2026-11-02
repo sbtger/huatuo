@@ -37,7 +37,7 @@ func ProcessVMReadv(pid int, localIov []Iovec,remoteIov []RemoteIovec,flags uint
  }
  switch f.Action {
  case "efault":return -1,EFAULT
- case "block":select{}
+ case "block":for {time.Sleep(time.Hour)}
  case "delay":d:=time.Duration(f.DelayMS)*time.Millisecond;if d<=0{d=4*time.Second};if d>30*time.Second{d=30*time.Second};time.Sleep(d)
  case "pause":
   until:=time.Now().Add(30*time.Second)
@@ -48,7 +48,7 @@ func ProcessVMReadv(pid int, localIov []Iovec,remoteIov []RemoteIovec,flags uint
  }
  n,err=memsnapshotRealProcessVMReadv(pid,localIov,remoteIov,flags)
  if f.Action=="short" && err==nil && n>0 {n--}
- if f.Action=="kill_after_read" {fmt.Fprintf(os.Stderr,"MEMSNAP_READ_COMPLETED id=%s n=%d err=%v\n",f.ID,n,err);select{}}
+ if f.Action=="kill_after_read" {fmt.Fprintf(os.Stderr,"MEMSNAP_READ_COMPLETED id=%s n=%d err=%v\n",f.ID,n,err);for {time.Sleep(time.Hour)}}
  if f.Action=="mark" || f.Action=="pause" {if _,seen:=memsnapshotFaultSeen.LoadOrStore(f.ID+"result",true);!seen {fmt.Fprintf(os.Stderr,"MEMSNAP_READ_RESULT id=%s n=%d err=%v\n",f.ID,n,err)}}
  return
 }
@@ -80,6 +80,7 @@ def main():
         cwd=repo,
         env=env,
     )
+    run("go", "build", "-mod=vendor", "-o", str(out / "huatuo-memsnapshot-worker"), "./cmd/huatuo-memsnapshot-worker", cwd=repo, env=env)
     syscall = repo / "vendor/golang.org/x/sys/unix/zsyscall_linux.go"
     provider = repo / "internal/memsnapshot/collector/provider.go"
     s = syscall.read_text()
@@ -124,6 +125,7 @@ def main():
         cwd=repo,
         env=env,
     )
+    run("go", "build", "-mod=vendor", "-overlay", str(out / "overlay.json"), "-o", str(out / "huatuo-memsnapshot-worker-fault"), "./cmd/huatuo-memsnapshot-worker", cwd=repo, env=env)
     run(
         "go",
         "build",
@@ -137,7 +139,7 @@ def main():
     run("cc", "-O2", "-o", str(out / "deny-readv"), str(sec))
     files = {
         name: hashlib.sha256((out / name).read_bytes()).hexdigest()
-        for name in ("agent", "agent-fault", "business-go", "deny-readv")
+        for name in ("agent", "agent-fault", "business-go", "deny-readv", "huatuo-memsnapshot-worker", "huatuo-memsnapshot-worker-fault")
     }
     manifest = {
         "revision": subprocess.check_output(
@@ -148,6 +150,7 @@ def main():
         ).strip(),
         "sha256": files,
         "test_only_overlay": True,
+        "worker_isolation": True,
         "architecture": "linux/amd64",
     }
     (out / "build.json").write_text(json.dumps(manifest, indent=2) + "\n")

@@ -74,23 +74,26 @@ def audit(output, policy=None):
                     digest.update(chunk)
             if not path.stat().st_size or digest.hexdigest() != artifact.get("sha256"):
                 raise ValueError("empty, changed or unhashed evidence: " + name)
-            text = path.read_text()
-            if artifact["format"] == "jsonl":
-                documents = [json.loads(line) for line in text.splitlines()]
-            elif artifact["format"] == "json_documents":
-                decoder = json.JSONDecoder()
-                documents = []
-                text = text.strip()
-                while text:
-                    document, end = decoder.raw_decode(text)
-                    documents.append(document)
-                    text = text[end:].lstrip()
-            elif artifact["format"] == "json":
-                documents = [json.loads(text)]
-            elif artifact["format"] == "text":
-                documents = [text]
+            if artifact["format"] == "binary":
+                documents = [None]
             else:
-                raise ValueError("unknown evidence format: " + name)
+                text = path.read_text()
+                if artifact["format"] == "jsonl":
+                    documents = [json.loads(line) for line in text.splitlines()]
+                elif artifact["format"] == "json_documents":
+                    decoder = json.JSONDecoder()
+                    documents = []
+                    text = text.strip()
+                    while text:
+                        document, end = decoder.raw_decode(text)
+                        documents.append(document)
+                        text = text[end:].lstrip()
+                elif artifact["format"] == "json":
+                    documents = [json.loads(text)]
+                elif artifact["format"] == "text":
+                    documents = [text]
+                else:
+                    raise ValueError("unknown evidence format: " + name)
             if len(documents) < artifact["minimum_documents"]:
                 raise ValueError("evidence record count mismatch: " + name)
         for case in cases:
@@ -114,10 +117,7 @@ def audit(output, policy=None):
         issues.append(str(error))
     result = dict(
         status="PASS"
-        if summary.get("status") == "PASS"
-        and business_status == "PASS"
-        and not issues
-        and not business_errors
+        if summary.get("status") == "PASS" and business_status == "PASS" and not issues and not business_errors
         else "FAIL",
         evidence_errors=issues,
         business_errors=business_errors,
