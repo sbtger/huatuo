@@ -2,8 +2,8 @@
 """Feature-neutral evidence integrity, phase coverage and request accounting."""
 import hashlib
 import json
-from collections import Counter
 from pathlib import Path
+from .business_audit import audit_business
 
 
 def audit(output, policy=None):
@@ -13,11 +13,18 @@ def audit(output, policy=None):
     business_errors = {}
     counts = {}
     policy_result = {}
+    business_status = "UNVERIFIED"
+    adapter_audit_completed = False
     try:
         summary = json.loads((output / "summary.json").read_text())
         manifest = json.loads((output / "manifest.json").read_text())
         if summary["schema_version"] != 2 or manifest["schema_version"] != 2:
             raise ValueError("unsupported evidence schema")
+        business = audit_business(output, summary, manifest)
+        business_status = business["status"]
+        business_errors = business["business_errors"]
+        counts = business["total_work_requests"]
+        issues.extend(business["issues"])
         if summary.get("adapter_policy_required") and policy is None:
             raise ValueError("adapter audit policy is required")
         cases = summary["cases"]
@@ -43,7 +50,6 @@ def audit(output, policy=None):
             or set(registered) != set(artifacts)
         ):
             raise ValueError("manifest does not match artifact registration history")
-        rows_by_target = {}
         for name, artifact in artifacts.items():
             registration = registered[name]
             for field in ("path", "role", "target_id", "format"):
@@ -59,35 +65,15 @@ def audit(output, policy=None):
                 or output not in path.resolve().parents
             ):
                 raise ValueError("evidence outside output: " + name)
+            if artifact["role"] == "requests":
+                # The independent business pass already verified and streamed it.
+                continue
             digest = hashlib.sha256()
             with path.open("rb") as source:
                 for chunk in iter(lambda: source.read(1024 * 1024), b""):
                     digest.update(chunk)
             if not path.stat().st_size or digest.hexdigest() != artifact.get("sha256"):
                 raise ValueError("empty, changed or unhashed evidence: " + name)
-            if artifact["role"] == "requests":
-                target = artifact["target_id"]
-                if target in rows_by_target or artifact["format"] != "jsonl":
-                    raise ValueError("duplicate or invalid business stream: " + target)
-                aggregate = dict(work=0, transactions=0, bad=[], by_phase=Counter())
-                count = 0
-                with path.open() as stream:
-                    for line in stream:
-                        row = json.loads(line)
-                        count += 1
-                        if row["kind"] not in ("work", "transaction", "scheduler"):
-                            raise ValueError("unknown business record kind: " + target)
-                        if row["ok"] is not True and len(aggregate["bad"]) < 100:
-                            aggregate["bad"].append(row)
-                        if row["kind"] == "work":
-                            aggregate["work"] += 1
-                            aggregate["by_phase"][row["phase"]] += 1
-                        if row["kind"] == "transaction" and row["ok"] is True:
-                            aggregate["transactions"] += 1
-                if count < artifact["minimum_documents"]:
-                    raise ValueError("evidence record count mismatch: " + name)
-                rows_by_target[target] = aggregate
-                continue
             text = path.read_text()
             if artifact["format"] == "jsonl":
                 documents = [json.loads(line) for line in text.splitlines()]
@@ -107,37 +93,6 @@ def audit(output, policy=None):
                 raise ValueError("unknown evidence format: " + name)
             if len(documents) < artifact["minimum_documents"]:
                 raise ValueError("evidence record count mismatch: " + name)
-        targets = set(summary["total_business_requests"])
-        if (
-            not targets
-            or set(rows_by_target) != targets
-            or set(summary["total_business_transactions"]) != targets
-        ):
-            raise ValueError("business stream targets do not match summary")
-        for target, rows in rows_by_target.items():
-            if rows["bad"]:
-                business_errors[target] = rows["bad"]
-            counts[target] = rows["work"]
-            if (
-                rows["work"] != summary["total_business_requests"][target]
-                or rows["transactions"]
-                != summary["total_business_transactions"][target]
-            ):
-                issues.append("business accounting mismatch: " + target)
-            by_phase = rows["by_phase"]
-            for case in cases:
-                observation = case["business"][target]
-                if (
-                    observation["samples"] <= 0
-                    or observation["samples"] != by_phase[case["name"]]
-                ):
-                    issues.append(
-                        "phase sample count mismatch: " + case["name"] + "/" + target
-                    )
-                if observation["assertion_errors"] or observation.get("errors"):
-                    issues.append(
-                        "business assertion failed: " + case["name"] + "/" + target
-                    )
         for case in cases:
             if case["expect_fault"] and (
                 case["fault_hits"] <= 0 or not case["evidence"]
@@ -148,6 +103,7 @@ def audit(output, policy=None):
         if policy is not None:
             try:
                 policy_result = policy(output, summary, manifest)
+                adapter_audit_completed = True
             except Exception as error:
                 issues.append("adapter policy failed: " + repr(error))
                 policy_result = {}
@@ -158,10 +114,15 @@ def audit(output, policy=None):
         issues.append(str(error))
     result = dict(
         status="PASS"
-        if summary.get("status") == "PASS" and not issues and not business_errors
+        if summary.get("status") == "PASS"
+        and business_status == "PASS"
+        and not issues
+        and not business_errors
         else "FAIL",
         evidence_errors=issues,
         business_errors=business_errors,
+        business_audit_status=business_status,
+        adapter_audit_completed=adapter_audit_completed,
         total_work_requests=counts,
         unexpected_agent_logs=policy_result.get("unexpected_agent_logs", {}),
         expected_fault_log_counts=policy_result.get("expected_fault_log_counts", {}),

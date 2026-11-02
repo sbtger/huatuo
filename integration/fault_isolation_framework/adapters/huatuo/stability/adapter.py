@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from ....core.models import Scenario, OperationResult
 from ....core.stability import coverage_errors, resource_errors
-from ....core.util import require, run, wait_for
+from ....core.util import write_control, require, run, wait_for
 from ....environments.linux import identity, ManagedProcess
 from ....environments.resources import ResourceMonitor
 from ....workloads.http_probe import request_http
@@ -18,6 +18,8 @@ from ..memsnapshot.assertions import validate_fault
 from .trigger import StabilityTrigger, burst_anon_floor
 from .policy import audit_artifacts
 from .resource_faults import resource_fault
+from . import reliability
+from .diagnostics import capture_failure
 
 
 class StabilityAdapter(MemsnapshotAdapter):
@@ -171,6 +173,10 @@ DumpProcessMaxNum = 10
             ["cycle-0000/%s/agent-off" % t["language"] for t in self.targets]
             + ["cycle-0000/%s/warmup" % t["language"] for t in self.targets]
             + [
+                "cycle-0000/%s/%s" % (self.targets[0]["language"], name)
+                for name, _ in self.extra_checks()
+            ]
+            + [
                 "cycle-%04d/%s/%s" % (cycle, t["language"], name)
                 for cycle in range(1, self.a.cycles + 1)
                 for t, name in self.names(cycle)
@@ -183,6 +189,12 @@ DumpProcessMaxNum = 10
         def execute():
             self.case_name = phase
             point = dict(phase=phase, started=time.monotonic(), idle_budget=0)
+            if name == "steady":
+                point["idle_budget"] = (
+                    self.a.steady_seconds
+                    + self.a.steady_rounds * 90
+                    + self.a.phase_timeout
+                )
             if name == "settled":
                 point["idle_budget"] = (
                     self.a.duration_seconds / self.a.cycles + self.a.phase_timeout
@@ -191,6 +203,10 @@ DumpProcessMaxNum = 10
             temporary.write_text(json.dumps(point))
             temporary.replace(Path(self.a.output) / "progress.json")
             detail = operation() or {}
+            require(
+                not reliability.contract_errors(detail.get("check"), detail),
+                "reliability check contract failed",
+            )
             detail["module"] = self.tracer_name
             artifacts = (
                 ["agent-%d.log" % self.number, "bamai-%d.conf" % self.number]
@@ -205,10 +221,25 @@ DumpProcessMaxNum = 10
 
         return Scenario(phase, target["language"], execute, expected, minimum_seconds=1)
 
-    def capture(self, target):
+    def capture(self, target, not_before=None):
+        # Single-target checks must not inherit another target's high pressure.
+        # Before a fresh Agent this also prevents an untracked startup capture.
+        self.trigger.release_all()
         if self.agent is None:
             self.start_agent(plain=True)
-        result = self.trigger.capture(target, normal=True)
+        kwargs = {"not_before": not_before} if not_before is not None else {}
+        try:
+            result = self.trigger.capture(target, normal=True, **kwargs)
+        except Exception as error:
+            try:
+                capture_failure(self, error)
+            except Exception as diagnostic_error:
+                print(
+                    "capture diagnostics unavailable: " + repr(diagnostic_error),
+                    flush=True,
+                )
+            raise
+        result["target_language"] = target["language"]
         self.counts["captures"] += 1
         agent_id = tuple(identity(self.agent.pid))
         self.warmed_languages.setdefault(agent_id, set()).add(target["language"])
@@ -223,18 +254,24 @@ DumpProcessMaxNum = 10
         return result
 
     def cooldown(self, target):
-        result = self.capture(target)
-        before = len(read_documents(self.event_path))
-        # A new edge is required; merely retaining high usage is not a cooldown test.
-        self.trigger.release_all()
-        self.trigger.pressure(target)
-        time.sleep(0.5)
-        require(
-            len(read_documents(self.event_path)) == before,
-            "cooldown did not suppress a repeated edge",
-        )
-        self.trigger.release_all()
-        return dict(suppressed=True, initial_capture=result)
+        return reliability.cooldown(self, target)
+
+    def extra_checks(self):
+        selected = getattr(self.a, "checks", "").split(",")
+        checks = []
+        if "steady" in selected:
+            checks.append(("steady", lambda: reliability.steady(self)))
+        for mode in ("efault", "delay", "block"):
+            if "isolation-" + mode in selected:
+                checks.append(
+                    (
+                        "isolation-" + mode,
+                        lambda m=mode: reliability.isolation(self, self.targets[0], m),
+                    )
+                )
+        if "target-exit" in selected:
+            checks.append(("target-exit", lambda: reliability.target_exit(self)))
+        return checks
 
     def limit_change(self, target):
         original = int((target["cgroup"] / "memory.limit_in_bytes").read_text())
@@ -258,7 +295,7 @@ DumpProcessMaxNum = 10
         for index in range(self.a.churn_per_cycle):
             ctl = self.out / ("churn-%04d-%04d" % (cycle, index))
             ctl.mkdir()
-            (ctl / "target_mb").write_text("0")
+            write_control(ctl / "target_mb", "0")
             window_started = time.time()
             target = self.environment.launch(
                 [
@@ -456,6 +493,8 @@ DumpProcessMaxNum = 10
             yield self.wrap(0, target, "agent-off", lambda t=target: self.agent_off(t))
         for target in self.targets:
             yield self.wrap(0, target, "warmup", lambda t=target: self.capture(t))
+        for name, operation in self.extra_checks():
+            yield self.wrap(0, self.targets[0], name, operation)
         for cycle in range(1, self.a.cycles + 1):
             started = time.monotonic()
             self.current_cycle = cycle
@@ -516,6 +555,8 @@ DumpProcessMaxNum = 10
                 self.a.fd_growth,
                 self.a.rss_limit_mib * 1024 * 1024,
                 self.a.fd_limit,
+                watch_growth=self.a.watch_growth,
+                thread_growth=self.a.thread_growth,
             )
         record = dict(
             status="FAIL" if issues else "PASS",
@@ -533,6 +574,8 @@ DumpProcessMaxNum = 10
                 fd_growth=self.a.fd_growth,
                 rss_limit=self.a.rss_limit_mib * 1024 * 1024,
                 fd_limit=self.a.fd_limit,
+                watch_growth=self.a.watch_growth,
+                thread_growth=self.a.thread_growth,
             ),
             performance_evaluated=False,
             long_soak_verified=self.a.profile == "soak"

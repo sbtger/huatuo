@@ -204,3 +204,13 @@ resource budgets and unverified cases. A short PASS does not establish a
 
 See [the short-run validation record](STABILITY_VALIDATION.md) for executed
 scenarios, preserved failures and the limits of the current evidence.
+
+The [reliability follow-up plan](RELIABILITY_PLAN.md) describes opt-in same-Agent
+continuity, cross-target faults, exit-during-read and full cooldown checks.
+Business isolation and capture-task isolation are reported separately.
+
+See the [follow-up validation report](RELIABILITY_VALIDATION.md),
+[machine-readable results](RELIABILITY_RESULTS.json), and
+[failure diagnosis](RELIABILITY_DIAGNOSIS.md) for the preserved outcomes.
+Pressure-control values are published by atomic replacement so readers cannot
+observe an empty value between truncation and write.

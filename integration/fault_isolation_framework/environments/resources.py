@@ -7,6 +7,19 @@ from pathlib import Path
 from .linux import identity
 
 
+def inotify_watch_count(fdinfo):
+    count = 0
+    for path in Path(fdinfo).iterdir():
+        try:
+            count += sum(
+                line.startswith("inotify ") for line in path.read_text().splitlines()
+            )
+        except FileNotFoundError:
+            # A live Agent may close a descriptor between listing and reading it.
+            continue
+    return count
+
+
 def sample_process(pid):
     root = Path("/proc/%d" % pid)
     ident = identity(pid)
@@ -20,6 +33,7 @@ def sample_process(pid):
         rss_bytes=int(status["VmRSS"].split()[0]) * 1024,
         fds=len(list((root / "fd").iterdir())),
         threads=int(status["Threads"]),
+        inotify_watches=inotify_watch_count(root / "fdinfo"),
         settled=False,
     )
 

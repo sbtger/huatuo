@@ -5,9 +5,9 @@ import math
 from pathlib import Path
 import os
 from ....core.documents import read_documents
-from ....core.util import require, wait_for
+from ....core.util import write_control, require, wait_for
 from ....environments.linux import identity
-from ..memsnapshot.trigger import SnapshotTrigger
+from ..memsnapshot.trigger import SnapshotTrigger, event_after_request
 
 
 def burst_anon_floor(total_kib, baseline_kib):
@@ -36,7 +36,7 @@ class StabilityTrigger(SnapshotTrigger):
                 else next(t for t in self.owner.targets if t["language"] == "go")
             )
             if target["language"] != "go":
-                (target["ctl"] / "target_mb").write_text("500")
+                write_control(target["ctl"] / "target_mb", "500")
                 wait_for(
                     "non-Go target resident before anonymous trigger",
                     lambda: int(
@@ -46,13 +46,13 @@ class StabilityTrigger(SnapshotTrigger):
                     > 450 * 1024 * 1024,
                     timeout=25,
                 )
-            (driver["ctl"] / "target_mb").write_text("500")
+            write_control(driver["ctl"] / "target_mb", "500")
         else:
-            (target["ctl"] / "target_mb").write_text("500")
+            write_control(target["ctl"] / "target_mb", "500")
 
-    def capture(self, target, normal=False):
+    def capture(self, target, normal=False, not_before=None):
         if self.owner.tracer_name != "memburst":
-            return super().capture(target, normal)
+            return super().capture(target, normal, not_before=not_before)
         self.release_all()
         self.release(target)
         time.sleep(
@@ -70,6 +70,8 @@ class StabilityTrigger(SnapshotTrigger):
             for index, doc in enumerate(
                 read_documents(self.owner.event_path)[before:], before
             ):
+                if not event_after_request(doc, not_before):
+                    continue
                 records = doc.get("tracer_data", {}).get("process_snapshots", [])
                 record = next((r for r in records if r["pid"] == target["pid"]), None)
                 if record:
@@ -113,6 +115,8 @@ class StabilityTrigger(SnapshotTrigger):
             target_pid=target["pid"],
             agent_pid=self.owner.agent.pid,
         )
+        if not_before is not None:
+            result["not_before_epoch"] = not_before
         if normal:
             attempts = [dict(result)]
             for _ in range(2):
@@ -123,7 +127,7 @@ class StabilityTrigger(SnapshotTrigger):
                     != "CPython interpreter GC generations are invalid"
                 ):
                     break
-                result = self.capture(target)
+                result = self.capture(target, not_before=not_before)
                 attempts.append(dict(result))
             require(
                 result["status"]

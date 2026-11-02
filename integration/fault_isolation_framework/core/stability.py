@@ -17,7 +17,15 @@ def coverage_errors(cycles, minimum_seconds, rows, elapsed):
     return errors
 
 
-def resource_errors(rows, rss_growth, fd_growth, rss_limit, fd_limit):
+def resource_errors(
+    rows,
+    rss_growth,
+    fd_growth,
+    rss_limit,
+    fd_limit,
+    watch_growth=None,
+    thread_growth=None,
+):
     errors = []
     groups = {}
     if not rows:
@@ -31,6 +39,12 @@ def resource_errors(rows, rss_growth, fd_growth, rss_limit, fd_limit):
         if not row.get("agent"):
             continue
         groups.setdefault(tuple(row["agent"]), []).append(row)
+        for field, budget in (
+            ("inotify_watches", watch_growth),
+            ("threads", thread_growth),
+        ):
+            if budget is not None and field not in row:
+                errors.append("required resource observation missing: " + field)
         if row["rss_bytes"] > rss_limit or row["fds"] > fd_limit:
             errors.append("Agent exceeded absolute resource budget")
     if not groups:
@@ -50,6 +64,13 @@ def resource_errors(rows, rss_growth, fd_growth, rss_limit, fd_limit):
             errors.append("Agent RSS grew beyond budget: " + str(agent))
         if settled[-1]["fds"] - settled[0]["fds"] > fd_growth:
             errors.append("Agent FD count grew beyond budget: " + str(agent))
+        for field, budget in (
+            ("inotify_watches", watch_growth),
+            ("threads", thread_growth),
+        ):
+            if budget is not None and all(field in row for row in settled):
+                if settled[-1][field] - settled[0][field] > budget:
+                    errors.append("Agent %s grew beyond budget: %s" % (field, agent))
     return sorted(set(errors))
 
 

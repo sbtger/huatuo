@@ -1,6 +1,6 @@
 # Copyright 2026 The HuaTuo Authors. Licensed under the Apache License, Version 2.0.
 import signal, time
-from ....core.util import require, wait_for
+from ....core.util import write_control, require, wait_for
 from ....core.documents import read_documents
 from ....workloads.http_probe import request_http
 from .assertions import validate_fault
@@ -44,7 +44,7 @@ class FaultScenarios:
                 self.owner.start_agent()
                 return self.owner.trigger.capture(t, normal=True)
             if mode == "storage_full":
-                (t["ctl"] / "target_mb").write_text("500")
+                write_control(t["ctl"] / "target_mb", "500")
                 wait_for(
                     "storage ENOSPC",
                     lambda: "no space left on device" in self.owner.logpath.read_text(),
@@ -52,7 +52,7 @@ class FaultScenarios:
                 )
                 return dict(storage_failure="ENOSPC", log=str(self.owner.logpath))
             if mode in ("block", "kill_after_read"):
-                (t["ctl"] / "target_mb").write_text("500")
+                write_control(t["ctl"] / "target_mb", "500")
                 marker = (
                     "MEMSNAP_READ_COMPLETED id=" + self.owner.case_name
                     if mode == "kill_after_read"
@@ -139,7 +139,7 @@ class FaultScenarios:
             def disabled(t=t):
                 self.owner.trigger.release(t)
                 self.owner.start_agent(disabled=True)
-                (t["ctl"] / "target_mb").write_text("500")
+                write_control(t["ctl"] / "target_mb", "500")
                 time.sleep(3)
                 require(
                     self.owner.agent.poll() is None,

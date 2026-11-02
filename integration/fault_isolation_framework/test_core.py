@@ -180,6 +180,26 @@ class FrameworkTest(unittest.TestCase):
         self.assertEqual(result["total_business_requests"], {"payments": 2})
         self.assertEqual(self.audit.audit(self.root)["status"], "PASS")
 
+    def test_partial_feature_failure_still_audits_observed_business_streams(self):
+        self.exercise(hits=0)
+        result = self.audit.audit(self.root)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result.get("business_audit_status"), "PASS")
+        self.assertEqual(result["total_work_requests"], {"payments": 1})
+
+    def test_partial_plan_cannot_hide_bad_between_phase_business_records(self):
+        self.exercise(hits=0, late_error=True)
+        result = self.audit.audit(self.root)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result.get("business_audit_status"), "FAIL")
+        self.assertTrue(result["business_errors"])
+
+    def test_partial_business_is_unverified_when_request_evidence_is_missing(self):
+        self.exercise(hits=0)
+        (self.root / "payments-requests.jsonl").unlink()
+        result = self.audit.audit(self.root)
+        self.assertEqual(result.get("business_audit_status"), "UNVERIFIED")
+
     def test_unreached_fault_fails(self):
         self.assertEqual(self.exercise(hits=0)["status"], "FAIL")
 
@@ -258,10 +278,6 @@ class FrameworkTest(unittest.TestCase):
         store = self.evidence.EvidenceStore(self.root)
         with self.assertRaises(ValueError):
             store.register("../foreign.log", "agent_log")
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class StabilityControlsTest(unittest.TestCase):
@@ -554,3 +570,482 @@ class ShippingAgentControlTest(unittest.TestCase):
         ):
             adapter.capture(adapter.targets[0])
         self.assertEqual(selected, [dict(plain=True)])
+
+
+class ReliabilityContractsTest(unittest.TestCase):
+    def contract(self, name, detail):
+        try:
+            from fault_isolation_framework.adapters.huatuo.stability.reliability import (
+                contract_errors,
+            )
+        except ImportError:
+            self.fail("reliability evidence contracts are unavailable")
+        return contract_errors(name, detail)
+
+    def test_steady_replacement_and_short_observation_fail(self):
+        self.assertTrue(
+            self.contract(
+                "steady",
+                dict(
+                    rounds=20,
+                    minimum_rounds=20,
+                    elapsed_seconds=1800,
+                    minimum_seconds=1800,
+                    identities=[[1, 2], [2, 3]],
+                    agent_binary="agent",
+                    captures=[],
+                ),
+            )
+        )
+
+    def test_cooldown_requires_full_observation_and_positive_capture(self):
+        self.assertTrue(
+            self.contract(
+                "cooldown",
+                dict(
+                    suppressed=True,
+                    observed_seconds=0.5,
+                    samples=[0],
+                    post_expiry_capture={},
+                ),
+            )
+        )
+
+    def test_isolation_requires_different_live_target_and_same_agent(self):
+        self.assertTrue(
+            self.contract(
+                "isolation",
+                dict(
+                    fault_pid=3,
+                    healthy_pid=3,
+                    agent_before=[1, 2],
+                    agent_after=[1, 2],
+                    fault_active=True,
+                    marker="MEMSNAP_FAULT",
+                    healthy_capture={},
+                ),
+            )
+        )
+
+    def test_target_exit_requires_read_after_exit_and_same_agent_recovery(self):
+        self.assertTrue(
+            self.contract(
+                "target-exit",
+                dict(
+                    target_gone=True,
+                    read_result="",
+                    agent_before=[1, 2],
+                    agent_after=[1, 2],
+                    recovery={},
+                ),
+            )
+        )
+
+    def test_steady_cannot_claim_rounds_without_all_runtime_captures(self):
+        detail = dict(
+            rounds=20,
+            minimum_rounds=20,
+            elapsed_seconds=1800,
+            minimum_seconds=1800,
+            identities=[[1, 2]],
+            agent_binary="agent",
+            languages=["go", "java", "python"],
+            round_results=[
+                dict(round=i + 1, agent=[1, 2], captures=[]) for i in range(20)
+            ],
+        )
+        self.assertTrue(self.contract("steady", detail))
+
+    def test_cooldown_negative_window_must_precede_expiry(self):
+        detail = dict(
+            initial_event_count=1,
+            observed_seconds=4,
+            cooldown_deadline=8,
+            observations=[dict(at=i, events=1) for i in [5, 7, 9]],
+            post_expiry_capture=dict(normal_attempts=[{}]),
+        )
+        self.assertTrue(self.contract("cooldown", detail))
+
+    def test_steady_accepts_complete_rounds_but_rejects_one_missing_language(self):
+        captures = [
+            dict(target_language=language, agent_pid=1)
+            for language in ["go", "java", "python"]
+        ]
+        detail = dict(
+            rounds=20,
+            minimum_rounds=20,
+            elapsed_seconds=1800,
+            minimum_seconds=1800,
+            identities=[[1, 2]],
+            agent_binary="agent",
+            languages=["go", "java", "python"],
+            round_results=[
+                dict(round=i + 1, agent=[1, 2], captures=list(captures))
+                for i in range(20)
+            ],
+        )
+        self.assertEqual(self.contract("steady", detail), [])
+        detail["round_results"][10]["captures"].pop()
+        self.assertTrue(self.contract("steady", detail))
+
+    def test_cooldown_cannot_skip_middle_of_observation_window(self):
+        detail = dict(
+            initial_event_count=1,
+            observed_seconds=7,
+            observation_started=0,
+            cooldown_deadline=7,
+            observations=[dict(at=i, events=1) for i in [0, 1, 7]],
+            post_expiry_capture=dict(normal_attempts=[{}]),
+        )
+        self.assertTrue(self.contract("cooldown", detail))
+
+    def test_target_exit_audit_rejects_success_for_dead_target(self):
+        from fault_isolation_framework.adapters.huatuo.stability.reliability import (
+            audit_check,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "agent-1.log").write_text("MARK\nerr=no such process\n")
+            (root / "events-1").mkdir()
+            (root / "events-1/memburst").write_text(
+                json.dumps(
+                    dict(
+                        tracer_data=dict(
+                            process_snapshots=[
+                                dict(pid=9, snapshot=dict(status="complete"))
+                            ]
+                        )
+                    )
+                )
+            )
+            detail = dict(
+                check="target-exit",
+                module="memburst",
+                target_pid=9,
+                target_gone=True,
+                marker="MARK",
+                read_result="err=no such process",
+                agent_before=[1, 2],
+                agent_after=[1, 2],
+                recovery=dict(normal_attempts=[{}]),
+            )
+            case = dict(
+                name="go/target-exit",
+                detail=detail,
+                evidence=["agent-1.log", "events-1/memburst"],
+            )
+            self.assertTrue(audit_check(root, case))
+
+    def test_delay_isolation_cannot_pass_after_fault_has_already_finished(self):
+        detail = dict(
+            mode="delay",
+            fault_pid=3,
+            healthy_pid=4,
+            agent_before=[1, 2],
+            agent_after=[1, 2],
+            fault_active=True,
+            marker="MEMSNAP_FAULT",
+            healthy_capture=dict(normal_attempts=[{}]),
+            healthy_started_ns=30,
+            healthy_finished_ns=40,
+            read_active_ns=10,
+            read_end_ns=20,
+        )
+        self.assertTrue(self.contract("isolation", detail))
+
+    def test_memburst_cooldown_uses_trigger_time_before_snapshot_completion(self):
+        try:
+            from fault_isolation_framework.adapters.huatuo.stability.reliability import (
+                cooldown_boundary,
+            )
+        except ImportError:
+            self.fail("cooldown has no module-specific raw timestamp boundary")
+        doc = dict(
+            started_timestamp="1970-01-01T00:00:00Z",
+            uploaded_timestamp="1970-01-01T00:00:05Z",
+        )
+        self.assertAlmostEqual(cooldown_boundary("memburst", doc, 8, 6, 100), 101.8)
+        self.assertAlmostEqual(
+            cooldown_boundary("memory_threshold_snapshot", doc, 8, 6, 100), 106.8
+        )
+
+    def test_isolation_cannot_omit_another_selected_healthy_runtime(self):
+        detail = dict(
+            mode="efault",
+            fault_pid=3,
+            healthy_pid=4,
+            agent_before=[1, 2],
+            agent_after=[1, 2],
+            fault_active=True,
+            marker="MEMSNAP_FAULT",
+            healthy_capture=dict(normal_attempts=[{}]),
+            required_healthy_targets=2,
+            additional_healthy_captures=[],
+        )
+        self.assertTrue(self.contract("isolation", detail))
+
+    def test_isolation_cannot_count_one_healthy_target_twice(self):
+        capture = dict(target_pid=4, normal_attempts=[{}])
+        detail = dict(
+            mode="efault",
+            fault_pid=3,
+            healthy_pid=4,
+            agent_before=[1, 2],
+            agent_after=[1, 2],
+            fault_active=True,
+            marker="MEMSNAP_FAULT",
+            healthy_capture=capture,
+            required_healthy_targets=2,
+            expected_healthy_pids=[4, 5],
+            additional_healthy_captures=[dict(capture)],
+        )
+        self.assertTrue(self.contract("isolation", detail))
+
+    def test_isolation_audit_rejects_witness_for_another_fault_target(self):
+        from fault_isolation_framework.adapters.huatuo.stability.reliability import (
+            audit_check,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "environment.json").write_text(
+                json.dumps(dict(targets=[dict(pid=p) for p in [3, 4, 5]]))
+            )
+            (root / "agent-1.log").write_text("MARK\n")
+            (root / "attempt.json").write_text(json.dumps(dict(fault_pid=99)))
+            detail = dict(
+                check="isolation",
+                mode="efault",
+                fault_pid=3,
+                healthy_pid=4,
+                agent_before=[1, 2],
+                agent_after=[1, 2],
+                fault_active=True,
+                marker="MARK",
+                healthy_capture=dict(target_pid=4, normal_attempts=[{}]),
+                additional_healthy_captures=[dict(target_pid=5, normal_attempts=[{}])],
+                required_healthy_targets=2,
+                expected_healthy_pids=[4, 5],
+                witness="attempt.json",
+            )
+            self.assertTrue(
+                audit_check(
+                    root,
+                    dict(
+                        name="go/isolation",
+                        detail=detail,
+                        evidence=["agent-1.log", "attempt.json"],
+                    ),
+                )
+            )
+
+    def test_selected_steady_check_cannot_be_silently_skipped(self):
+        try:
+            from fault_isolation_framework.adapters.huatuo.stability.reliability import (
+                selected_check_errors,
+            )
+        except ImportError:
+            self.fail("audit does not reconcile selected checks with command line")
+        self.assertTrue(
+            selected_check_errors(
+                ["stability.py", "--checks", "steady"],
+                [dict(name="cycle-0001/go/capture", detail={})],
+            )
+        )
+        self.assertTrue(
+            selected_check_errors(
+                ["stability.py", "--checks=steady", "--steady-seconds=3600"],
+                [
+                    dict(
+                        name="cycle-0000/go/steady",
+                        detail=dict(
+                            check="steady", minimum_rounds=20, minimum_seconds=1800
+                        ),
+                    )
+                ],
+            )
+        )
+
+    def test_selected_isolation_cannot_substitute_a_weaker_fault_mode(self):
+        from fault_isolation_framework.adapters.huatuo.stability.reliability import (
+            selected_check_errors,
+        )
+
+        self.assertTrue(
+            selected_check_errors(
+                ["stability.py", "--checks", "isolation-block"],
+                [
+                    dict(
+                        name="cycle-0000/go/isolation-block",
+                        detail=dict(check="isolation", mode="efault"),
+                    )
+                ],
+            )
+        )
+
+    def test_inotify_watch_leak_is_detected_even_when_fd_count_is_constant(self):
+        from fault_isolation_framework.core.stability import resource_errors
+
+        rows = [
+            dict(
+                time=t,
+                agent=[1, 2],
+                rss_bytes=10,
+                fds=3,
+                threads=22,
+                inotify_watches=w,
+                settled=True,
+                baseline=(t == 0),
+            )
+            for t, w in [(0, 3), (2, 4)]
+        ]
+        try:
+            errors = resource_errors(
+                rows, 64, 16, 512, 512, watch_growth=0, thread_growth=16
+            )
+        except TypeError:
+            self.fail("resource gates omit inotify watch and thread growth")
+        self.assertTrue(errors)
+        rows[1]["inotify_watches"] = 3
+        rows[1]["threads"] = 39
+        self.assertTrue(
+            resource_errors(rows, 64, 16, 512, 512, watch_growth=0, thread_growth=16)
+        )
+        rows[1]["threads"] = 22
+        self.assertEqual(
+            resource_errors(rows, 64, 16, 512, 512, watch_growth=0, thread_growth=16),
+            [],
+        )
+
+    def test_watch_budget_cannot_pass_without_raw_watch_samples(self):
+        from fault_isolation_framework.core.stability import resource_errors
+
+        rows = [dict(time=0, agent=[1, 2], rss_bytes=10, fds=3, threads=22)]
+        try:
+            self.assertTrue(
+                resource_errors(
+                    rows, 64, 16, 512, 512, watch_growth=0, thread_growth=16
+                )
+            )
+        except TypeError:
+            self.fail("resource gates cannot require raw watch observations")
+
+    def test_late_persisted_pre_request_event_is_not_a_new_capture(self):
+        try:
+            from fault_isolation_framework.adapters.huatuo.memsnapshot.trigger import (
+                event_after_request,
+            )
+        except ImportError:
+            self.fail("capture does not reject asynchronous pre-request events")
+        self.assertFalse(
+            event_after_request(dict(started_timestamp="1970-01-01T00:00:05Z"), 8)
+        )
+        self.assertTrue(
+            event_after_request(dict(started_timestamp="1970-01-01T00:00:09Z"), 8)
+        )
+
+    def test_fresh_agent_starts_below_pressure_to_avoid_untracked_startup_capture(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from fault_isolation_framework.adapters.huatuo.stability.adapter import (
+            StabilityAdapter,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            control = Path(tmp) / "target_mb"
+            control.write_text("500")
+            adapter = StabilityAdapter.__new__(StabilityAdapter)
+            adapter.agent = None
+            adapter.targets = [dict(language="go")]
+            adapter.warmed_agents, adapter.warmed_languages = set(), {}
+            adapter.counts = dict(captures=0)
+            adapter.monitor = SimpleNamespace(record=lambda **kw: None)
+            adapter.trigger = SimpleNamespace(
+                capture=lambda *a, **kw: {}, release_all=lambda: control.write_text("0")
+            )
+
+            def start(**kwargs):
+                self.assertEqual(
+                    control.read_text(),
+                    "0",
+                    "Agent may capture high pressure before driver records its event baseline",
+                )
+                adapter.agent = SimpleNamespace(pid=1)
+
+            adapter.start_agent = start
+            with patch(
+                "fault_isolation_framework.adapters.huatuo.stability.adapter.identity",
+                return_value=[1, 2],
+            ):
+                adapter.capture(adapter.targets[0])
+
+    def test_normal_capture_clears_other_pressure_sources_even_with_live_agent(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from fault_isolation_framework.adapters.huatuo.stability.adapter import (
+            StabilityAdapter,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            other = Path(tmp) / "other-target-mb"
+            other.write_text("500")
+            adapter = StabilityAdapter.__new__(StabilityAdapter)
+            adapter.agent = SimpleNamespace(pid=1)
+            adapter.targets = [dict(language="go"), dict(language="java")]
+            adapter.warmed_agents, adapter.warmed_languages = set(), {}
+            adapter.counts = dict(captures=0)
+            adapter.monitor = SimpleNamespace(record=lambda **kw: None)
+
+            def capture(*args, **kwargs):
+                self.assertEqual(
+                    other.read_text(),
+                    "0",
+                    "single-target edge is confounded by a previous pressure source",
+                )
+                return {}
+
+            adapter.trigger = SimpleNamespace(
+                capture=capture, release_all=lambda: other.write_text("0")
+            )
+            with patch(
+                "fault_isolation_framework.adapters.huatuo.stability.adapter.identity",
+                return_value=[1, 2],
+            ):
+                adapter.capture(adapter.targets[0])
+
+
+class ControlPublicationTest(unittest.TestCase):
+    def test_existing_reader_never_sees_a_rewritten_pressure_value(self):
+        util = importlib.import_module("fault_isolation_framework.core.util")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "target_mb"
+            path.write_text("500")
+            with path.open() as reader:
+                util.write_control(path, "0")
+                self.assertEqual(reader.read(), "500")
+            self.assertEqual(path.read_text(), "0")
+            self.assertEqual(
+                sorted(p.name for p in Path(directory).iterdir()), ["target_mb"]
+            )
+
+    def test_failed_publication_preserves_previous_value_and_removes_temporary(self):
+        from unittest.mock import patch
+
+        util = importlib.import_module("fault_isolation_framework.core.util")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "target_mb"
+            path.write_text("500")
+            with patch.object(
+                util.os, "replace", side_effect=OSError("injected publish failure")
+            ):
+                with self.assertRaises(OSError):
+                    util.write_control(path, "0")
+            self.assertEqual(path.read_text(), "500")
+            self.assertEqual(
+                sorted(p.name for p in Path(directory).iterdir()), ["target_mb"]
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

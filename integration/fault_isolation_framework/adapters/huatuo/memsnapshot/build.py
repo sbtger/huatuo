@@ -5,7 +5,7 @@ from pathlib import Path
 
 HELPER = r"""
 // Test-only overlay; never included in the shipping Agent.
-type memsnapshotFaultSpec struct { PID int `json:"pid"`; Action string `json:"action"`; ID string `json:"id"` }
+type memsnapshotFaultSpec struct { PID int `json:"pid"`; Action string `json:"action"`; ID string `json:"id"`; DelayMS int `json:"delay_ms"` }
 var memsnapshotFaultSeen sync.Map
 func memsnapshotFault(pid int, stage string) memsnapshotFaultSpec {
  var f memsnapshotFaultSpec
@@ -26,17 +26,30 @@ func MemsnapshotTestProvider(ctx context.Context,pid int) context.Context {
  }
  return ctx
 }
+func memsnapshotTestClock() int64 { var ts Timespec;if ClockGettime(CLOCK_MONOTONIC,&ts)!=nil{return 0};return ts.Nano() }
 func ProcessVMReadv(pid int, localIov []Iovec,remoteIov []RemoteIovec,flags uint)(n int,err error) {
  f:=memsnapshotFault(pid,"read")
+ if f.Action=="delay" || f.Action=="block" {
+  if _,seen:=memsnapshotFaultSeen.LoadOrStore(f.ID+"active",true);!seen {
+   fmt.Fprintf(os.Stderr,"MEMSNAP_READ_ACTIVE id=%s pid=%d at=%d\n",f.ID,pid,memsnapshotTestClock())
+   defer func(){fmt.Fprintf(os.Stderr,"MEMSNAP_READ_END id=%s pid=%d at=%d\n",f.ID,pid,memsnapshotTestClock())}()
+  }
+ }
  switch f.Action {
  case "efault":return -1,EFAULT
  case "block":select{}
- case "delay":time.Sleep(4*time.Second)
+ case "delay":d:=time.Duration(f.DelayMS)*time.Millisecond;if d<=0{d=4*time.Second};if d>30*time.Second{d=30*time.Second};time.Sleep(d)
+ case "pause":
+  until:=time.Now().Add(30*time.Second)
+  for time.Now().Before(until) {
+   b,_:=os.ReadFile(os.Getenv("HUATUO_MEMSNAP_FAULT_FILE"));var current memsnapshotFaultSpec;_ = json.Unmarshal(b,&current)
+   if current.ID!=f.ID || current.Action!="pause" {break};time.Sleep(10*time.Millisecond)
+  }
  }
  n,err=memsnapshotRealProcessVMReadv(pid,localIov,remoteIov,flags)
  if f.Action=="short" && err==nil && n>0 {n--}
  if f.Action=="kill_after_read" {fmt.Fprintf(os.Stderr,"MEMSNAP_READ_COMPLETED id=%s n=%d err=%v\n",f.ID,n,err);select{}}
- if f.Action=="mark" {if _,seen:=memsnapshotFaultSeen.LoadOrStore(f.ID+"result",true);!seen {fmt.Fprintf(os.Stderr,"MEMSNAP_READ_RESULT id=%s n=%d err=%v\n",f.ID,n,err)}}
+ if f.Action=="mark" || f.Action=="pause" {if _,seen:=memsnapshotFaultSeen.LoadOrStore(f.ID+"result",true);!seen {fmt.Fprintf(os.Stderr,"MEMSNAP_READ_RESULT id=%s n=%d err=%v\n",f.ID,n,err)}}
  return
 }
 """

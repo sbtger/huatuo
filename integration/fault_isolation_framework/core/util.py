@@ -1,5 +1,6 @@
 # Copyright 2026 The HuaTuo Authors. Licensed under the Apache License, Version 2.0.
-import json, subprocess, time
+import json, os, subprocess, time, uuid
+from pathlib import Path
 
 
 class Failure(Exception):
@@ -40,3 +41,18 @@ def wait_for(description, predicate, timeout=30, period=0.25):
             last_error = str(exc)
         time.sleep(period)
     raise Failure(f"timeout waiting for {description}; last error: {last_error}")
+
+
+def write_control(path, value):
+    """Publish a complete control value without truncating readers' open files."""
+    path = Path(path)
+    temporary = path.with_name("." + path.name + "." + uuid.uuid4().hex)
+    try:
+        with temporary.open("x") as stream:
+            stream.write(value)
+        os.replace(temporary, path)
+    finally:
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass

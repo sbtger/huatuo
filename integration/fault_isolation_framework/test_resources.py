@@ -139,3 +139,56 @@ class RankingScaleObservationTest(unittest.TestCase):
                 self.assertIn("ranking helper", row.get("error", ""))
             finally:
                 monitor.stream.close()
+
+
+class InotifyObservationTest(unittest.TestCase):
+    def test_counts_watches_inside_fdinfo_not_just_number_of_fds(self):
+        try:
+            from fault_isolation_framework.environments.resources import (
+                inotify_watch_count,
+            )
+        except ImportError:
+            self.fail("inotify watch observation is unavailable")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "1").write_text("pos:\t0\nflags:\t02000000\n")
+            (root / "4").write_text(
+                "pos:\t0\ninotify wd:1 ino:12\ninotify wd:2 ino:13\n"
+            )
+            (root / "7").write_text("pos:\t0\nflags:\t02000000\n")
+            self.assertEqual(inotify_watch_count(root), 2)
+
+
+class CaptureDiagnosticsTest(unittest.TestCase):
+    def test_timeout_records_actual_usage_instead_of_assuming_control_was_applied(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.core.evidence import EvidenceStore
+
+        try:
+            from fault_isolation_framework.adapters.huatuo.stability.diagnostics import (
+                capture_failure,
+            )
+        except ImportError:
+            self.fail("failed captures have no live input diagnostics")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            control, group = root / "control", root / "group"
+            control.mkdir()
+            group.mkdir()
+            (control / "target_mb").write_text("500")
+            (group / "memory.usage_in_bytes").write_text("100")
+            (group / "memory.limit_in_bytes").write_text("1000")
+            evidence = EvidenceStore(root / "evidence")
+            owner = SimpleNamespace(
+                out=evidence.output,
+                evidence=evidence,
+                case_name="go/capture",
+                last_capture=1,
+                agent=None,
+                targets=[dict(language="go", pid=999999999, ctl=control, cgroup=group)],
+            )
+            name = capture_failure(owner, RuntimeError("missing event"))
+            data = json.loads((owner.out / name).read_text())
+            self.assertEqual(data["targets"][0]["requested_mb"], "500")
+            self.assertEqual(data["targets"][0]["memory.usage_in_bytes"], "100")
+            self.assertIn(name, evidence.artifacts)

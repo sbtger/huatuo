@@ -1,0 +1,2279 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "timezone": "Asia/Shanghai",
+  "scope": "short VM reliability validation; no performance or 72-hour claim",
+  "baseline_revision": "8a627bdc032ba12d0e83d59a49083b071baa8c9f",
+  "framework_parent_revision": "9f4442dc1e4dadd6ead417b06bb3fc598d0c047f",
+  "planned_primary_runs": 22,
+  "completed_primary_runs": 22,
+  "producer_notes": "Original primary runs used frozen producer100. Offline auditor103 independently rechecked business evidence. Follow-ups use isolated producer105 with atomic pressure publication. Counts identify control-suite snapshots, not Git revisions.",
+  "audit_json_note": "audit.json is a regenerated derived result from offline auditor103; canonical summary and registered raw streams/logs remain hash-verified",
+  "auditor_source_sha256": {
+    "audit.py": "31d18a476c507839d3f2028fa60926b7e2adea7e4bff4e30ab57284d9c87b28a",
+    "business_audit.py": "20d789d7c88986deddb7f537f806d8be8c5fcd13e5661f1f0395d6785051b227"
+  },
+  "primary": [
+    {
+      "run": "reliability-threshold-target-exit-20261102-trial2",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 135.98827123100637,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 16,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1304,
+        "java": 1304,
+        "python": 1304
+      },
+      "growth": [
+        {
+          "identity": [
+            141271,
+            24260030
+          ],
+          "seconds": 0.011,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/target-exit",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            141824,
+            24262092
+          ],
+          "seconds": 43.527,
+          "baseline_phase": "cycle-0001/python/capture",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 10.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 106.738,
+        "fds": 41,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 26,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "66db8e8d96133b74fafa96424415da26381c468e1a6f9a0ce17542a7d5f8ad2f",
+      "summary_sha256": "c8f60a85aac93c0665e9823fd34c18d6f64925961ab3712d70020fac6cb02398",
+      "environment_sha256": "fb215e37f57706589cfece28127faf94da756c46f7ed895dba0f389de5859c1c",
+      "executed_framework_sha256": "109694dd4ed382f4d542ceca23a5ae7c3fc914085ef1a9b9ad2d72d94287f227",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-isolation-efault-20261102-trial2",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 145.12271578298532,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 16,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1396,
+        "java": 1396,
+        "python": 1396
+      },
+      "growth": [
+        {
+          "identity": [
+            144917,
+            24273672
+          ],
+          "seconds": 0.011,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-efault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            145366,
+            24275686
+          ],
+          "seconds": 61.427,
+          "baseline_phase": "cycle-0001/go/capture",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 4.762,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 98.258,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 27,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "13381c7bf0104929b983d82ac22ce35829830543e0874e95a63ee221d05fbb3d",
+      "summary_sha256": "7c1019aa868048df10299c64b87aa4292722382a32de173aee8bdf49ebb87eb3",
+      "environment_sha256": "f5f7e7713f92e9624e0f7d033534c0379236ac308ed47e1260075faa3911278e",
+      "executed_framework_sha256": "f9ed4fcd72b26e6ccfae3d18793c3e338cf2d59de3bfe745463eca7ad500d39e",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-efault-attempt.json",
+          "hash_verified": true,
+          "mode": "efault",
+          "healthy_started_ns": 242767558794966,
+          "attempt_finished_ns": 242777765705716,
+          "read_active_ns": 0,
+          "read_end_ns": 0
+        }
+      ]
+    },
+    {
+      "run": "reliability-threshold-isolation-delay-20261102-trial2",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 91.71016363200033,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 7,
+      "failed_cases": [
+        {
+          "name": "cycle-0000/go/isolation-delay",
+          "error": "Failure('timeout waiting for real Agent persisted java capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 862,
+        "java": 862,
+        "python": 862
+      },
+      "growth": [
+        {
+          "identity": [
+            148635,
+            24288274
+          ],
+          "seconds": 0.013,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-delay",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 92.262,
+        "fds": 40,
+        "threads": 22,
+        "inotify_watches": 3
+      },
+      "integrity": {
+        "verified_artifacts": 20,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "89658aa3b62cfee2cf95fc57fad33ea95ac6d895cea783e3fe43b8e341cf1676",
+      "summary_sha256": "81a1e810f518c1db593dadae98648eb98e7532ab2c33e72bec7c4e4c4e11778a",
+      "environment_sha256": "6519d90445328fc71b0335af8df55486d90c98649bbf166485129795c0ab384c",
+      "executed_framework_sha256": "c57af4b6bbc6f28f44d31d31383d85eeb89e34e2f73a1b784c79eaed9e60c4a0",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-delay-attempt.json",
+          "hash_verified": true,
+          "mode": "delay",
+          "healthy_started_ns": 242913588775138,
+          "attempt_finished_ns": 242958884680559,
+          "read_active_ns": 242904941172008,
+          "read_end_ns": 242934941346948
+        }
+      ]
+    },
+    {
+      "run": "reliability-threshold-isolation-block-20261102-trial2",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 91.79380001398386,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 7,
+      "failed_cases": [
+        {
+          "name": "cycle-0000/go/isolation-block",
+          "error": "Failure('timeout waiting for real Agent persisted java capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 862,
+        "java": 862,
+        "python": 862
+      },
+      "growth": [
+        {
+          "identity": [
+            151117,
+            24297497
+          ],
+          "seconds": 0.014,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-block",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 92.344,
+        "fds": 40,
+        "threads": 22,
+        "inotify_watches": 3
+      },
+      "integrity": {
+        "verified_artifacts": 20,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "d017af92491aede9135827526a352f8644885010c38e1eb88a4bfb754365bbd8",
+      "summary_sha256": "23438bd2eebd79fced8a8a8e94efbe9c3a76d3a40326d41c13953d5bef3302c4",
+      "environment_sha256": "d9dc0c9da88783313b4643e3fb96f9b7307f619d991b05e877a36bf2a1abac32",
+      "executed_framework_sha256": "d36d50556c400306093ae0552f9b57f09a41fd31ebd20295ba3c49eafe78c49e",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-block-attempt.json",
+          "hash_verified": true,
+          "mode": "block",
+          "healthy_started_ns": 243005842629078,
+          "attempt_finished_ns": 243051123895285,
+          "read_active_ns": 242997214787959,
+          "read_end_ns": 0
+        }
+      ]
+    },
+    {
+      "run": "reliability-threshold-fault-panic-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 185.8497816559975,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 23,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1803,
+        "java": 1803,
+        "python": 1803
+      },
+      "growth": [
+        {
+          "identity": [
+            153600,
+            24306694
+          ],
+          "seconds": 69.88,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 12.879,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 104.051,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 45,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "ec2b877c2014ce3c5f6799ff04cca12fa0cc55347410a374dbb6f14ee9a30fe8",
+      "summary_sha256": "6f6140f19a1a5591534f86f22c349424c57e29ba8cd507f10584afd7ea38f4e9",
+      "environment_sha256": "d596c8206f0c1097c1cd895bbbc01be7f7791c7ee9771017cce3444242829a1e",
+      "executed_framework_sha256": "565bbe2c5a0a8678c66ecffbfe4ff40bab63e894dfa437c365139dd514f1da44",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-fault-cancel-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 185.6424193040002,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 23,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1798,
+        "java": 1798,
+        "python": 1798
+      },
+      "growth": [
+        {
+          "identity": [
+            158315,
+            24325365
+          ],
+          "seconds": 69.88,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 6.461,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 99.098,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 45,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "62af10385fb8d4fff12aaf96571eb711e278c79632907b4fe48448b11aaeb47d",
+      "summary_sha256": "bb9ef45161bdb815329cd5e210612cdba6eb0d5303910a046a25f0b3febf462a",
+      "environment_sha256": "f881839c4618595ec69fcd202aea05a66602918a714d405e3f1e080881a97a26",
+      "executed_framework_sha256": "4337d19f035db84c051dd7b8b9a9cf1d12d75055fced08722afb8a9cb2253722",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-fault-delay-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 197.60512864298653,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 23,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1918,
+        "java": 1918,
+        "python": 1918
+      },
+      "growth": [
+        {
+          "identity": [
+            162951,
+            24343978
+          ],
+          "seconds": 69.881,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 11.625,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 104.934,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 45,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "7733c439afcf9ad236bcb24486a17a1dc80ed04352a75b9235714c713fea57aa",
+      "summary_sha256": "e2edf332a717b5fa07f3675db6dd1f68bff7d9981484b3906df33e559828d16d",
+      "environment_sha256": "8b83d013608ba560471605b82389c6cfdc26d94ab7b5c193d0f56e319391718e",
+      "executed_framework_sha256": "2ba92c0c3c216599c4e8b5400cadf9b756336fb0b00166795760c5a07281439e",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-fault-block-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 159.1580993499956,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 23,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1532,
+        "java": 1532,
+        "python": 1532
+      },
+      "growth": [
+        {
+          "identity": [
+            167851,
+            24363810
+          ],
+          "seconds": 70.131,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 11.816,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 103.242,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 60,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "329a53ba3d33cf98fafd049eb31d088909fd6eda855cc41626c08e73582f80b6",
+      "summary_sha256": "396823de3b8bfb867e675a319335940ca9c7e47be3b03d5fcc9188b690b91f83",
+      "environment_sha256": "f82ba25734c7b20c663c576e42ad2110a27b528378282fc6f45dde34e20fc75e",
+      "executed_framework_sha256": "db23357f53f8085e198f736b343131504dd86c1f2edbdfa2a2fd1cbb14a7fdb6",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-fault-kill_after_read-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 159.34547419301816,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 23,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1535,
+        "java": 1535,
+        "python": 1535
+      },
+      "growth": [
+        {
+          "identity": [
+            172055,
+            24379775
+          ],
+          "seconds": 69.881,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 11.742,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 103.5,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 60,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "0fb9488252274520b26d26c98fd6c587348211b417d9c0548681530e043e1cb7",
+      "summary_sha256": "2e7379d89aa32075216a41af48f24440a4667afe7c7f315c45906337dc28216f",
+      "environment_sha256": "70680ffc7f91195dd90ded2cfce5f24ba2199ac129fcfb0f444e3091bdd20097",
+      "executed_framework_sha256": "2ae265299b8fe9317017c29fc9b41063cb30dc7e51164d8949552c55c2c32798",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-fault-permission-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 184.72996000101557,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 23,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1793,
+        "java": 1793,
+        "python": 1793
+      },
+      "growth": [
+        {
+          "identity": [
+            176297,
+            24395766
+          ],
+          "seconds": 69.881,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 11.121,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 103.98,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 60,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "3e7764c1c010fb1f232400b124a8e075e3a64403f5ac1fcf545641500690cab4",
+      "summary_sha256": "31c0b82c297ec974febff1fc97f63b384830fd1ee051a7571d68176548132f3d",
+      "environment_sha256": "8bcdd3cca5d1b64dd8206bb9313770cdef7da57a4f1cd7edd665e64302effe82",
+      "executed_framework_sha256": "f0a42cc7e859633968f7f72976f3886fe42262aa876c84023cf726b3a257f8fd",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-target-exit-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 178.44942270001047,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 15,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1727,
+        "java": 1727,
+        "python": 1727
+      },
+      "growth": [
+        {
+          "identity": [
+            181268,
+            24415232
+          ],
+          "seconds": 0.011,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/target-exit",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        },
+        {
+          "identity": [
+            181994,
+            24418162
+          ],
+          "seconds": 47.615,
+          "baseline_phase": "cycle-0001/python/capture",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 60.152,
+          "fd_growth": 0,
+          "thread_growth": 1,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 206.664,
+        "fds": 249,
+        "threads": 22,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 26,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "76267229e554c272428316e8676beff61e9480728a0aaa43496bef1969e2ad84",
+      "summary_sha256": "e6abbb04d9bc8a0672727207fd872bdc6801ef76fab31edaae6cd7d41aea0ede",
+      "environment_sha256": "912623623604bc27e94fb2714c1120960468344a78704196681e9ecf824346ce",
+      "executed_framework_sha256": "b24fe8c8044be88726bb129eea17513e2d8c36f21dad6a3492bb20349459a62f",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-isolation-efault-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 189.45791626902064,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 15,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1839,
+        "java": 1839,
+        "python": 1839
+      },
+      "growth": [
+        {
+          "identity": [
+            185770,
+            24433094
+          ],
+          "seconds": 0.011,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-efault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        },
+        {
+          "identity": [
+            186389,
+            24435976
+          ],
+          "seconds": 71.798,
+          "baseline_phase": "cycle-0001/go/capture",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 0.027,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 195.031,
+        "fds": 304,
+        "threads": 23,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 27,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "41e0817513ddc6b5c5fda1099d9622db1f9cd2cef26b35b333faede5107c554c",
+      "summary_sha256": "ba92c2645c4825dd84be7449e7d392f78395b298bc60d00f02c74ae4d408f9c3",
+      "environment_sha256": "af30fea950e9f1fb0d86a15c6ab80bd91fe044c4d64f789808c019058f7905af",
+      "executed_framework_sha256": "498c13dac655e86ba58c68389c60ab98386031d64e9daba8a7e154ea61367545",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-efault-attempt.json",
+          "hash_verified": true,
+          "mode": "efault",
+          "healthy_started_ns": 244371419626385,
+          "attempt_finished_ns": 244387589087749,
+          "read_active_ns": 0,
+          "read_end_ns": 0
+        }
+      ]
+    },
+    {
+      "run": "reliability-memburst-isolation-delay-20261102-trial1",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 116.59806045502773,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 7,
+      "failed_cases": [
+        {
+          "name": "cycle-0000/go/isolation-delay",
+          "error": "Failure('timeout waiting for real memburst ranked target capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 1111,
+        "java": 1111,
+        "python": 1111
+      },
+      "growth": [
+        {
+          "identity": [
+            190341,
+            24452065
+          ],
+          "seconds": 0.012,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-delay",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 157.113,
+        "fds": 238,
+        "threads": 21,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 20,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "7b7611d62359cc1f03fed41012a970de505f0f676c15deb1eaf61f8a97f9055e",
+      "summary_sha256": "729cd97781e125177dbb9440bc139f007d5a18202fe4d6f3f9972e1e8b6534dc",
+      "environment_sha256": "5b9cfa8a962ce0d60d5ab79bc11d798dca1f00787fad265371e5204c1c93bd5b",
+      "executed_framework_sha256": "9be9e119edc7d9e956cad7a68ecc899d8f7c3a3afe57affc3224ee72036cda66",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-delay-attempt.json",
+          "hash_verified": true,
+          "mode": "delay",
+          "healthy_started_ns": 244561125221578,
+          "attempt_finished_ns": 244604131141136,
+          "read_active_ns": 244552562665460,
+          "read_end_ns": 244582563593243
+        }
+      ]
+    },
+    {
+      "run": "reliability-memburst-isolation-block-20261102-trial1",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 108.68159843501053,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 7,
+      "failed_cases": [
+        {
+          "name": "cycle-0000/go/isolation-block",
+          "error": "Failure('timeout waiting for real memburst ranked target capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 1028,
+        "java": 1028,
+        "python": 1028
+      },
+      "growth": [
+        {
+          "identity": [
+            193338,
+            24463836
+          ],
+          "seconds": 0.01,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-block",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 181.781,
+        "fds": 440,
+        "threads": 21,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 20,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "005851f7cdb9c0b79aaf5b52642f5f7073ad2353651ff8139696b85029e8f3e7",
+      "summary_sha256": "8a81033390030a98ac08b28aa0412a11cdc443a419d12a06dcd403b41bdfcf79",
+      "environment_sha256": "ad0e716d9af1a235ac5cf487ada04ef9aaa115b432f9b527ad58ffc3624e2666",
+      "executed_framework_sha256": "52ef8e359aef90c17851fb87d6a46053f1102b00997d275f22b784ac36944149",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-block-attempt.json",
+          "hash_verified": true,
+          "mode": "block",
+          "healthy_started_ns": 244678830797648,
+          "attempt_finished_ns": 244721840651531,
+          "read_active_ns": 244670284944791,
+          "read_end_ns": 0
+        }
+      ]
+    },
+    {
+      "run": "reliability-memburst-fault-panic-20261102-trial1",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 244.7440434320015,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 22,
+      "failed_cases": [],
+      "errors": [
+        "Agent exceeded absolute resource budget",
+        "campaign final checks failed"
+      ],
+      "work_requests": {
+        "go": 2392,
+        "java": 2392,
+        "python": 2392
+      },
+      "growth": [
+        {
+          "identity": [
+            196170,
+            24474736
+          ],
+          "seconds": 83.743,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 21.164,
+          "fd_growth": 0,
+          "thread_growth": 1,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 182.621,
+        "fds": 650,
+        "threads": 22,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 45,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "35d1c05b0f1bf9d8723f24445f498424d90b4506909707e1d9d2a53da8a7ddc0",
+      "summary_sha256": "bb8cda809be55068d2b3c8a18e8a83e741c464fc32ced552df242d4e9140e2ab",
+      "environment_sha256": "201bea80f6e2555e24a259045ee79f69194d3930897524d1714f32ceff444eed",
+      "executed_framework_sha256": "ee9b9fcdd8fb68fbddab4477509f22af77c5523a71da776369996354f9d6833c",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-fault-cancel-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 245.34692956900108,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 22,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 2395,
+        "java": 2395,
+        "python": 2395
+      },
+      "growth": [
+        {
+          "identity": [
+            202060,
+            24499307
+          ],
+          "seconds": 83.755,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 7.43,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 199.695,
+        "fds": 512,
+        "threads": 23,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 45,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "c838de5aaed9065a2afaf447722d42a87720cec25cd9669e7b0acc9e72633a26",
+      "summary_sha256": "138f528412fb4e5cef09e1ae9e61eda764849ae8824f67b75240b12919510a0c",
+      "environment_sha256": "b4323af60750aaab01473745aa739b546e825cc008efaeb539dc5c2628d4a052",
+      "executed_framework_sha256": "ea9e6747335130a0336055916aca515e054dfd5c25382ede01fed4248298fdf0",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-fault-delay-20261102-trial1",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 257.3030578289763,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 22,
+      "failed_cases": [],
+      "errors": [
+        "Agent RSS grew beyond budget: (208037, 24523886)",
+        "campaign final checks failed"
+      ],
+      "work_requests": {
+        "go": 2515,
+        "java": 2515,
+        "python": 2515
+      },
+      "growth": [
+        {
+          "identity": [
+            208037,
+            24523886
+          ],
+          "seconds": 83.988,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 88.836,
+          "fd_growth": -134,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 184.328,
+        "fds": 450,
+        "threads": 23,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 45,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "e591c64c01e03ba4909344ea100e39e7c31df10cbf6f67b6a98c3c1f31076abc",
+      "summary_sha256": "30eec41c9beb09cf5c31bbd684285e722273e861ac898bd1ec8c6338827705f7",
+      "environment_sha256": "525d4cbb080ca9bf5c31efdf7415bfb285a588765f3a7a4f22fe5612b386813e",
+      "executed_framework_sha256": "8b1df1457d77f840adedc17210cdafb4959acb7c3c7b23bac7257a593b930aa0",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-fault-block-20261102-trial1",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 212.54704828601098,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 22,
+      "failed_cases": [],
+      "errors": [
+        "Agent exceeded absolute resource budget",
+        "campaign final checks failed"
+      ],
+      "work_requests": {
+        "go": 2067,
+        "java": 2067,
+        "python": 2067
+      },
+      "growth": [
+        {
+          "identity": [
+            214406,
+            24549661
+          ],
+          "seconds": 83.749,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": -10.664,
+          "fd_growth": 0,
+          "thread_growth": 1,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 205.848,
+        "fds": 526,
+        "threads": 22,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 60,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "a53061a81df7fce995d3db48856ab96681b62c6eefee59b2ae9d8f82951365e3",
+      "summary_sha256": "f3184788e1836fa7d00881548573c0bb80800f8bdefe868e47df607df82f7b6d",
+      "environment_sha256": "1fe29e8981fdea5208a01dcb2d21ef273f20bdd23470b024cd1e07a0b94e26fe",
+      "executed_framework_sha256": "dafefeea9380c6a13b69eb59cee097f4eaf8e3836eae63d4f8c9b650c913c542",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-fault-kill_after_read-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 211.3908675010025,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 22,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 2058,
+        "java": 2058,
+        "python": 2058
+      },
+      "growth": [
+        {
+          "identity": [
+            219805,
+            24570972
+          ],
+          "seconds": 83.751,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 3.379,
+          "fd_growth": 0,
+          "thread_growth": 2,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 191.715,
+        "fds": 506,
+        "threads": 23,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 60,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "2f4f5524d0e20bc15c0dcb0ab5b707fc515910d86f24aa6162f6c42b5b099f7d",
+      "summary_sha256": "762549c246fb12efd1b6e3161a6f91ebb4773406b5fcbcacdbe5ffe06fdf7223",
+      "environment_sha256": "132e5bd7babe215d0471b681fc48dddea8c87fc909996a0429589e889a9f7f8a",
+      "executed_framework_sha256": "39b11661a811106b0b556365be4f446791911d871406952acf59460a5a01faa8",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-fault-permission-20261102-trial1",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 243.78808136400767,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 22,
+      "failed_cases": [],
+      "errors": [
+        "Agent exceeded absolute resource budget",
+        "campaign final checks failed"
+      ],
+      "work_requests": {
+        "go": 2380,
+        "java": 2380,
+        "python": 2380
+      },
+      "growth": [
+        {
+          "identity": [
+            225072,
+            24592172
+          ],
+          "seconds": 83.746,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 10.129,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 191.98,
+        "fds": 641,
+        "threads": 22,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 60,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS"
+      ],
+      "manifest_sha256": "cfa0cf92e858e67124c21a07e5e63b61c24b482aca8e5a2399609d87de3e984b",
+      "summary_sha256": "1fa3396c5e1d909761a9cf87c5c1ab6b39b9fea3794ac268cdcdb08ef40caac2",
+      "environment_sha256": "24d0d9cff3c535592f4d5cb34ffb1e5f1cde695e8b1442de991bed4a2175439c",
+      "executed_framework_sha256": "83b8275652e4cc57fa911d179b7c24ff6597a9a3785932dea1bc637b36a6f154",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-steady-observed-20261102-trial1",
+      "role": "primary",
+      "status": "FAIL",
+      "elapsed_seconds": 190.23768146001385,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 7,
+      "failed_cases": [
+        {
+          "name": "cycle-0000/go/steady",
+          "error": "Failure('timeout waiting for real Agent persisted python capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 1846,
+        "java": 1846,
+        "python": 1846
+      },
+      "growth": [
+        {
+          "identity": [
+            230854,
+            24615674
+          ],
+          "seconds": 0.013,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/steady",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            231305,
+            24617687
+          ],
+          "seconds": 127.902,
+          "baseline_phase": "cycle-0000/go/steady",
+          "endpoint_phase": "cycle-0000/go/steady",
+          "rss_growth_mib": 5.586,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 98.086,
+        "fds": 40,
+        "threads": 22,
+        "inotify_watches": 3
+      },
+      "integrity": {
+        "verified_artifacts": 21,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "1260162e77bbe9b1ae8e16536dfc65feff0fd1bb10790e10018f9c407f164ea6",
+      "summary_sha256": "b07197a8ea1183b40e02f90e92d87a31305aebdd95adb5d548d4bb5c937771f2",
+      "environment_sha256": "93c02ca3348927aeeb6315fab507beffc9753c43b200e5a493e1d82a315b8e8c",
+      "executed_framework_sha256": "fa80205abd7059399aa28be65ef891ab06e6cc60c720d2b035af1fa02205ae43",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-memburst-steady-observed-20261102-trial1",
+      "role": "primary",
+      "status": "PASS",
+      "elapsed_seconds": 1956.4367761040048,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 15,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 19492,
+        "java": 19492,
+        "python": 19492
+      },
+      "growth": [
+        {
+          "identity": [
+            235529,
+            24635658
+          ],
+          "seconds": 0.011,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/steady",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        },
+        {
+          "identity": [
+            236232,
+            24638540
+          ],
+          "seconds": 1841.487,
+          "baseline_phase": "cycle-0000/go/steady",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": -10.676,
+          "fd_growth": 0,
+          "thread_growth": 1,
+          "watch_growth": 0,
+          "watches_before": 0,
+          "watches_after": 0
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 209.066,
+        "fds": 452,
+        "threads": 22,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 27,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [
+        {
+          "rounds": 20,
+          "seconds": 1800.0024186310184,
+          "identity": [
+            236232,
+            24638540
+          ],
+          "same_identity": true,
+          "binary": "agent"
+        }
+      ],
+      "fault_cases": [],
+      "manifest_sha256": "d6e2cea1bb0b8a027100d6fd977b7dc8d7556dfb38d7232c8d52b5240a7b5200",
+      "summary_sha256": "9af1059446d3503aab5559d5961c16333c90eeba908e3ed37c1d1ce12e96855a",
+      "environment_sha256": "a1fc2df6ad649098b979f0e49983af224827e58fb1ceee2effcabc18b848ca9f",
+      "executed_framework_sha256": "f8420d33ad69ffddd71727f6771e7d3a494774ec578ba192346b4a2450f2845e",
+      "read_fault_witnesses": []
+    }
+  ],
+  "historical": [
+    {
+      "run": "reliability-threshold-steady-20261102-trial1",
+      "role": "historical",
+      "status": "PASS",
+      "elapsed_seconds": 1920.9006057730003,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 16,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 19139,
+        "java": 19139,
+        "python": 19139
+      },
+      "growth": [
+        {
+          "identity": [
+            69622,
+            23873521
+          ],
+          "seconds": 0.009,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/steady",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": null,
+          "watches_before": null,
+          "watches_after": null
+        },
+        {
+          "identity": [
+            70106,
+            23875711
+          ],
+          "seconds": 1837.559,
+          "baseline_phase": "cycle-0000/go/steady",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 2.523,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": null,
+          "watches_before": null,
+          "watches_after": null
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 97.152,
+        "fds": 60,
+        "threads": 23,
+        "inotify_watches": 0
+      },
+      "integrity": {
+        "verified_artifacts": 27,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [
+        {
+          "rounds": 20,
+          "seconds": 1800.0010400239844,
+          "identity": [
+            70106,
+            23875711
+          ],
+          "same_identity": true,
+          "binary": "agent"
+        }
+      ],
+      "fault_cases": [],
+      "manifest_sha256": "b836e61dfa9e0f6d2d80bd641f6c57b754117abc54e576b8aa57c1725c4293ca",
+      "summary_sha256": "ef0ce847202041a532201f19757abce225ade9430b6d312259505b958b06d048",
+      "environment_sha256": "934f618b36135313d2a4c30dc0a02c55b0187aecc45bd31f0b951b79b762a117",
+      "executed_framework_sha256": "81d8267c0aceac1a71111d58bc86e5335b9367c9d45044b50ddf3ad97241ae53",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-target-exit-20261102-trial1",
+      "role": "historical",
+      "status": "PASS",
+      "elapsed_seconds": 145.20259500600514,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 16,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 1396,
+        "java": 1396,
+        "python": 1396
+      },
+      "growth": [
+        {
+          "identity": [
+            109111,
+            24065784
+          ],
+          "seconds": 0.012,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/target-exit",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            109671,
+            24067896
+          ],
+          "seconds": 43.023,
+          "baseline_phase": "cycle-0001/python/capture",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 6.555,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 104.438,
+        "fds": 60,
+        "threads": 22,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 26,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "e3f2dd7f6416e0d4a9b6d3d1e7834288c7632b07aebf4194fc0e4fa860e57a32",
+      "summary_sha256": "2aee6c391c926833d23fbf353cbb8e6057ded1588f511493362966735e68109a",
+      "environment_sha256": "9aa0cd202c604eb54a78ac7af702cc4cf59244bea5292f033a11cf942e84ba00",
+      "executed_framework_sha256": "b199ac69a076d9b8c0d70dab4eb6370ff26fc3e79f5889a115962f1cbcd7b5d0",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-isolation-efault-20261102-trial1",
+      "role": "historical",
+      "status": "FAIL",
+      "elapsed_seconds": 128.1341731309949,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 10,
+      "failed_cases": [
+        {
+          "name": "cycle-0001/python/capture",
+          "error": "Failure('timeout waiting for real Agent persisted python capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 1223,
+        "java": 1223,
+        "python": 1223
+      },
+      "growth": [
+        {
+          "identity": [
+            112989,
+            24080329
+          ],
+          "seconds": 0.012,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-efault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            113449,
+            24082393
+          ],
+          "seconds": 61.499,
+          "baseline_phase": "cycle-0001/go/capture",
+          "endpoint_phase": "cycle-0001/python/capture",
+          "rss_growth_mib": 0.48,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 97.348,
+        "fds": 40,
+        "threads": 22,
+        "inotify_watches": 3
+      },
+      "integrity": {
+        "verified_artifacts": 20,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "6dbc7c4f23d9aa19268a015a8d70fa24a717b56dddef96db17f582ca96650276",
+      "summary_sha256": "131dff4120e06c7cf1a492e259e5dbbf0aa1ce9b2251f456b306765785b9641a",
+      "environment_sha256": "f97a4eb6835a06895756fe6b2019b735526c409446c48ee8e7ce4de507791abf",
+      "executed_framework_sha256": "ec7e35cc96c8280395a429e2ba03cc92a2cdbc0bacd35d2248e0c046e6dcd7c4",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-efault-attempt.json",
+          "hash_verified": true,
+          "mode": "efault",
+          "healthy_started_ns": 240834637309096,
+          "attempt_finished_ns": 240844593360768,
+          "read_active_ns": 0,
+          "read_end_ns": 0
+        }
+      ]
+    },
+    {
+      "run": "reliability-threshold-isolation-delay-20261102-trial1",
+      "role": "historical",
+      "status": "FAIL",
+      "elapsed_seconds": 91.79733887701877,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 7,
+      "failed_cases": [
+        {
+          "name": "cycle-0000/go/isolation-delay",
+          "error": "Failure('timeout waiting for real Agent persisted java capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 864,
+        "java": 864,
+        "python": 864
+      },
+      "growth": [
+        {
+          "identity": [
+            116206,
+            24093168
+          ],
+          "seconds": 0.011,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-delay",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 92.758,
+        "fds": 40,
+        "threads": 17,
+        "inotify_watches": 3
+      },
+      "integrity": {
+        "verified_artifacts": 19,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "ab7f3d2fbe1b4c9501ca438330750b6e4930bae9d5afbe0aa3137227dd537dd5",
+      "summary_sha256": "3acd7de807fc52c1a682e90a1bea1a85b959e63325274b366792c1d86fdcb999",
+      "environment_sha256": "23b7d3f7c1ba93e7dcd8f3158de7ccf7d0369702d5a72e8f373ff79f6c065d24",
+      "executed_framework_sha256": "59506fe6e5d6462cdbdeef6b9660145815a290b7aba475d51af48e6325dfcc23",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-delay-attempt.json",
+          "hash_verified": true,
+          "mode": "delay",
+          "healthy_started_ns": 240963017798861,
+          "attempt_finished_ns": 241008059707988,
+          "read_active_ns": 240954337182863,
+          "read_end_ns": 240984337989605
+        }
+      ]
+    },
+    {
+      "run": "reliability-threshold-isolation-block-20261102-trial1",
+      "role": "historical",
+      "status": "FAIL",
+      "elapsed_seconds": 80.1776210530079,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 6,
+      "failed_cases": [
+        {
+          "name": "cycle-0000/python/warmup",
+          "error": "Failure('timeout waiting for real Agent persisted python capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan",
+        "no fully warmed Agent growth baseline"
+      ],
+      "work_requests": {
+        "go": 744,
+        "java": 744,
+        "python": 744
+      },
+      "growth": [],
+      "resource_peaks": {
+        "rss_mib": 91.949,
+        "fds": 40,
+        "threads": 22,
+        "inotify_watches": 3
+      },
+      "integrity": {
+        "verified_artifacts": 14,
+        "missing_artifacts": [
+          "cycles.jsonl"
+        ],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "8c1ceef5ee6fc5472e0085099aa11e5cbf8153d38310d64c6f1322ada503b222",
+      "summary_sha256": "0d58df5e13f01084465fdce1c536af7fb8034d0ecd2fea5633079972844cfa2b",
+      "environment_sha256": "119b16b62d57f81dccdcec76f313d19c73d13489071ff7bf69fa0d9826e49d64",
+      "executed_framework_sha256": "bd2c0f8ce96c2cdaff722ab8d4c6030a4c73e6edc760779cb34bbe9f664390a2",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-threshold-matrix-20261102-trial1",
+      "role": "historical",
+      "status": "FAIL",
+      "elapsed_seconds": 617.7354176759836,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": false,
+      "case_count": 65,
+      "failed_cases": [
+        {
+          "name": "cycle-0004/go/recovery",
+          "error": "Failure('timeout waiting for real Agent persisted go capture; last error: ')",
+          "business_errors": {}
+        }
+      ],
+      "errors": [
+        "cycle coverage is incomplete or duplicated",
+        "executed cases do not match the complete plan"
+      ],
+      "work_requests": {
+        "go": 6118,
+        "java": 6118,
+        "python": 6118
+      },
+      "growth": [
+        {
+          "identity": [
+            120943,
+            24110495
+          ],
+          "seconds": 69.381,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 12.211,
+          "fd_growth": 0,
+          "thread_growth": 7,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            124370,
+            24125663
+          ],
+          "seconds": 43.027,
+          "baseline_phase": "cycle-0002/python/capture",
+          "endpoint_phase": "cycle-0002/go/fault",
+          "rss_growth_mib": 8.43,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            127717,
+            24140533
+          ],
+          "seconds": 43.029,
+          "baseline_phase": "cycle-0003/python/capture",
+          "endpoint_phase": "cycle-0003/go/fault",
+          "rss_growth_mib": 6.031,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            131355,
+            24156625
+          ],
+          "seconds": 43.034,
+          "baseline_phase": "cycle-0004/python/capture",
+          "endpoint_phase": "cycle-0004/go/fault",
+          "rss_growth_mib": 8.598,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 103.715,
+        "fds": 60,
+        "threads": 23,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 115,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [
+        "cycle-0001/go/fault:PASS",
+        "cycle-0001/java/fault:PASS",
+        "cycle-0001/python/fault:PASS",
+        "cycle-0002/go/fault:PASS",
+        "cycle-0002/java/fault:PASS",
+        "cycle-0002/python/fault:PASS",
+        "cycle-0003/go/fault:PASS",
+        "cycle-0003/java/fault:PASS",
+        "cycle-0003/python/fault:PASS",
+        "cycle-0004/go/fault:PASS"
+      ],
+      "manifest_sha256": "21a4dd6f222f81379efa8a20460eb047a4fe08ebdb33f3e634e45a0569b0c8f7",
+      "summary_sha256": "d80f60c0a27c5d0300fa9e12ce3122c38dbd1b504f8bdc79357ebd97bf0f30cd",
+      "environment_sha256": "8294c0eaf5838efb3c30c82fce6a3d7b5a5be6f118389f2b6553900f18d2819d",
+      "executed_framework_sha256": "b91c04e26357a07fa50a6466e9923ebdbf49fdcde600994bf6197e003f25ce62",
+      "read_fault_witnesses": []
+    },
+    {
+      "run": "reliability-diagnostic-threshold-20261102-trial1",
+      "role": "diagnostic",
+      "status": "PASS",
+      "elapsed_seconds": 234.9625367349945,
+      "business_audit_status": "PASS",
+      "adapter_audit_completed": true,
+      "case_count": 25,
+      "failed_cases": [],
+      "errors": [],
+      "work_requests": {
+        "go": 2289,
+        "java": 2289,
+        "python": 2289
+      },
+      "growth": [
+        {
+          "identity": [
+            135459,
+            24185927
+          ],
+          "seconds": 0.012,
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0000/go/isolation-efault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            135934,
+            24188118
+          ],
+          "seconds": 60.927,
+          "baseline_phase": "cycle-0001/go/capture",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 11.281,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        },
+        {
+          "identity": [
+            137978,
+            24197225
+          ],
+          "seconds": 43.027,
+          "baseline_phase": "cycle-0002/python/capture",
+          "endpoint_phase": "cycle-0002/go/restart",
+          "rss_growth_mib": 6.844,
+          "fd_growth": 0,
+          "thread_growth": 0,
+          "watch_growth": 0,
+          "watches_before": 3,
+          "watches_after": 3
+        }
+      ],
+      "resource_peaks": {
+        "rss_mib": 107.43,
+        "fds": 60,
+        "threads": 23,
+        "inotify_watches": 4
+      },
+      "integrity": {
+        "verified_artifacts": 33,
+        "missing_artifacts": [],
+        "changed_artifacts": []
+      },
+      "steady": [],
+      "fault_cases": [],
+      "manifest_sha256": "0334fb88c3ec2991076b76860b6792ee96d388bca59c40e1703b160c1a8afdcc",
+      "summary_sha256": "c4023d45e6f66116dcf9859e671f3d55d4a6c220bd6ec59aa0d9b9d434a4d041",
+      "environment_sha256": "8c497897b5bdc8f31043b8b8e1d06ac5afb7384c9141724bd3f0e2c6c3dda0b0",
+      "executed_framework_sha256": "b91c04e26357a07fa50a6466e9923ebdbf49fdcde600994bf6197e003f25ce62",
+      "read_fault_witnesses": [
+        {
+          "file": "cycle-0000_go_isolation-efault-attempt.json",
+          "hash_verified": true,
+          "mode": "efault",
+          "healthy_started_ns": 241891899851263,
+          "attempt_finished_ns": 241901855741629,
+          "read_active_ns": 0,
+          "read_end_ns": 0
+        }
+      ]
+    }
+  ],
+  "optimization": {
+    "complete": true,
+    "planned_followups": 5,
+    "producer": "isolated producer105 with atomic target_mb publication",
+    "baseline_agent_sha256": "7133a62bde2de344456bcc6a3c67dc97f648ea0e1ba19e48d8ff30e69259323c",
+    "optimized_agent_sha256": "5b4fd01e1a72d8dcdeb268e11e68c7e0a94e662f608baa5f068f2b54823a2807",
+    "shipping_production_change": "core/autotracing/memburst_process.go: enumerate PIDs and construct readers without NewProcess",
+    "runtime_isolation_implemented": false,
+    "automatic_gc_disabled_in_agent": false,
+    "budgets_relaxed": false,
+    "runs": [
+      {
+        "label": "baseline/panic",
+        "run": "reliability-baseline-memburst-panic-producer105-20261102-trial1",
+        "status": "PASS",
+        "elapsed_seconds": 245.34182463699835,
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "case_count": 22,
+        "work_requests": {
+          "go": 2395,
+          "java": 2395,
+          "python": 2395
+        },
+        "errors": [],
+        "failed_cases": [],
+        "resource_peaks": {
+          "rss_mib": 185.191,
+          "fds": 243,
+          "threads": 23,
+          "inotify_watches": 0
+        },
+        "growth": [
+          {
+            "identity": [
+              276172,
+              24831487
+            ],
+            "seconds": 84.026,
+            "baseline_phase": "cycle-0000/python/warmup",
+            "endpoint_phase": "cycle-0001/go/fault",
+            "rss_growth_mib": 0.863,
+            "fd_growth": 0,
+            "thread_growth": 1,
+            "watch_growth": 0,
+            "watches_before": 0,
+            "watches_after": 0
+          }
+        ],
+        "fd_budget_status": "PASS",
+        "integrity": {
+          "verified_artifacts": 45,
+          "missing_artifacts": [],
+          "changed_artifacts": []
+        },
+        "manifest_sha256": "ea605f4bc39d0d5a189008f5f197903ca6121bcbdeb5d7f66eacb7da31f880c0",
+        "summary_sha256": "ac07be71c30952c9c83ca5e5c765f6ac3780ceafb1e8eddf0617600c09e1b78e",
+        "executed_framework_sha256": "895d69c0a0cbce3d963716c62a656332d12c08552fcfe338e87d1df436f42d76",
+        "producer_audit_sha256": "f36bb9f032540d4352e39992800d67b18021221ed5863266b0b44c071b6a2ec7"
+      },
+      {
+        "label": "optimized/panic",
+        "run": "reliability-optimized-memburst-panic-producer105-20261102-trial1",
+        "status": "PASS",
+        "elapsed_seconds": 245.70996694199857,
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "case_count": 22,
+        "work_requests": {
+          "go": 2398,
+          "java": 2397,
+          "python": 2397
+        },
+        "errors": [],
+        "failed_cases": [],
+        "resource_peaks": {
+          "rss_mib": 205.77,
+          "fds": 57,
+          "threads": 22,
+          "inotify_watches": 0
+        },
+        "growth": [
+          {
+            "identity": [
+              282129,
+              24856090
+            ],
+            "seconds": 83.757,
+            "baseline_phase": "cycle-0000/python/warmup",
+            "endpoint_phase": "cycle-0001/go/fault",
+            "rss_growth_mib": -48.648,
+            "fd_growth": 0,
+            "thread_growth": 0,
+            "watch_growth": 0,
+            "watches_before": 0,
+            "watches_after": 0
+          }
+        ],
+        "fd_budget_status": "PASS",
+        "integrity": {
+          "verified_artifacts": 45,
+          "missing_artifacts": [],
+          "changed_artifacts": []
+        },
+        "manifest_sha256": "88359cd98da3dd1c548134504c7a788b2d81c4d03751c9242def28b5a9acc0ac",
+        "summary_sha256": "84923eabd2349525381f680628abe8cef47cd3261a72650a0d6c9869033ed8c0",
+        "executed_framework_sha256": "2a78bab7eefa198f77f2c94a8cb65ce0e9c637fde16de2f5213bbc18930d7abb",
+        "producer_audit_sha256": "4039e3cc8fdc6eb617173d1c29ea6368bf074bc89e6f1cba58a886f8b23d35d5"
+      },
+      {
+        "label": "optimized/block",
+        "run": "reliability-optimized-memburst-block-producer105-20261102-trial1",
+        "status": "PASS",
+        "elapsed_seconds": 212.2466794529755,
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "case_count": 22,
+        "work_requests": {
+          "go": 2068,
+          "java": 2068,
+          "python": 2068
+        },
+        "errors": [],
+        "failed_cases": [],
+        "resource_peaks": {
+          "rss_mib": 198.566,
+          "fds": 57,
+          "threads": 22,
+          "inotify_watches": 0
+        },
+        "growth": [
+          {
+            "identity": [
+              287999,
+              24880653
+            ],
+            "seconds": 83.754,
+            "baseline_phase": "cycle-0000/python/warmup",
+            "endpoint_phase": "cycle-0001/go/fault",
+            "rss_growth_mib": -1.504,
+            "fd_growth": 0,
+            "thread_growth": 0,
+            "watch_growth": 0,
+            "watches_before": 0,
+            "watches_after": 0
+          }
+        ],
+        "fd_budget_status": "PASS",
+        "integrity": {
+          "verified_artifacts": 60,
+          "missing_artifacts": [],
+          "changed_artifacts": []
+        },
+        "manifest_sha256": "09ad6c4f626a0345c351dec640433b25fedc58e1738ad85c8f9ee668ea2e45b6",
+        "summary_sha256": "31146764c389c53f1ee5794d652809fb5879f2225e084d156aad1eef2186620f",
+        "executed_framework_sha256": "09648e27c434290558226005060a10f67435af14b374170d89b6d70b8052aa0e",
+        "producer_audit_sha256": "a5e73d667ac2ca280a6624b93b02f17b0f9f00cc68bafd94f07ad030cc59f7f9"
+      },
+      {
+        "label": "optimized/permission",
+        "run": "reliability-optimized-memburst-permission-producer105-20261102-trial1",
+        "status": "PASS",
+        "elapsed_seconds": 243.70004888699623,
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "case_count": 22,
+        "work_requests": {
+          "go": 2378,
+          "java": 2378,
+          "python": 2378
+        },
+        "errors": [],
+        "failed_cases": [],
+        "resource_peaks": {
+          "rss_mib": 190.891,
+          "fds": 57,
+          "threads": 22,
+          "inotify_watches": 0
+        },
+        "growth": [
+          {
+            "identity": [
+              293308,
+              24901951
+            ],
+            "seconds": 83.796,
+            "baseline_phase": "cycle-0000/python/warmup",
+            "endpoint_phase": "cycle-0001/go/fault",
+            "rss_growth_mib": -7.098,
+            "fd_growth": 0,
+            "thread_growth": 0,
+            "watch_growth": 0,
+            "watches_before": 0,
+            "watches_after": 0
+          }
+        ],
+        "fd_budget_status": "PASS",
+        "integrity": {
+          "verified_artifacts": 60,
+          "missing_artifacts": [],
+          "changed_artifacts": []
+        },
+        "manifest_sha256": "db51f08885bec71b7cfd7ebac2d71bf6dc018c86bdede9da49515af0687f9f69",
+        "summary_sha256": "9d968defbfc1fc653af4acd7f68d12253ed71353471a4dc596fb0e6e77b74861",
+        "executed_framework_sha256": "e665832c3ce3a63ace5d66990d1afc636936457a61fe49fc401d373c41dd5dfc",
+        "producer_audit_sha256": "020df90f674626fa1b9fa016475daf976d94ebadfd5ac9e32d6a63e157b83dbc"
+      },
+      {
+        "label": "optimized/threshold-control",
+        "run": "reliability-optimized-threshold-control-producer105-20261102-trial1",
+        "status": "PASS",
+        "elapsed_seconds": 135.92449453601148,
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "case_count": 16,
+        "work_requests": {
+          "go": 1302,
+          "java": 1302,
+          "python": 1302
+        },
+        "errors": [],
+        "failed_cases": [],
+        "resource_peaks": {
+          "rss_mib": 104.992,
+          "fds": 41,
+          "threads": 24,
+          "inotify_watches": 4
+        },
+        "growth": [
+          {
+            "identity": [
+              298984,
+              24925486
+            ],
+            "seconds": 0.012,
+            "baseline_phase": "cycle-0000/python/warmup",
+            "endpoint_phase": "cycle-0000/go/target-exit",
+            "rss_growth_mib": 0.0,
+            "fd_growth": 0,
+            "thread_growth": 0,
+            "watch_growth": 0,
+            "watches_before": 3,
+            "watches_after": 3
+          },
+          {
+            "identity": [
+              299525,
+              24927524
+            ],
+            "seconds": 43.524,
+            "baseline_phase": "cycle-0001/python/capture",
+            "endpoint_phase": "cycle-0001/go/restart",
+            "rss_growth_mib": 9.027,
+            "fd_growth": 0,
+            "thread_growth": 0,
+            "watch_growth": 0,
+            "watches_before": 3,
+            "watches_after": 3
+          }
+        ],
+        "fd_budget_status": "PASS",
+        "integrity": {
+          "verified_artifacts": 26,
+          "missing_artifacts": [],
+          "changed_artifacts": []
+        },
+        "manifest_sha256": "6a4e1e11b76ae7b32d7c76010ad52e3ccf3014ad329d84176253c50b0015910c",
+        "summary_sha256": "d8062fd6e8dfe4392334431b330bca6ab358a99c9acabdad952f1237e1a9904a",
+        "executed_framework_sha256": "f9cedea83bc7e61d898196616ecb226bfef35f68174613ae0cbc092f6ce5d52b",
+        "producer_audit_sha256": "cfb57c4fed365516e18f5b104a30a1e7c65f5a3c854de72d25f3564734db0f37"
+      }
+    ],
+    "fd_observer": {
+      "baseline": {
+        "observations": 82,
+        "fd_peak": 242,
+        "pidfd_peak": 208
+      },
+      "optimized": {
+        "observations": 356,
+        "fd_peak": 60,
+        "pidfd_peak": 0
+      }
+    },
+    "cleanup": {
+      "status": "PASS",
+      "time": 1793604420.7613494,
+      "counts": {
+        "runs": 34,
+        "processes": 200,
+        "containers": 136,
+        "images": 34,
+        "configs": 0,
+        "cgroups": 0,
+        "container_memory_cgroups": 136
+      },
+      "remaining_owned_resources": [],
+      "scope": "read-only owned PID+start-time, Docker resources, recorded config/cgroups and Docker memory-cgroup checks; no global cleanup"
+    },
+    "fd_observer_sha256": "27b51e810f6846c8a63bc35e2eb9241386a3537b1d72ff74b972783c8aba90a4",
+    "cleanup_sha256": "51a8ef975e13bb916a884e8a258ad3104c3c44ced94731243a32c12649d031bc"
+  },
+  "performance_evaluated": false,
+  "long_soak_verified": false,
+  "raw_export_sha256": "548512295ef5a1dc7e204a24c0cff7eaf8c6abb48924198cabb29a50d6734262"
+}

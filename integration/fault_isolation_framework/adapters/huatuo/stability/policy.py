@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from ....core.documents import read_documents
 from ....core.stability import coverage_errors, resource_errors
+from .reliability import audit_check, selected_check_errors
+from ..memsnapshot.trigger import event_after_request
 from ..memsnapshot.assertions import validate_fault
 from ..memsnapshot.log_policy import unexpected_logs
 
@@ -17,7 +19,8 @@ def captures(detail):
     elif isinstance(detail, dict):
         if detail.get("event_file"):
             if detail.get("normal_attempts"):
-                yield from detail["normal_attempts"]
+                for attempt in detail["normal_attempts"]:
+                    yield {**attempt, "target_language": detail.get("target_language")}
             else:
                 yield detail
         else:
@@ -82,6 +85,10 @@ def audit_artifacts(output, summary, manifest):
     output = Path(output)
     errors, rejected, allowed = [], {}, {}
     campaign = json.loads((output / "campaign.json").read_text())
+    environment = json.loads((output / "environment.json").read_text())
+    errors += selected_check_errors(
+        environment.get("command_line", []), summary["cases"]
+    )
     cycles = [
         json.loads(line) for line in (output / "cycles.jsonl").read_text().splitlines()
     ]
@@ -125,6 +132,11 @@ def audit_artifacts(output, summary, manifest):
     }
     lifecycle_windows = [
         r for c in summary["cases"] for r in c["detail"].get("replacements", [])
+    ]
+    lifecycle_windows += [
+        c["detail"]["exit_window"]
+        for c in summary["cases"]
+        if c["detail"].get("exit_window")
     ]
     fd_logs = {
         name
@@ -179,9 +191,12 @@ def audit_artifacts(output, summary, manifest):
     used_events = set()
     for case in summary["cases"]:
         detail = case["detail"]
+        errors += audit_check(output, case)
         mode = detail.get("fault_mode", detail.get("action"))
         for result in normal_results(detail):
-            errors += normal_capture_errors(result, case["target_id"])
+            errors += normal_capture_errors(
+                result, result.get("target_language", case["target_id"])
+            )
         if detail.get("resource_fault"):
             witness = json.loads((output / detail["witness"]).read_text())
             if witness != {
@@ -259,6 +274,10 @@ def audit_artifacts(output, summary, manifest):
                     "raw event reused by multiple phase claims: " + case["name"]
                 )
             used_events.add(key)
+            if not event_after_request(records[index], attempt.get("not_before_epoch")):
+                errors.append(
+                    "stale asynchronous event predates healthy capture request"
+                )
             data = records[index]["tracer_data"]
             if detail["module"] == "memburst":
                 record = next(
@@ -287,7 +306,8 @@ def audit_artifacts(output, summary, manifest):
                         "raw memburst ranking/snapshot association is invalid"
                     )
             if record and (
-                record.get("language") != case["target_id"]
+                record.get("language")
+                != (attempt.get("target_language") or case["target_id"])
                 or record.get("process_memory", {}).get("rss_bytes", 0) <= 0
             ):
                 errors.append("raw runtime or process RSS differs from expected target")

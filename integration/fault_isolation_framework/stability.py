@@ -25,6 +25,13 @@ def main():
     p.add_argument("--bpf-dir")
     p.add_argument("--output", required=True)
     p.add_argument("--audit", action="store_true")
+    p.add_argument(
+        "--checks",
+        default="",
+        help="comma-separated steady,isolation-efault,isolation-delay,isolation-block,target-exit",
+    )
+    p.add_argument("--steady-rounds", type=int, default=20)
+    p.add_argument("--steady-seconds", type=float, default=1800)
     p.add_argument("--cycles", type=int)
     p.add_argument("--duration-seconds", type=float)
     p.add_argument("--churn-per-cycle", type=int)
@@ -53,6 +60,8 @@ def main():
     p.add_argument("--campaign-timeout", type=float)
     p.add_argument("--rss-growth-mib", type=int, default=64)
     p.add_argument("--fd-growth", type=int, default=16)
+    p.add_argument("--watch-growth", type=int, default=0)
+    p.add_argument("--thread-growth", type=int, default=16)
     p.add_argument("--rss-limit-mib", type=int, default=512)
     p.add_argument("--fd-limit", type=int, default=512)
     p.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
@@ -64,6 +73,26 @@ def main():
     require(
         a.module and a.build and a.bpf_dir,
         "--module, --build and --bpf-dir are required",
+    )
+    require(
+        set(a.checks.split(","))
+        <= {
+            "",
+            "steady",
+            "isolation-efault",
+            "isolation-delay",
+            "isolation-block",
+            "target-exit",
+        },
+        "unknown reliability check",
+    )
+    require(
+        a.steady_rounds >= 20 and a.steady_seconds >= 1800,
+        "steady requires >=20 rounds and >=1800 seconds",
+    )
+    require(
+        not a.checks or len(a.languages.split(",")) >= 2,
+        "reliability checks require at least two runtimes",
     )
     a.phase_timeout = a.phase_timeout or (180 if a.profile == "short" else 900)
     a.cycles = (
@@ -92,6 +121,8 @@ def main():
     require(
         a.rss_growth_mib >= 0
         and a.fd_growth >= 0
+        and a.watch_growth >= 0
+        and a.thread_growth >= 0
         and a.rss_limit_mib > 0
         and a.fd_limit > 0,
         "invalid resource budgets",
@@ -158,7 +189,17 @@ def main():
         result = supervise(
             command,
             Path(a.output),
-            a.campaign_timeout or (a.duration_seconds + a.cycles * 1800 + 300),
+            a.campaign_timeout
+            or (
+                a.duration_seconds
+                + a.cycles * 1800
+                + 300
+                + (
+                    a.steady_seconds + a.steady_rounds * 90
+                    if "steady" in a.checks.split(",")
+                    else 0
+                )
+            ),
             a.phase_timeout,
         )
         print(json.dumps(result, indent=2))

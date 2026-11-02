@@ -1,6 +1,7 @@
 # Copyright 2026 The HuaTuo Authors. Licensed under the Apache License, Version 2.0.
 """Launch the example services using generic Docker resource ownership."""
 from pathlib import Path
+from ..core.util import write_control
 from ..core.util import require, run
 from .http_probe import EXPECTED, request_http
 
@@ -18,7 +19,7 @@ def launch_services(environment, output, languages, java_home, python):
     for language in languages:
         ctl = output / (language + "-control")
         ctl.mkdir()
-        (ctl / "target_mb").write_text("0")
+        write_control(ctl / "target_mb", "0")
         args = [
             "docker",
             "run",
