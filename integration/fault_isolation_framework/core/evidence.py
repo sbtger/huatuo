@@ -55,7 +55,11 @@ class EvidenceStore:
             item = dict(artifact)
             path = self.output / item["path"]
             if path.is_file():
-                item["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                digest = hashlib.sha256()
+                with path.open("rb") as source:
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                item["sha256"] = digest.hexdigest()
             artifacts.append(item)
         (self.output / "manifest.json").write_text(
             json.dumps(dict(schema_version=2, artifacts=artifacts), indent=2) + "\n"

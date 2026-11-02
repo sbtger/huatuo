@@ -59,10 +59,36 @@ def audit(output, policy=None):
                 or output not in path.resolve().parents
             ):
                 raise ValueError("evidence outside output: " + name)
-            raw = path.read_bytes()
-            if not raw or hashlib.sha256(raw).hexdigest() != artifact.get("sha256"):
+            digest = hashlib.sha256()
+            with path.open("rb") as source:
+                for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            if not path.stat().st_size or digest.hexdigest() != artifact.get("sha256"):
                 raise ValueError("empty, changed or unhashed evidence: " + name)
-            text = raw.decode()
+            if artifact["role"] == "requests":
+                target = artifact["target_id"]
+                if target in rows_by_target or artifact["format"] != "jsonl":
+                    raise ValueError("duplicate or invalid business stream: " + target)
+                aggregate = dict(work=0, transactions=0, bad=[], by_phase=Counter())
+                count = 0
+                with path.open() as stream:
+                    for line in stream:
+                        row = json.loads(line)
+                        count += 1
+                        if row["kind"] not in ("work", "transaction", "scheduler"):
+                            raise ValueError("unknown business record kind: " + target)
+                        if row["ok"] is not True and len(aggregate["bad"]) < 100:
+                            aggregate["bad"].append(row)
+                        if row["kind"] == "work":
+                            aggregate["work"] += 1
+                            aggregate["by_phase"][row["phase"]] += 1
+                        if row["kind"] == "transaction" and row["ok"] is True:
+                            aggregate["transactions"] += 1
+                if count < artifact["minimum_documents"]:
+                    raise ValueError("evidence record count mismatch: " + name)
+                rows_by_target[target] = aggregate
+                continue
+            text = path.read_text()
             if artifact["format"] == "jsonl":
                 documents = [json.loads(line) for line in text.splitlines()]
             elif artifact["format"] == "json_documents":
@@ -81,11 +107,6 @@ def audit(output, policy=None):
                 raise ValueError("unknown evidence format: " + name)
             if len(documents) < artifact["minimum_documents"]:
                 raise ValueError("evidence record count mismatch: " + name)
-            if artifact["role"] == "requests":
-                target = artifact["target_id"]
-                if target in rows_by_target:
-                    raise ValueError("duplicate business stream: " + target)
-                rows_by_target[target] = documents
         targets = set(summary["total_business_requests"])
         if (
             not targets
@@ -94,22 +115,16 @@ def audit(output, policy=None):
         ):
             raise ValueError("business stream targets do not match summary")
         for target, rows in rows_by_target.items():
-            if any(r["kind"] not in ("work", "transaction", "scheduler") for r in rows):
-                raise ValueError("unknown business record kind: " + target)
-            bad = [r for r in rows if r["ok"] is not True]
-            if bad:
-                business_errors[target] = bad
-            work = [r for r in rows if r["kind"] == "work"]
-            counts[target] = len(work)
-            transactions = sum(
-                r["kind"] == "transaction" and r["ok"] is True for r in rows
-            )
+            if rows["bad"]:
+                business_errors[target] = rows["bad"]
+            counts[target] = rows["work"]
             if (
-                len(work) != summary["total_business_requests"][target]
-                or transactions != summary["total_business_transactions"][target]
+                rows["work"] != summary["total_business_requests"][target]
+                or rows["transactions"]
+                != summary["total_business_transactions"][target]
             ):
                 issues.append("business accounting mismatch: " + target)
-            by_phase = Counter(r["phase"] for r in work)
+            by_phase = rows["by_phase"]
             for case in cases:
                 observation = case["business"][target]
                 if (

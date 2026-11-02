@@ -190,3 +190,17 @@ and [async-profiler's process test helper](https://github.com/async-profiler/asy
 Their examples informed lifecycle and live-target checks; these links do not imply
 that those projects prove HuaTuo's business fault isolation. The next, separate
 stage may use calibrated open-loop load and baseline comparisons for overhead.
+
+## Repeated stability campaigns
+
+The opt-in `stability.py` entry point reuses this core for `memburst` and
+`memory_threshold_snapshot`. It adds explicit short/72-hour profiles, repeated
+real triggers, disposable cgroup lifecycle and limit changes, resource sampling,
+warm-Agent growth gates, disk-backed request accounting and a separate process
+supervisor. Agent EMFILE and test-cgroup OOM are opt-in faults. See
+[the stability test plan](STABILITY_PLAN.md) for exact coverage, commands,
+resource budgets and unverified cases. A short PASS does not establish a
+72-hour result, a performance budget or actual PID reuse.
+
+See [the short-run validation record](STABILITY_VALIDATION.md) for executed
+scenarios, preserved failures and the limits of the current evidence.

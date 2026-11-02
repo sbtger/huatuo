@@ -15,6 +15,15 @@ def audit_output(output):
     try:
         summary = json.loads((Path(output) / "summary.json").read_text())
         if summary.get("schema_version") == 2:
+            if summary.get("adapter_id") in (
+                "huatuo.stability.memburst",
+                "huatuo.stability.memory_threshold_snapshot",
+            ):
+                from .adapters.huatuo.stability.policy import (
+                    audit_artifacts as stability_policy,
+                )
+
+                return core_audit(output, stability_policy)
             if summary.get("adapter_id") != "huatuo.memsnapshot":
                 raise ValueError(
                     "unsupported adapter in evidence: " + str(summary.get("adapter_id"))

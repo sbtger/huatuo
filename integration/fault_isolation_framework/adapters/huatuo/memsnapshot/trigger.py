@@ -32,7 +32,14 @@ class SnapshotTrigger:
     def capture(self, t, normal=False):
         self.release(t)
         # Threshold edges during Agent's node-wide cooldown are intentionally discarded.
-        time.sleep(max(0, 1.2 - (time.monotonic() - self.owner.last_capture)))
+        time.sleep(
+            max(
+                0,
+                getattr(self.owner.a, "cooldown", 1)
+                + 0.2
+                - (time.monotonic() - self.owner.last_capture),
+            )
+        )
         before = len(read_documents(self.owner.event_path))
         (t["ctl"] / "target_mb").write_text("500")
         document = wait_for(
@@ -64,6 +71,8 @@ class SnapshotTrigger:
             entries=len(snapshot.get("entries", [])),
             event_file=str(self.owner.event_path),
             agent_pid=self.owner.agent.pid,
+            target_pid=t["pid"],
+            event_index=read_documents(self.owner.event_path).index(document),
         )
         if normal:
             attempts = [dict(result)]

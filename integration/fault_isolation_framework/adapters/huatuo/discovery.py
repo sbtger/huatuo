@@ -89,6 +89,13 @@ class Discovery:
                 )
             )
             self.created_config = p
+            from ...environments.supervisor import own
+            import hashlib
+
+            own(
+                "config",
+                {"path": str(p), "sha256": hashlib.sha256(p.read_bytes()).hexdigest()},
+            )
 
     def register(self, target):
         PodFixture.containers[target["cid"]] = (

@@ -89,7 +89,6 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def background():
-    global ticks
     chunks = []
     while True:
         try:
@@ -99,15 +98,23 @@ def background():
                 chunk = mmap.mmap(-1, 1 << 20)
                 chunk[::4096] = b"1" * 256
                 chunks.append(chunk)
+                time.sleep(0)
             while len(chunks) > target:
                 chunks.pop().close()
         except FileNotFoundError:
             pass
+        time.sleep(0.1)
+
+
+def progress():
+    global ticks
+    while True:
         with lock:
             ticks += 1
         time.sleep(0.1)
 
 
+threading.Thread(target=progress, daemon=True).start()
 threading.Thread(target=background, daemon=True).start()
 server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 print(

@@ -41,13 +41,15 @@ public class SnapshotBusiness {
                     try(FileChannel channel=FileChannel.open(file,StandardOpenOption.READ,StandardOpenOption.WRITE)){
                         ByteBuffer b=channel.map(FileChannel.MapMode.READ_WRITE,0,1<<20);
                         for(int p=0;p<b.capacity();p+=4096)b.put(p,(byte)1);
-                        chunks.add(b);files.add(file);
+                        chunks.add(b);files.add(file);Thread.yield();
                     }
                 }
                 while(chunks.size()>target){cleaner.invokeCleaner(chunks.remove(chunks.size()-1));Files.delete(files.remove(files.size()-1));}
-                ticks.incrementAndGet();Thread.sleep(100);
+                Thread.sleep(100);
             }catch(Exception e){e.printStackTrace();try{Thread.sleep(100);}catch(Exception ignored){}}}
         });background.setDaemon(true);background.start();
+        Thread progress=new Thread(()->{for(;;){ticks.incrementAndGet();try{Thread.sleep(100);}catch(InterruptedException e){return;}}});
+        progress.setDaemon(true);progress.start();
         HttpServer server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),64);
         server.setExecutor(Executors.newFixedThreadPool(16));
         server.createContext("/state",exchange->{byte[] body=state().getBytes(StandardCharsets.UTF_8);exchange.sendResponseHeaders(200,body.length);exchange.getResponseBody().write(body);exchange.close();});

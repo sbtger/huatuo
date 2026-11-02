@@ -41,6 +41,13 @@ class ManagedProcess:
             self.stream.close()
             self.stream = None
             raise
+        from .supervisor import own
+
+        try:
+            own("process", identity(self.process.pid))
+        except (OSError, RuntimeError):
+            if self.process.poll() is None:
+                raise
         return self.process
 
     def stop(self, kill=False):

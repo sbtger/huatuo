@@ -35,7 +35,7 @@ class BusinessProbe(Protocol):
     def totals(self) -> Dict:
         ...
 
-    def records(self) -> List[Dict]:
+    def records(self) -> Iterable[Dict]:
         ...
 
 

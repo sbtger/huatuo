@@ -146,6 +146,7 @@ func main() {
 					chunk[p] = 1
 				}
 				chunks = append(chunks, chunk)
+				runtime.Gosched()
 			}
 			for len(chunks) > target {
 				if err := syscall.Munmap(chunks[len(chunks)-1]); err != nil {
@@ -153,8 +154,14 @@ func main() {
 				}
 				chunks = chunks[:len(chunks)-1]
 			}
-			s.ticks.Add(1)
 			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+		for range ticker.C {
+			s.ticks.Add(1)
 		}
 	}()
 	server := &http.Server{Handler: s, ReadHeaderTimeout: time.Second, IdleTimeout: 30 * time.Second}

@@ -34,6 +34,9 @@ class DockerEnvironment:
         )
         self.image = "huatuo-fault-isolation:" + uuid.uuid4().hex[:12]
         run("docker", "build", "-q", "-t", self.image, str(work), timeout=120)
+        from .supervisor import own
+
+        own("image", self.image)
 
     def launch(self, args, command):
         cid = run(
@@ -52,6 +55,9 @@ class DockerEnvironment:
             )
         ).stdout.strip()
         self.containers.append(cid)
+        from .supervisor import own
+
+        own("container", cid)
         ready = wait_for(
             "business readiness",
             lambda: next(

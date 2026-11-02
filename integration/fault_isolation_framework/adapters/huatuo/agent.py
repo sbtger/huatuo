@@ -18,3 +18,22 @@ def command(binary, config, output, bpf_dir, region="fault-isolation"):
         str(output),
         "--log-debug",
     ]
+
+
+def verify_build(directory):
+    import hashlib
+    import json
+    from ...core.util import require
+
+    directory = Path(directory)
+    manifest = json.loads((directory / "build.json").read_text())
+    require(bool(manifest.get("sha256")), "build manifest has no binary hashes")
+    for name, expected in manifest["sha256"].items():
+        require(
+            Path(name).name == name, "build manifest contains an invalid binary path"
+        )
+        require(
+            hashlib.sha256((directory / name).read_bytes()).hexdigest() == expected,
+            "build hash mismatch: " + name,
+        )
+    return manifest

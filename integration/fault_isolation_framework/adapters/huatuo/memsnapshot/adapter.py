@@ -7,7 +7,7 @@ from ....environments.docker import DockerEnvironment
 from ....environments.linux import ManagedProcess, identity
 from ....workloads.fixtures import launch_services
 from ....workloads.http_probe import Traffic, request_http
-from ..agent import command as agent_command
+from ..agent import command as agent_command, verify_build
 from ..discovery import Discovery
 from .trigger import SnapshotTrigger
 from .faults import FaultScenarios
@@ -54,6 +54,7 @@ class MemsnapshotAdapter:
     requires_audit_policy = True
 
     def prepare(self):
+        verify_build(self.build)
         self.environment = DockerEnvironment(self.out)
         self.environment.build_image(self.build / "business-go")
         self.discovery = Discovery(self.environment.driver)
@@ -177,39 +178,13 @@ class MemsnapshotAdapter:
         self.number += 1
         events = self.out / ("events-%d" % self.number)
         events.mkdir()
-        self.event_path = events / TRACER
+        self.event_path = events / self.tracer_name
         if storage_full:
             self.event_path.symlink_to("/dev/full")
-        blacklist = BLACKLIST + ([TRACER] if disabled else [])
+        blacklist = self.blacklist() + ([self.tracer_name] if disabled else [])
         conf = self.out / ("bamai-%d.conf" % self.number)
         self.evidence.register(conf.name, "agent_config")
-        conf.write_text(
-            """BlackList = %s
-[HTTPServer]
-ListenAddress = "127.0.0.1:%d"
-[HTTPServer.Auth]
-BearerToken = "memsnapshot-business-test"
-[Pod]
-KubeletReadOnlyPort = %d
-KubeletAuthorizedPort = 0
-DockerAPIVersion = "%s"
-[AutoTracing.MemoryThresholdSnapshot]
-ThresholdPercent = %d
-IntervalTracing = 1
-RunTracingToolTimeout = 3
-MaxMemoryObjectEntries = 7
-[Storage.LocalFile]
-Path = "%s"
-"""
-            % (
-                json.dumps(blacklist),
-                self.a.agent_port,
-                self.server.server_port,
-                self.api,
-                101 if invalid else 60,
-                events,
-            )
-        )
+        conf.write_text(self.configuration(events, blacklist, invalid))
         logfile = self.out / ("agent-%d.log" % self.number)
         self.evidence.register(logfile.name, "agent_log")
         self.logpath = logfile
@@ -221,6 +196,20 @@ Path = "%s"
             cmd,
             logfile,
             {**os.environ, "HUATUO_MEMSNAP_FAULT_FILE": str(self.faultfile)},
+        )
+        metadata_name = "agent-%d.json" % self.number
+        self.evidence.register(metadata_name, "agent_process", format="json")
+        (self.out / metadata_name).write_text(
+            json.dumps(
+                dict(
+                    pid=self.agent.pid,
+                    binary=binary.name,
+                    sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
+                    command=cmd,
+                ),
+                indent=2,
+            )
+            + "\n"
         )
         if invalid:
             # Configuration may reject startup or disable this tracer. Both must be explicit.
@@ -244,10 +233,10 @@ Path = "%s"
         self.evidence.register("metrics-%d.txt" % self.number, "agent_metrics")
         (self.out / ("metrics-%d.txt" % self.number)).write_text(metrics)
         require(
-            ('tracing="' + TRACER + '"' in metrics) != disabled,
+            ('tracing="' + self.tracer_name + '"' in metrics) != disabled,
             "tracing status disagrees with configured switch",
         )
-        if not disabled:
+        if not disabled and self.tracer_name == TRACER:
             for t in self.targets:
                 wait_for(
                     "registered threshold watch " + t["language"],
@@ -273,4 +262,33 @@ Path = "%s"
     def hits(self):
         return self.logpath.read_text().count(
             "MEMSNAP_FAULT id=" + self.case_name + " "
+        )
+
+    def blacklist(self):
+        return BLACKLIST
+
+    def configuration(self, events, blacklist, invalid=False):
+        return """BlackList = %s
+[HTTPServer]
+ListenAddress = "127.0.0.1:%d"
+[HTTPServer.Auth]
+BearerToken = "memsnapshot-business-test"
+[Pod]
+KubeletReadOnlyPort = %d
+KubeletAuthorizedPort = 0
+DockerAPIVersion = "%s"
+[AutoTracing.MemoryThresholdSnapshot]
+ThresholdPercent = %d
+IntervalTracing = 1
+RunTracingToolTimeout = 3
+MaxMemoryObjectEntries = 7
+[Storage.LocalFile]
+Path = "%s"
+""" % (
+            json.dumps(blacklist),
+            self.a.agent_port,
+            self.server.server_port,
+            self.api,
+            101 if invalid else 60,
+            events,
         )

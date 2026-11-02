@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "results": [
+    {
+      "run": "stability-threshold-short-20261102-final2",
+      "historical_trial": false,
+      "supervisor": {
+        "status": "PASS",
+        "reason": "",
+        "returncode": 0,
+        "cleanup_errors": [],
+        "elapsed_seconds": 353.07882277001045
+      },
+      "summary_status": "PASS",
+      "case_count": 48,
+      "failed_cases": [],
+      "work_requests": {
+        "go": 3472,
+        "java": 3472,
+        "python": 3472
+      },
+      "transactions": {
+        "go": 1719,
+        "java": 1717,
+        "python": 1712
+      },
+      "campaign": {
+        "status": "PASS",
+        "profile": "short",
+        "module": "memory_threshold_snapshot",
+        "minimum_seconds": 0,
+        "elapsed_seconds": 346.98252173300716,
+        "planned_cycles": 2,
+        "completed_cycles": 2,
+        "counts": {
+          "captures": 33,
+          "cgroup_replacements": 2,
+          "limit_changes": 2,
+          "observed_pid_reuse": 0,
+          "agent_replacements": 20
+        },
+        "extra_processes": 0,
+        "errors": [],
+        "resource_limits": {
+          "rss_growth": 67108864,
+          "fd_growth": 16,
+          "rss_limit": 536870912,
+          "fd_limit": 512
+        },
+        "performance_evaluated": false,
+        "long_soak_verified": false,
+        "pid_reuse_verified": false,
+        "unsupported": [
+          "cgroup-v2",
+          "forced-blocked-syscall-cancellation"
+        ]
+      },
+      "audit_status": "PASS",
+      "evidence_errors": [],
+      "business_errors": {},
+      "unexpected_agent_logs": {},
+      "growth": [
+        {
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 9.188,
+          "fd_growth": 0,
+          "seconds": 60.926
+        },
+        {
+          "baseline_phase": "cycle-0001/go/settled",
+          "endpoint_phase": "cycle-0002/go/fault",
+          "rss_growth_mib": 7.574,
+          "fd_growth": 0,
+          "seconds": 61.417
+        },
+        {
+          "baseline_phase": "cycle-0002/go/settled",
+          "endpoint_phase": "cycle-0002/go/settled",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.759
+        }
+      ],
+      "agent_binary_counts": {
+        "agent": 11,
+        "agent-fault": 6
+      },
+      "evidence_hashes": {
+        "summary.json": "3dcf3c9e556d8361cde1e1ae67cfec665bde7f75dfdcebc3a4a8bb3bbaacf56f",
+        "audit.json": "c454128ed3bcfe04f3fc738cf8a383f7a6b03f54b759ecc73401a20022fdc9d0",
+        "campaign.json": "492d85358eb498c5db00f2290b70ce91edf9a84b86ce3cbb2a5f6644b9b588c4",
+        "manifest.json": "5d53b0b00246a5be5be37b3645142051addba1593d28d27facc582ba8bd9b62e",
+        "environment.json": "03f8d86dad622c3717233d48f720244cc19f88b3ee8784e9e0ea33f9e81b1d37"
+      }
+    },
+    {
+      "run": "stability-memburst-short-20261102-final4",
+      "historical_trial": false,
+      "supervisor": {
+        "status": "PASS",
+        "reason": "",
+        "returncode": 0,
+        "cleanup_errors": [],
+        "elapsed_seconds": 461.8232117629959
+      },
+      "summary_status": "PASS",
+      "case_count": 46,
+      "failed_cases": [],
+      "work_requests": {
+        "go": 4559,
+        "java": 4559,
+        "python": 4559
+      },
+      "transactions": {
+        "go": 2256,
+        "java": 2254,
+        "python": 2249
+      },
+      "campaign": {
+        "status": "PASS",
+        "profile": "short",
+        "module": "memburst",
+        "minimum_seconds": 0,
+        "elapsed_seconds": 453.73941235398524,
+        "planned_cycles": 2,
+        "completed_cycles": 2,
+        "counts": {
+          "captures": 31,
+          "cgroup_replacements": 2,
+          "limit_changes": 0,
+          "observed_pid_reuse": 0,
+          "agent_replacements": 20
+        },
+        "extra_processes": 8,
+        "errors": [],
+        "resource_limits": {
+          "rss_growth": 67108864,
+          "fd_growth": 16,
+          "rss_limit": 536870912,
+          "fd_limit": 512
+        },
+        "performance_evaluated": false,
+        "long_soak_verified": false,
+        "pid_reuse_verified": false,
+        "unsupported": [
+          "cgroup-v2",
+          "forced-blocked-syscall-cancellation"
+        ]
+      },
+      "audit_status": "PASS",
+      "evidence_errors": [],
+      "business_errors": {},
+      "unexpected_agent_logs": {},
+      "growth": [
+        {
+          "baseline_phase": "cycle-0000/python/warmup",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 16.188,
+          "fd_growth": 0,
+          "seconds": 71.787
+        },
+        {
+          "baseline_phase": "cycle-0001/go/settled",
+          "endpoint_phase": "cycle-0002/go/fault",
+          "rss_growth_mib": 36.613,
+          "fd_growth": 0,
+          "seconds": 72.006
+        },
+        {
+          "baseline_phase": "cycle-0002/go/settled",
+          "endpoint_phase": "cycle-0002/go/settled",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.76
+        }
+      ],
+      "agent_binary_counts": {
+        "agent": 11,
+        "agent-fault": 6
+      },
+      "evidence_hashes": {
+        "summary.json": "b26ada2d2d66237c833f406a4947ec84d0ec3d0f6a43365b886417787d014a74",
+        "audit.json": "a58df1ebdaf460e3f34fd83f18122134ba6fc4ec62f7dc4ed88c09797218d379",
+        "campaign.json": "6bb2240ad376446350b575d4b14fa42dfac4a58428ba633f551c70f5432f82fe",
+        "manifest.json": "c7859b4f5e1504741b38583febbe812fc1ec4885aaa0633d657e955cd9667bfd",
+        "environment.json": "b18f23b9841c0d411afb7b771ee3e46fbad5d8da32d723ec7044c9b5fe656935"
+      }
+    },
+    {
+      "run": "stability-memburst-short-20261102-final2",
+      "historical_trial": true,
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 426.41735348297516
+      },
+      "summary_status": "FAIL",
+      "case_count": 43,
+      "failed_cases": [],
+      "work_requests": {
+        "go": 4204,
+        "java": 4204,
+        "python": 4204
+      },
+      "transactions": {
+        "go": 2080,
+        "java": 2078,
+        "python": 2073
+      },
+      "campaign": {
+        "status": "FAIL",
+        "profile": "short",
+        "module": "memburst",
+        "minimum_seconds": 0,
+        "elapsed_seconds": 418.17758622500696,
+        "planned_cycles": 2,
+        "completed_cycles": 2,
+        "counts": {
+          "captures": 28,
+          "cgroup_replacements": 2,
+          "limit_changes": 0,
+          "observed_pid_reuse": 0,
+          "agent_replacements": 20
+        },
+        "extra_processes": 8,
+        "errors": [
+          "Agent RSS grew beyond budget: (20050, 23576282)"
+        ],
+        "resource_limits": {
+          "rss_growth": 67108864,
+          "fd_growth": 16,
+          "rss_limit": 536870912,
+          "fd_limit": 512
+        },
+        "performance_evaluated": false,
+        "long_soak_verified": false,
+        "pid_reuse_verified": false,
+        "unsupported": [
+          "cgroup-v2",
+          "forced-blocked-syscall-cancellation"
+        ]
+      },
+      "audit_status": "FAIL",
+      "evidence_errors": [
+        "campaign final checks failed",
+        "Agent RSS grew beyond budget: (20050, 23576282)"
+      ],
+      "business_errors": {},
+      "unexpected_agent_logs": {},
+      "growth": [
+        {
+          "baseline_phase": "cycle-0001/go/capture",
+          "endpoint_phase": "cycle-0001/go/fault",
+          "rss_growth_mib": 76.082,
+          "fd_growth": -209,
+          "seconds": 60.295
+        },
+        {
+          "baseline_phase": "cycle-0001/go/recovery",
+          "endpoint_phase": "cycle-0001/java/fault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.011
+        },
+        {
+          "baseline_phase": "cycle-0001/java/recovery",
+          "endpoint_phase": "cycle-0001/python/fault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.031
+        },
+        {
+          "baseline_phase": "cycle-0001/python/recovery",
+          "endpoint_phase": "cycle-0001/go/storage-full",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.012
+        },
+        {
+          "baseline_phase": "cycle-0001/go/storage-recovery",
+          "endpoint_phase": "cycle-0001/go/restart",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.011
+        },
+        {
+          "baseline_phase": "cycle-0001/go/restart",
+          "endpoint_phase": "cycle-0001/go/agent-fd",
+          "rss_growth_mib": 21.41,
+          "fd_growth": 0,
+          "seconds": 12.223
+        },
+        {
+          "baseline_phase": "cycle-0001/go/agent-fd-recovery",
+          "endpoint_phase": "cycle-0001/go/agent-oom",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.013
+        },
+        {
+          "baseline_phase": "cycle-0001/go/agent-oom-recovery",
+          "endpoint_phase": "cycle-0002/go/fault",
+          "rss_growth_mib": 48.324,
+          "fd_growth": 0,
+          "seconds": 72.02
+        },
+        {
+          "baseline_phase": "cycle-0002/go/recovery",
+          "endpoint_phase": "cycle-0002/java/fault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.013
+        },
+        {
+          "baseline_phase": "cycle-0002/java/recovery",
+          "endpoint_phase": "cycle-0002/python/fault",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.014
+        },
+        {
+          "baseline_phase": "cycle-0002/python/recovery",
+          "endpoint_phase": "cycle-0002/go/storage-full",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.015
+        },
+        {
+          "baseline_phase": "cycle-0002/go/storage-recovery",
+          "endpoint_phase": "cycle-0002/go/restart",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.014
+        },
+        {
+          "baseline_phase": "cycle-0002/go/restart",
+          "endpoint_phase": "cycle-0002/go/agent-fd",
+          "rss_growth_mib": 39.113,
+          "fd_growth": 0,
+          "seconds": 11.969
+        },
+        {
+          "baseline_phase": "cycle-0002/go/agent-fd-recovery",
+          "endpoint_phase": "cycle-0002/go/agent-oom",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 0.018
+        },
+        {
+          "baseline_phase": "cycle-0002/go/agent-oom-recovery",
+          "endpoint_phase": "cycle-0002/go/settled",
+          "rss_growth_mib": 0.0,
+          "fd_growth": 0,
+          "seconds": 1.023
+        }
+      ],
+      "agent_binary_counts": {},
+      "evidence_hashes": {
+        "summary.json": "590ac7bd7a62ae6de867af479af952b3ff6376ec7b1cf119a7c295573fbe4a22",
+        "audit.json": "f3232ac0b5d2b286ab240fc7390ec43ab91953d6b05176092c0a06a1ad85e0bb",
+        "campaign.json": "a46ac4b80d628210bb45dc9cc8b8a9e6bafef605717147ada4e0dca690720c67",
+        "manifest.json": "437f3cf1861b6531ea0f168dcc533d32eda418efe2bfbc8b6f34019ab3e90d15",
+        "environment.json": "901ee5985ceba83c6703fe48f1ae4469c14110cac162a7c3dead3c923208efdf"
+      }
+    }
+  ]
+}

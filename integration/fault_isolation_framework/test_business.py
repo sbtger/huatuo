@@ -51,3 +51,30 @@ class BusinessContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IndependentProgressTest(unittest.TestCase):
+    def test_pressure_worker_stall_does_not_stop_independent_tick(self):
+        source = (
+            Path(__file__).parent / "workloads/services/python_service.py"
+        ).read_text()
+        source = source.replace("    chunks = []", "    chunks = []\n    time.sleep(3)")
+        p = subprocess.Popen(
+            [sys.executable, "-u", "-c", source, "1"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            url = json.loads(p.stdout.readline())["url"]
+
+            def tick():
+                with urllib.request.urlopen(url + "/state", timeout=1) as response:
+                    return json.load(response)["ticks"]
+
+            before = tick()
+            time.sleep(0.4)
+            self.assertGreater(tick(), before, "tick is coupled to the pressure worker")
+        finally:
+            p.terminate()
+            p.communicate(timeout=5)

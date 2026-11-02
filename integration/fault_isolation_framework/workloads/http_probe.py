@@ -41,7 +41,7 @@ def validate_phase(p):
 
 
 class Traffic:
-    def __init__(self, target, out, qps):
+    def __init__(self, target, out, qps, retain_history=True):
         self.t = target
         self.target_id = target["language"]
         self.qps = qps
@@ -50,6 +50,9 @@ class Traffic:
         self.lock = threading.Lock()
         self.txnlock = threading.Lock()
         self.rows = []
+        self.retain_history = retain_history
+        self.request_count = 0
+        self.record_path = out / (target["language"] + "-requests.jsonl")
         self.pending = {}
         self.scheduled = {}
         self.last_tick = -1
@@ -77,6 +80,8 @@ class Traffic:
         )
         with self.lock:
             self.rows.append(row)
+            if kind == "work":
+                self.request_count += 1
             self.file.write(json.dumps(row) + "\n")
             self.file.flush()
 
@@ -196,6 +201,9 @@ class Traffic:
             seconds=ended - started,
         )
         p["assertion_errors"] = validate_phase(p)
+        if not self.retain_history:
+            with self.lock:
+                self.rows = [r for r in self.rows if r["phase"] == "between"]
         return p
 
     def close(self):
@@ -211,14 +219,20 @@ class Traffic:
             "business observer did not stop",
         )
         require(
-            sum(self.scheduled.values()) == sum(r["kind"] == "work" for r in self.rows),
+            sum(self.scheduled.values()) == self.request_count,
             "aggregate scheduled business requests were lost",
         )
 
     def totals(self):
-        return dict(
-            requests=sum(r["kind"] == "work" for r in self.rows), transactions=self.seq
-        )
+        return dict(requests=self.request_count, transactions=self.seq)
 
     def records(self):
-        return self.rows
+        if self.retain_history:
+            return self.rows
+
+        def stream():
+            with self.record_path.open() as source:
+                for line in source:
+                    yield json.loads(line)
+
+        return stream()

@@ -262,3 +262,295 @@ class FrameworkTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StabilityControlsTest(unittest.TestCase):
+    def api(self):
+        try:
+            return importlib.import_module("fault_isolation_framework.core.stability")
+        except ImportError:
+            self.fail("stability supervision and coverage API is missing")
+
+    def test_campaign_missing_cycles_or_duration_cannot_pass(self):
+        api = self.api()
+        self.assertTrue(api.coverage_errors(2, 10, [dict(cycle=1, status="PASS")], 10))
+        self.assertTrue(api.coverage_errors(1, 10, [dict(cycle=1, status="PASS")], 9))
+        self.assertFalse(api.coverage_errors(1, 10, [dict(cycle=1, status="PASS")], 10))
+
+    def test_campaign_duplicate_cycles_cannot_replace_missing_cycles(self):
+        api = self.api()
+        rows = [dict(cycle=1, status="PASS"), dict(cycle=1, status="PASS")]
+        self.assertTrue(api.coverage_errors(2, 0, rows, 10))
+
+    def test_resource_growth_is_compared_within_same_agent_identity(self):
+        api = self.api()
+        rows = [
+            dict(agent=[10, 1], rss_bytes=10, fds=3),
+            dict(agent=[10, 1], rss_bytes=30, fds=9),
+            dict(agent=[10, 2], rss_bytes=100, fds=20),
+        ]
+        self.assertTrue(
+            api.resource_errors(
+                rows, rss_growth=10, fd_growth=3, rss_limit=200, fd_limit=100
+            )
+        )
+        self.assertFalse(
+            api.resource_errors(
+                rows, rss_growth=100, fd_growth=10, rss_limit=200, fd_limit=100
+            )
+        )
+
+    def test_resource_evidence_missing_or_observer_failure_fails(self):
+        api = self.api()
+        self.assertTrue(api.resource_errors([], 10, 3, 200, 100))
+        self.assertTrue(
+            api.resource_errors([dict(error="observer died")], 10, 3, 200, 100)
+        )
+
+    def test_supervisor_stops_hung_controller(self):
+        import subprocess
+
+        from fault_isolation_framework.environments.supervisor import supervise
+
+        with tempfile.TemporaryDirectory() as output:
+            result = supervise(
+                [sys.executable, "-c", "import time; time.sleep(30)"],
+                Path(output),
+                timeout=0.3,
+                phase_timeout=0.2,
+            )
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("timeout", result["reason"])
+            self.assertNotEqual(result["returncode"], 0)
+
+
+class StabilityEvidenceControlsTest(unittest.TestCase):
+    def test_raw_resource_sampling_gap_fails_repeated_audit(self):
+        from fault_isolation_framework.core.stability import resource_errors
+
+        rows = [
+            dict(time=0, agent=[1, 1], rss_bytes=10, fds=2),
+            dict(time=40, agent=[1, 1], rss_bytes=10, fds=2),
+        ]
+        self.assertTrue(resource_errors(rows, 100, 100, 200, 200))
+
+    def test_campaign_counts_come_from_raw_phase_operations(self):
+        try:
+            from fault_isolation_framework.adapters.huatuo.stability.policy import (
+                phase_counts,
+            )
+        except ImportError:
+            self.fail("raw phase coverage accounting is missing")
+        cases = [
+            dict(
+                name="cycle-0001/go/lifecycle",
+                detail=dict(
+                    replacements=[
+                        {"capture": {"event_file": "e", "normal_attempts": [{}]}}
+                    ]
+                ),
+            ),
+            dict(
+                name="cycle-0001/go/limit-change",
+                detail=dict(captures=[{"event_file": "e", "normal_attempts": [{}]}]),
+            ),
+        ]
+        actual = phase_counts(cases)
+        self.assertEqual(actual["captures"], 2)
+        self.assertEqual(actual["cgroup_replacements"], 1)
+        self.assertEqual(actual["limit_changes"], 1)
+
+
+class GrowthCoverageTest(unittest.TestCase):
+    def test_warmed_agent_without_endpoint_cannot_claim_growth_checked(self):
+        from fault_isolation_framework.core.stability import resource_errors
+
+        rows = [dict(agent=[1, 2], rss_bytes=10, fds=3, settled=True, baseline=True)]
+        self.assertTrue(resource_errors(rows, 100, 100, 200, 200))
+        rows.append(dict(agent=[1, 2], rss_bytes=12, fds=3, settled=True))
+        self.assertFalse(resource_errors(rows, 100, 100, 200, 200))
+
+
+class SupervisorHeartbeatTest(unittest.TestCase):
+    def test_stopped_resource_observer_aborts_even_with_large_phase_budget(self):
+        from fault_isolation_framework.environments.supervisor import supervise
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "evidence").mkdir()
+            script = 'from pathlib import Path; import sys,time; Path(sys.argv[1]).write_text("{}\\n"); time.sleep(30)'
+            try:
+                result = supervise(
+                    [
+                        sys.executable,
+                        "-c",
+                        script,
+                        str(root / "evidence/resources.jsonl"),
+                    ],
+                    root,
+                    timeout=30,
+                    phase_timeout=30,
+                    observer_timeout=0.2,
+                )
+            except TypeError:
+                self.fail("supervisor resource-heartbeat deadline is missing")
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("observer", result["reason"])
+
+
+class RecoveryPolicyTest(unittest.TestCase):
+    def test_normal_capture_requires_nonempty_supported_result_and_bounded_retry(self):
+        try:
+            from fault_isolation_framework.adapters.huatuo.stability.policy import (
+                normal_capture_errors,
+            )
+        except ImportError:
+            self.fail("normal recovery audit gate is missing")
+        bad = dict(
+            normal_attempts=[dict(status="failed", entries=0, reason="bad address")]
+        )
+        self.assertTrue(normal_capture_errors(bad, "go"))
+        good = dict(
+            normal_attempts=[
+                dict(
+                    status="failed",
+                    entries=0,
+                    reason="CPython interpreter GC generations are invalid",
+                ),
+                dict(status="complete", entries=7, reason=""),
+            ]
+        )
+        self.assertFalse(normal_capture_errors(good, "python"))
+        self.assertTrue(normal_capture_errors(good, "go"))
+        good["normal_attempts"] *= 2
+        self.assertTrue(normal_capture_errors(good, "python"))
+
+
+class BurstStimulusTest(unittest.TestCase):
+    def test_anon_floor_waits_for_target_to_enter_rss_ranking(self):
+        try:
+            from fault_isolation_framework.adapters.huatuo.stability.trigger import (
+                burst_anon_floor,
+            )
+        except ImportError:
+            self.fail("memburst target-ranking pressure floor is missing")
+        total = 16 * 1024 * 1024
+        baseline = 1024 * 1024
+        percent = burst_anon_floor(total, baseline)
+        self.assertGreaterEqual(total * percent / 100, baseline + 256 * 1024)
+        self.assertLess(total * percent / 100, baseline + 500 * 1024)
+
+
+class BurstConfigurationTest(unittest.TestCase):
+    def test_memburst_config_renders_both_pressure_floor_and_cooldown(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.adapters.huatuo.stability.adapter import (
+            StabilityAdapter,
+        )
+
+        adapter = StabilityAdapter.__new__(StabilityAdapter)
+        adapter.tracer_name = "memburst"
+        adapter.a = SimpleNamespace(cooldown=8, agent_port=19704)
+        adapter.server = SimpleNamespace(server_port=10250)
+        adapter.api = "1.52"
+        from unittest.mock import patch
+
+        with patch(
+            "pathlib.Path.read_text",
+            return_value="MemTotal: 16777216 kB\nActive(anon): 1024 kB\nInactive(anon): 1047552 kB\n",
+        ):
+            text = adapter.configuration(Path("/tmp/test-events"), [])
+        self.assertIn("IntervalTracing = 8", text)
+        import re
+
+        floor = int(re.search(r"DeltaAnonThreshold = (\d+)", text).group(1))
+        self.assertGreater(floor, 0)
+
+
+class StreamingHashTest(unittest.TestCase):
+    def test_final_manifest_hash_does_not_load_entire_request_file(self):
+        from unittest.mock import patch
+        from fault_isolation_framework.core.evidence import EvidenceStore
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store = EvidenceStore(Path(tmp) / "evidence")
+            store.register("stream.jsonl", "requests", format="jsonl")
+            (store.output / "stream.jsonl").write_text('{"ok":true}\n' * 100)
+            with patch(
+                "pathlib.Path.read_bytes", side_effect=AssertionError("whole file read")
+            ):
+                store.save({"status": "PASS"})
+            self.assertIn(
+                "sha256",
+                json.loads((store.output / "manifest.json").read_text())["artifacts"][
+                    0
+                ],
+            )
+
+
+class ComparableWarmupTest(unittest.TestCase):
+    def test_mixed_runtime_agent_baseline_waits_for_all_runtime_warmups(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from fault_isolation_framework.adapters.huatuo.stability.adapter import (
+            StabilityAdapter,
+        )
+
+        adapter = StabilityAdapter.__new__(StabilityAdapter)
+        adapter.agent = SimpleNamespace(pid=1)
+        adapter.targets = [dict(language=lang) for lang in ("go", "java", "python")]
+        adapter.warmed_agents = set()
+        adapter.warmed_languages = {}
+        adapter.counts = dict(captures=0)
+        rows = []
+        adapter.monitor = SimpleNamespace(record=lambda **row: rows.append(row))
+        adapter.trigger = SimpleNamespace(
+            capture=lambda *a, **kw: {}, release_all=lambda: None
+        )
+        with patch(
+            "fault_isolation_framework.adapters.huatuo.stability.adapter.identity",
+            return_value=[1, 2],
+        ):
+            adapter.capture(adapter.targets[0])
+            self.assertEqual(
+                rows, [], "Go-only cache state is not a mixed-runtime baseline"
+            )
+            adapter.capture(adapter.targets[1])
+            self.assertEqual(rows, [])
+            adapter.capture(adapter.targets[2])
+            self.assertEqual(len(rows), 1)
+            adapter.capture(adapter.targets[0])
+            self.assertEqual(len(rows), 1)
+
+
+class ShippingAgentControlTest(unittest.TestCase):
+    def test_steady_campaign_starts_shipping_agent_even_when_faults_are_selected(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from fault_isolation_framework.adapters.huatuo.stability.adapter import (
+            StabilityAdapter,
+        )
+
+        adapter = StabilityAdapter.__new__(StabilityAdapter)
+        adapter.agent = None
+        adapter.a = SimpleNamespace(inject_faults=True)
+        selected = []
+
+        def start(**kwargs):
+            selected.append(kwargs)
+            adapter.agent = SimpleNamespace(pid=1)
+
+        adapter.start_agent = start
+        adapter.targets = [dict(language="go")]
+        adapter.warmed_agents, adapter.warmed_languages = set(), {}
+        adapter.counts = dict(captures=0)
+        adapter.monitor = SimpleNamespace(record=lambda **kw: None)
+        adapter.trigger = SimpleNamespace(
+            capture=lambda *a, **kw: {}, release_all=lambda: None
+        )
+        with patch(
+            "fault_isolation_framework.adapters.huatuo.stability.adapter.identity",
+            return_value=[1, 2],
+        ):
+            adapter.capture(adapter.targets[0])
+        self.assertEqual(selected, [dict(plain=True)])
