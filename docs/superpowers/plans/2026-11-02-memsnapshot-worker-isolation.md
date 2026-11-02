@@ -61,7 +61,20 @@ Consumes contained worker collector; preserves public event schema.
 - [x] Give each target its own bounded deadline; retain healthy batch records.
 - [x] Adapt fault injection to helper; assert worker exits and same Agent survives;
   verify Java/Python after failed Go, honoring actual completion plus cooldown.
-- [ ] Run Go/Java/Python fault matrix and 20 rounds/30 minutes threshold steady
+- [x] Run Go/Java/Python fault matrix and 20 rounds/30 minutes threshold steady
   on VM2222. Retain business/resource evidence and aggregate child measurements.
-- [ ] Run project checks, report baseline failures, whole-branch review, commit
+- [x] Run project checks, report baseline failures, whole-branch review, commit
   focused changes and push existing authorized feature branch.
+
+## Recorded outcome
+
+Final six-mode matrices: memburst 102 cases, threshold 108 cases, both PASS.
+Threshold 20 rounds on one shipping Agent lasted 1800.005 seconds; its full
+campaign passed. Final cross-target/exit checks with churn=5 passed for both
+modules. All five final campaigns: 263 cases, 137775 work requests, all business
+and artifact audits PASS. Native v1/v2: 15 top-level tests each with race, no skip.
+
+One earlier limit-change timeout remains unexplained despite later passes.
+The public result is PARTIAL rather than an all-exception-path claim. See
+integration/fault_isolation_framework/WORKER_VALIDATION.md for exact provenance,
+retained failures, offline replay compatibility repair and unverified scope.

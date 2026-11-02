@@ -1,5 +1,9 @@
 # Memory snapshot reliability validation — 2026-11-02
 
+This is a historical pre-worker record. Its builds and measurements do not
+validate the later dedicated-helper implementation. See
+[worker validation](WORKER_VALIDATION.md) for the new scope and open issues.
+
 Original campaign completion: **22/22 runs**, 13 PASS and 9 FAIL. This report retains failed runs; it is not an all-green reliability claim.
 
 The independent auditor checked 166,959 recorded work requests across Go, Java and Python in 382 executed case entries. Business auditing is PASS for 22/22 completed runs, for the observed periods only. A stopped feature plan does not prove unexecuted recovery or future scenarios.

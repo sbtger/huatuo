@@ -28,6 +28,41 @@ class AttributionTest(unittest.TestCase):
             self.assertEqual(result["failed_worker_capture"]["not_before_epoch"], 100)
             owner.evidence.expect_document.assert_called_once_with("events")
 
+    def test_nanosecond_lifecycle_logs_still_require_cid_time_and_reason(self):
+        import datetime
+        from fault_isolation_framework.adapters.huatuo.stability.policy import audit_artifacts, phase_counts
+        at = datetime.datetime(2026, 11, 2, 15, 12, 59, 804123,
+                               tzinfo=datetime.timezone.utc).timestamp()
+        for label, cid, start, reason, accepted in (
+            ("matching", "tracked", at - 1, "creation is not yet reflected by kubelet", True),
+            ("wrong-cid", "other", at - 1, "creation is not yet reflected by kubelet", False),
+            ("outside-window", "tracked", at + 10, "creation is not yet reflected by kubelet", False),
+            ("other-error", "tracked", at - 1, "operation not permitted", False),
+        ):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                line = ('time="2026-11-02T23:12:59.804123900+08:00" level="warning" '
+                        'msg="refresh container view" error="tracked ' + reason + '"')
+                (root / "agent-1.log").write_text(line + "\n")
+                case = dict(name="cycle-0001/go/lifecycle", target_id="go", expect_fault=False,
+                    fault_hits=0, evidence=["agent-1.log"], detail=dict(replacements=[dict(
+                        cid=cid, window_started=start, window_finished=start + 2)]))
+                counts = phase_counts([case])
+                counts["agent_replacements"] = 0
+                (root / "campaign.json").write_text(json.dumps(dict(status="PASS", planned_cycles=1,
+                    minimum_seconds=0, elapsed_seconds=1, counts=counts, resource_limits=dict(
+                        rss_growth=0, fd_growth=0, rss_limit=10, fd_limit=10,
+                        watch_growth=0, thread_growth=0))))
+                (root / "cycles.jsonl").write_text(json.dumps(dict(cycle=1, status="PASS", counts=counts))+"\n")
+                rows = [dict(time=i, agent=[1, 2], rss_bytes=1, fds=1, threads=1,
+                    inotify_watches=0, baseline=i == 0, settled=True) for i in range(2)]
+                (root / "resources.jsonl").write_text("".join(json.dumps(r)+"\n" for r in rows))
+                (root / "environment.json").write_text(json.dumps(dict(targets=[], command_line=[])))
+                result = audit_artifacts(root, dict(cases=[case]), dict(artifacts=[dict(
+                    role="agent_log", path="agent-1.log")]))
+                self.assertFalse(result["errors"])
+                self.assertEqual(not result["unexpected_agent_logs"], accepted)
+
     def fixture(
         self, root, marker=True, pid=42, snapshot_status="failed", reason="bad address"
     ):

@@ -1,5 +1,9 @@
 # 内存快照稳定性短周期验证记录
 
+This is a historical pre-worker record. Its builds and measurements do not
+validate the later dedicated-helper implementation. See
+[worker validation](WORKER_VALIDATION.md) for the new scope and open issues.
+
 日期：2026-11-02。对应 [测试计划](STABILITY_PLAN.md)。本次只验证短周期故障隔离与反复采集，不作 72 小时、性能或生产可用率结论。
 
 ## 代码与构建

@@ -17,6 +17,8 @@ under `adapters/huatuo/`. See [Architecture](ARCHITECTURE.md)
 and the [recorded validation](VALIDATION.md).
 The [worker boundary](../../docs/memsnapshot-worker.md) describes the contained
 production helper, shared slots and the limits of timeout isolation.
+See the [worker validation and retained failures](WORKER_VALIDATION.md) and
+[structured results](WORKER_RESULTS.json) for the recorded acceptance scope.
 
 A PASS establishes the assertions below for the recorded runtime, kernel, build,
 traffic and fault window. It does not prove every exception path, every runtime

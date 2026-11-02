@@ -1,9 +1,9 @@
 # Independent memsnapshot worker design
 
 Status: implemented with a dedicated helper. Native cgroup v1/v2 integration,
-race checks and short real-Agent isolation acceptance have passed. Full runtime
-fault matrices and the post-change 30-minute threshold run are tracked in the
-implementation plan and validation report. This does not establish real D-state
+race checks and short real-Agent isolation acceptance have passed. Both runtime fault matrices and the post-change 30-minute threshold run passed.
+An earlier intermittent limit-change timeout remains unexplained; the validation
+report retains that failure and does not claim all reliability paths are proven. This does not establish real D-state
 termination, production performance or a 72-hour soak result.
 
 ## Problem and guarantee

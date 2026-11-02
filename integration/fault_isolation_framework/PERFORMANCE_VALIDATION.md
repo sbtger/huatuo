@@ -1,5 +1,9 @@
 # Performance framework short validation — 2026-11-02
 
+This is a historical pre-worker record. Its builds and measurements do not
+validate the later dedicated-helper implementation. See
+[worker validation](WORKER_VALIDATION.md) for the new scope and open issues.
+
 This validates measurement and rejection paths, not production overhead or SLOs.
 Use [the plan](PERFORMANCE_PLAN.md) for execution and interpretation, and
 [structured results](PERFORMANCE_RESULTS.json) for trial-level observations.

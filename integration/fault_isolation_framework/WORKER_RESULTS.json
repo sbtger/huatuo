@@ -1,0 +1,1110 @@
+{
+  "schema_version": 1,
+  "status": "PARTIAL",
+  "dates": [
+    "2026-11-02",
+    "2026-11-03"
+  ],
+  "source_commit": "e74db839538677dfb4d81d6c61bebc2a2780dd34",
+  "build_provenance": {
+    "candidate": "reliability-worker-build-20261102-v5",
+    "recorded_build_revision": "12a7ff0442003427e64cec01449ca96fc5145fe8",
+    "tracked_non_test_go_files_byte_identical_to_source_commit": 11371,
+    "frozen_producer_python_files_byte_identical": 62,
+    "proof_sha256": "21d5c7f8f5e4f3f6b9e2e83c9edaf5432eb4b1433b308060974cc39042f5bd2d"
+  },
+  "python_controls": 137,
+  "performance_evaluated": false,
+  "all_exception_paths_proven": false,
+  "known_unresolved": [
+    {
+      "id": "limit-change-timeout",
+      "campaign": "worker-threshold-isolation-20261102-v6",
+      "business_audit": "PASS",
+      "feature_plan": "FAIL",
+      "cause": "not established; subsequent diagnostic and matrix passes do not establish a fix"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "worker-memburst-fault-matrix-20261102-v9",
+      "supervisor": {
+        "status": "PASS",
+        "reason": "",
+        "returncode": 0,
+        "cleanup_errors": [],
+        "elapsed_seconds": 1181.407621765
+      },
+      "audit": {
+        "status": "PASS",
+        "evidence_errors": [],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "total_work_requests": {
+          "go": 11741,
+          "java": 11741,
+          "python": 11741
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 102,
+        "performance_evaluated": false
+      },
+      "case_count": 102,
+      "transactions": {
+        "go": 5813,
+        "java": 5810,
+        "python": 5789
+      },
+      "counts": {
+        "captures": 81,
+        "cgroup_replacements": 6,
+        "limit_changes": 0,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 39
+      },
+      "resources": {
+        "resource_rows": 11386,
+        "error_rows": 0,
+        "unavailable_worker_samples": 12,
+        "sampled_max_rss_bytes": 174485504,
+        "sampled_max_fds": 59,
+        "worker_reaped_records": 315,
+        "completed_worker_cpu_ns": 26857993000
+      },
+      "posthoc_limit_fields": {
+        "captures": 0,
+        "errors": [],
+        "values": []
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "44610f3b2e62df94b8d38e024d11184d2a2a0a4e089874142fc7acabc4d78c3f",
+        "evidence/audit.json": "ea66cf32a38a1dca839ca2e3efe1975f14f8b30be6900d57be17ca3a00e45ddc",
+        "evidence/summary.json": "4dbb6f3fa5ad29efa386bfb47685174d311966d7057c0aad4837b28106aa5c8c",
+        "evidence/campaign.json": "a39f1cf8f0bd52423466b929e4b6742f2b95e843cea10ce0b5432ac0dc1595be",
+        "evidence/manifest.json": "2c01088feac63c112a2073fe3e4b411d1a4410a9e1ebcd8f5dc759e0a08cdcde",
+        "evidence/environment.json": "a9593f20657bda6c2be4881a3a04afa638bf2005d1ae8cf5915aa4df6cb95cfd"
+      },
+      "module": "memburst",
+      "kind": "fault_matrix"
+    },
+    {
+      "id": "worker-threshold-fault-matrix-20261102-v9",
+      "supervisor": {
+        "status": "PASS",
+        "reason": "",
+        "returncode": 0,
+        "cleanup_errors": [],
+        "elapsed_seconds": 920.8428325470013
+      },
+      "audit": {
+        "status": "PASS",
+        "evidence_errors": [],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "total_work_requests": {
+          "go": 9140,
+          "java": 9140,
+          "python": 9140
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 108,
+        "performance_evaluated": false
+      },
+      "case_count": 108,
+      "transactions": {
+        "go": 4525,
+        "java": 4522,
+        "python": 4506
+      },
+      "counts": {
+        "captures": 87,
+        "cgroup_replacements": 6,
+        "limit_changes": 6,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 39
+      },
+      "resources": {
+        "resource_rows": 8835,
+        "error_rows": 0,
+        "unavailable_worker_samples": 4,
+        "sampled_max_rss_bytes": 104665088,
+        "sampled_max_fds": 62,
+        "worker_reaped_records": 111,
+        "completed_worker_cpu_ns": 4478452000
+      },
+      "posthoc_limit_fields": {
+        "captures": 6,
+        "errors": [],
+        "values": [
+          734003200
+        ]
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "c42d53c952ce8863cac6130d5ff68efa2ec36d07df9d1c38b848a2f22fc47372",
+        "evidence/audit.json": "5be8716bbe2b456575abdff11a4ed298380336f74173b4216d3517077bced223",
+        "evidence/summary.json": "09b9f59869f21bbbbe84e3c61edca56307a3f6da34ca82e08ca4c376929d2ba0",
+        "evidence/campaign.json": "3a03fc4f420323bbb31585b6e978417b1fafa9323aee198b68a222a9644cd470",
+        "evidence/manifest.json": "6a31ad41c74c618e8b49ca4aec40f086d725920870391f9432535aa0fda66c2f",
+        "evidence/environment.json": "2ce47b2af24fd2ff636108f9e7618ed27cb422f56cd5486d915c7151c5837daf"
+      },
+      "module": "memory_threshold_snapshot",
+      "kind": "fault_matrix"
+    },
+    {
+      "id": "worker-threshold-steady-20261102-v9",
+      "supervisor": {
+        "status": "PASS",
+        "reason": "",
+        "returncode": 0,
+        "cleanup_errors": [],
+        "elapsed_seconds": 1919.7877509710015
+      },
+      "audit": {
+        "status": "PASS",
+        "evidence_errors": [],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "total_work_requests": {
+          "go": 19123,
+          "java": 19123,
+          "python": 19123
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 16,
+        "performance_evaluated": false
+      },
+      "case_count": 16,
+      "transactions": {
+        "go": 9464,
+        "java": 9462,
+        "python": 9429
+      },
+      "counts": {
+        "captures": 73,
+        "cgroup_replacements": 1,
+        "limit_changes": 1,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 2
+      },
+      "resources": {
+        "resource_rows": 18391,
+        "error_rows": 0,
+        "unavailable_worker_samples": 3,
+        "sampled_max_rss_bytes": 100741120,
+        "sampled_max_fds": 61,
+        "worker_reaped_records": 74,
+        "completed_worker_cpu_ns": 3409651000
+      },
+      "posthoc_limit_fields": {
+        "captures": 1,
+        "errors": [],
+        "values": [
+          734003200
+        ]
+      },
+      "bounded_gc_recoveries": [
+        [
+          {
+            "status": "failed",
+            "reason": "CPython interpreter GC generations are invalid",
+            "event_index": 56
+          },
+          {
+            "status": "partial",
+            "reason": "GC generation changed during external census",
+            "event_index": 57
+          }
+        ]
+      ],
+      "sha256": {
+        "supervisor.json": "c91a9e6f9dbff7d97800eb925e991f86c0cf901427105ac7a759596b0dbdafc2",
+        "evidence/audit.json": "0bf8ecbaf66891bfc7654e478161138c22975f7f0d5893989b5e58332c9bb465",
+        "evidence/summary.json": "da01cd73267b58e49d80309e100902a27554d8384ebcf0e941b682f9c443559e",
+        "evidence/campaign.json": "00b8c036ea0be9f3359842bb6539c7538459e793d3a6141bad90ecce3ae2fd6d",
+        "evidence/manifest.json": "d53bd7ffbdecf76814bb8937d38bbbbed78d2eec872e388ae15244f16273603d",
+        "evidence/environment.json": "57e4ac0b542839d194426c56bb29a43ca97417a3e56e1183d42c640c98acabc2"
+      },
+      "module": "memory_threshold_snapshot",
+      "kind": "steady",
+      "same_agent_steady": {
+        "rounds": 20,
+        "elapsed_seconds": 1800.0050022379983,
+        "agent_identity": [
+          205016,
+          2864615
+        ],
+        "agent_binary": "agent",
+        "languages": [
+          "go",
+          "java",
+          "python"
+        ]
+      }
+    },
+    {
+      "id": "worker-memburst-final-isolation-20261103-v10",
+      "supervisor": {
+        "status": "PASS",
+        "reason": "",
+        "returncode": 0,
+        "cleanup_errors": [],
+        "elapsed_seconds": 328.3053712690016
+      },
+      "audit": {
+        "status": "PASS",
+        "evidence_errors": [],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "total_work_requests": {
+          "go": 3225,
+          "java": 3225,
+          "python": 3225
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 18,
+        "performance_evaluated": false
+      },
+      "case_count": 18,
+      "transactions": {
+        "go": 1597,
+        "java": 1595,
+        "python": 1590
+      },
+      "counts": {
+        "captures": 23,
+        "cgroup_replacements": 5,
+        "limit_changes": 0,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 5
+      },
+      "resources": {
+        "resource_rows": 3125,
+        "error_rows": 0,
+        "unavailable_worker_samples": 1,
+        "sampled_max_rss_bytes": 178810880,
+        "sampled_max_fds": 59,
+        "worker_reaped_records": 81,
+        "completed_worker_cpu_ns": 8704107000
+      },
+      "posthoc_limit_fields": {
+        "captures": 0,
+        "errors": [],
+        "values": []
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "ffd48b612410edc5dea4392ea16b70ad026face0b25a5ba0aa449d6dc389f3c7",
+        "evidence/audit.json": "aca0608c611b15bff47486a1af88bfde9001637bc82048541c1f9006b8943bc2",
+        "evidence/summary.json": "d4bc3a28e4cf20f01c6379099454bb8a03d1bf90761c8085c58c04475c374cce",
+        "evidence/campaign.json": "acb39a8505e7153e3ef37fc5d80457d3aa81228cc8796143f805a0e65b6bada1",
+        "evidence/manifest.json": "d1ca95c82b9b9a86463f365376e8fe7340dc34b4b3b93c6fa18c104d45da94d1",
+        "evidence/environment.json": "32b8e3263327db4ed19c20547c21abc1524271f7359a22fc3750c74bedde7b18"
+      },
+      "module": "memburst",
+      "kind": "final_isolation_and_churn"
+    },
+    {
+      "id": "worker-threshold-final-isolation-20261103-v10",
+      "supervisor": {
+        "status": "PASS",
+        "reason": "",
+        "returncode": 0,
+        "cleanup_errors": [],
+        "elapsed_seconds": 275.85296412299795
+      },
+      "audit": {
+        "status": "PASS",
+        "evidence_errors": [],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "total_work_requests": {
+          "go": 2696,
+          "java": 2696,
+          "python": 2696
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 19,
+        "performance_evaluated": false
+      },
+      "case_count": 19,
+      "transactions": {
+        "go": 1335,
+        "java": 1333,
+        "python": 1329
+      },
+      "counts": {
+        "captures": 28,
+        "cgroup_replacements": 5,
+        "limit_changes": 5,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 5
+      },
+      "resources": {
+        "resource_rows": 2600,
+        "error_rows": 0,
+        "unavailable_worker_samples": 1,
+        "sampled_max_rss_bytes": 102309888,
+        "sampled_max_fds": 61,
+        "worker_reaped_records": 32,
+        "completed_worker_cpu_ns": 2533609000
+      },
+      "posthoc_limit_fields": {
+        "captures": 5,
+        "errors": [],
+        "values": [
+          734003200
+        ]
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "8398ff654d8b7fb3282d928fee68304685ba2bc265f6b9caef7b17fe037c284f",
+        "evidence/audit.json": "d87983b9a198e3a1d23365b1d978369a464277189d2693cfe0de2ae9e78e59c1",
+        "evidence/summary.json": "6ee815d2bc0cddc1af9dc1da619cba539de905ee275a0df2a5aeb5d145f2ae04",
+        "evidence/campaign.json": "9d38e6b7616908a2fb28a1c951a2fe0fe7fe17b2556ba7a7004ea5c272a439bf",
+        "evidence/manifest.json": "47207c0b870d4b98c890a96a32052ec4996b94324d416821790fe00516419da9",
+        "evidence/environment.json": "cfe7774e752cb887e5d29503f2dd88a42a15a8009e15fe40a4eb5c44c60b06ec"
+      },
+      "module": "memory_threshold_snapshot",
+      "kind": "final_isolation_and_churn"
+    }
+  ],
+  "status_meaning": "All five final campaigns and business audits passed; one earlier limit-change timeout remains unexplained. Not an all-exception-path or performance claim.",
+  "completed_campaigns": 5,
+  "completed_case_entries": 263,
+  "final_campaign_work_requests": 137775,
+  "retained_failed_campaigns": [
+    {
+      "id": "worker-threshold-isolation-block-20261102-v1",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 148.49514415299927
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "'utf-8' codec can't decode byte 0xc0 in position 24: invalid start byte"
+        ],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": false,
+        "total_work_requests": {
+          "go": 1428,
+          "java": 1428,
+          "python": 1428
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 16,
+        "performance_evaluated": false
+      },
+      "case_count": 16,
+      "transactions": {
+        "go": 707,
+        "java": 706,
+        "python": 704
+      },
+      "counts": {
+        "captures": 15,
+        "cgroup_replacements": 1,
+        "limit_changes": 1,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 2
+      },
+      "resources": {
+        "resource_rows": 1380,
+        "error_rows": 0,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 103915520,
+        "sampled_max_fds": 61,
+        "worker_reaped_records": 16,
+        "completed_worker_cpu_ns": 1273957000
+      },
+      "posthoc_limit_fields": {
+        "captures": 1,
+        "errors": [],
+        "values": [
+          734003200
+        ]
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "3846f21e570aabe532ace167720162199754aaf0d64d5496bbce2807bd7894dd",
+        "evidence/audit.json": "87b5c3033b4916f600fe9ef0499ef4f1d86c44b819891e1adc628dfa145e619d",
+        "evidence/summary.json": "2ee615d783dfbe0ac1ba876c0fb70079084ed1b51f972b626e3cfc04944b420f",
+        "evidence/campaign.json": "a239017b7c3e685b2b9cd8e5768205ac2264ca135f6c925a060d74a3fc7b042d",
+        "evidence/manifest.json": "17e698de0b64a78c94c7a54363272548ed1c2d45a21f60de4aa36e49c398fbda",
+        "evidence/environment.json": "1a4aa0457d3d1bed6d8fbeb9eca2a8e08edcce3e28e94b8a9f20fb55b2bb8e5d"
+      },
+      "failure_classification": "binary artifact decoded as text"
+    },
+    {
+      "id": "worker-threshold-isolation-20261102-v3",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 138.88254498600145
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "executed cases do not match the complete plan"
+        ],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": false,
+        "total_work_requests": {
+          "go": 1331,
+          "java": 1331,
+          "python": 1330
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 10,
+        "performance_evaluated": false
+      },
+      "case_count": 10,
+      "transactions": {
+        "go": 659,
+        "java": 658,
+        "python": 656
+      },
+      "counts": {
+        "captures": 9,
+        "cgroup_replacements": 0,
+        "limit_changes": 0,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 4
+      },
+      "resources": {
+        "resource_rows": 1287,
+        "error_rows": 0,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 104316928,
+        "sampled_max_fds": 62,
+        "worker_reaped_records": 13,
+        "completed_worker_cpu_ns": 1733624000
+      },
+      "posthoc_limit_fields": {
+        "captures": 0,
+        "errors": [],
+        "values": []
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "8d389155c7db90e63f712e123d22e2872708c08b877ac04ed0700675160d57e2",
+        "evidence/audit.json": "59fc369339323d0284fad30dc821f7bdc86c8ffda996f030a0c120acd2dc375d",
+        "evidence/summary.json": "eb621886b03b08e3a1bf35f6f129682e1f1db7edc23679c3e0f7544bffc0dc84",
+        "evidence/campaign.json": "5c9b2541c0e877b82219229a989cb2894508c775f19a1fd930e07eca18c6677c",
+        "evidence/manifest.json": "271baaf56ab5742f9d161ed8329060c337edbfbbb196d1d8327c75e7e7e42b4c",
+        "evidence/environment.json": "a035ce5f854c40874231b6e145b91804bba8cd089875b10210a7371c96126253"
+      },
+      "failure_classification": "container retirement cancels before ESRCH read"
+    },
+    {
+      "id": "worker-threshold-isolation-20261102-v4",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 206.2433898929994
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "unexpected feature logs"
+        ],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": true,
+        "total_work_requests": {
+          "go": 1999,
+          "java": 1999,
+          "python": 1999
+        },
+        "unexpected_agent_logs": {
+          "agent-4.log": [
+            "fatal error: all goroutines are asleep - deadlock!"
+          ]
+        },
+        "case_count": 19,
+        "performance_evaluated": false
+      },
+      "case_count": 19,
+      "transactions": {
+        "go": 990,
+        "java": 988,
+        "python": 985
+      },
+      "counts": {
+        "captures": 20,
+        "cgroup_replacements": 1,
+        "limit_changes": 1,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 5
+      },
+      "resources": {
+        "resource_rows": 1933,
+        "error_rows": 0,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 103170048,
+        "sampled_max_fds": 62,
+        "worker_reaped_records": 24,
+        "completed_worker_cpu_ns": 2402965000
+      },
+      "posthoc_limit_fields": {
+        "captures": 1,
+        "errors": [],
+        "values": [
+          734003200
+        ]
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "48d10f9880c64f9dd4e52ca82921a91b1c4cacd82d4051c57c0246466e10824a",
+        "evidence/audit.json": "1ac1df98ab856c5308e8cd8e0bbe14c711bb9645255e7ed5f43f3fa45c4ca558",
+        "evidence/summary.json": "5c0116b574afceea4b5a7ec7711a44c8436183f8ffab5f557cc496719d353f63",
+        "evidence/campaign.json": "934fad01dd65af90fdc1ca7b4acece4c590899bc9a72157198019519d8336478",
+        "evidence/manifest.json": "52ea1625d17c928bd4c2487104bbe2aa709d88564f2e2474721f2dc12397d115",
+        "evidence/environment.json": "39d46efe498cc582084955947c03104bb4520dc3e2185a23fee1a0602bf0af57"
+      },
+      "failure_classification": "test-only select{} triggers runtime deadlock"
+    },
+    {
+      "id": "worker-memburst-fault-matrix-20261102-v5",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 160.3660402940004
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "business assertion failed: cycle-0001/go/fault/go",
+          "executed cases do not match the complete plan"
+        ],
+        "business_errors": {},
+        "business_audit_status": "FAIL",
+        "adapter_audit_completed": false,
+        "total_work_requests": {
+          "go": 1546,
+          "java": 1546,
+          "python": 1546
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 12,
+        "performance_evaluated": false
+      },
+      "case_count": 12,
+      "transactions": {
+        "go": 765,
+        "java": 764,
+        "python": 761
+      },
+      "counts": {
+        "captures": 10,
+        "cgroup_replacements": 1,
+        "limit_changes": 0,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 1
+      },
+      "resources": {
+        "resource_rows": 1500,
+        "error_rows": 0,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 169897984,
+        "sampled_max_fds": 59,
+        "worker_reaped_records": 36,
+        "completed_worker_cpu_ns": 3308223000
+      },
+      "posthoc_limit_fields": {
+        "captures": 0,
+        "errors": [],
+        "values": []
+      },
+      "bounded_gc_recoveries": [
+        [
+          {
+            "status": "failed",
+            "reason": "CPython interpreter GC generations are invalid",
+            "event_index": 5
+          },
+          {
+            "status": "complete",
+            "reason": "",
+            "event_index": 6
+          }
+        ]
+      ],
+      "sha256": {
+        "supervisor.json": "b8d411210b8df9792039ab1cbe736a5bc3df62df5159280e655331ca053e7cf0",
+        "evidence/audit.json": "245c02194e805b3d042ff5c8e26f4be95497a0f82fe4c1ff970ee3670a2ef47b",
+        "evidence/summary.json": "b1dc723585dfbf0ce5963e4c6c6603d3fdb054ccebcba0fe424ac0b79e61207b",
+        "evidence/campaign.json": "8a48b581e04b7e4881716428f0f8e3c2f0b445bb1292cd9d704b9776b396e0b3",
+        "evidence/manifest.json": "432bab9a0765a8672db335051bdedb34dcaeef646f0b6d7bcd1d333214fbdf0e",
+        "evidence/environment.json": "6d6bf57b584f4d11aca5b87a90e240adada424fa9fa18f0c3be24a304af2d265"
+      },
+      "failure_classification": "provider log contaminates helper stdout",
+      "business_audit_note": "Original FAIL retained: fault was not reached attribution after operation raised before returning fault_hits. Raw work/transaction error dictionary is empty; this run is not accepted."
+    },
+    {
+      "id": "worker-threshold-fault-matrix-20261102-v5",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 114.39818456899957
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "business assertion failed: cycle-0001/go/fault/go",
+          "executed cases do not match the complete plan"
+        ],
+        "business_errors": {},
+        "business_audit_status": "FAIL",
+        "adapter_audit_completed": false,
+        "total_work_requests": {
+          "go": 1085,
+          "java": 1085,
+          "python": 1085
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 13,
+        "performance_evaluated": false
+      },
+      "case_count": 13,
+      "transactions": {
+        "go": 537,
+        "java": 536,
+        "python": 535
+      },
+      "counts": {
+        "captures": 11,
+        "cgroup_replacements": 1,
+        "limit_changes": 1,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 1
+      },
+      "resources": {
+        "resource_rows": 1049,
+        "error_rows": 0,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 103026688,
+        "sampled_max_fds": 61,
+        "worker_reaped_records": 12,
+        "completed_worker_cpu_ns": 404912000
+      },
+      "posthoc_limit_fields": {
+        "captures": 1,
+        "errors": [],
+        "values": [
+          734003200
+        ]
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "e642e54dcbd775592e0f644c361fc8dec121fe0013ac2e29fe39db4ed3b76d0e",
+        "evidence/audit.json": "fb76013e9434a6c3a1876d59d6d9f94e34aff8ba471cde78768b4ee3777ab04b",
+        "evidence/summary.json": "69e615dfd7df95e9ccaeb569d13aa9c2a4068f6114d1bcb14c66787f8bd5e72a",
+        "evidence/campaign.json": "fba3a2d2de7beb342062f3fbf57681f196b2ef0d0a489fc129eea0aaa3068127",
+        "evidence/manifest.json": "ad199b4bc41620d816874b7217551495ecd129b3b7792d8e59d4da19f15d6fd3",
+        "evidence/environment.json": "b030635d6127d4bf6052879eb456db7f4df962f1768a7e95ac2ce2727762c30d"
+      },
+      "failure_classification": "provider log contaminates helper stdout",
+      "business_audit_note": "Original FAIL retained: fault was not reached attribution after operation raised before returning fault_hits. Raw work/transaction error dictionary is empty; this run is not accepted."
+    },
+    {
+      "id": "worker-threshold-isolation-20261102-v6",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 240.97098307099805
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "executed cases do not match the complete plan"
+        ],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": false,
+        "total_work_requests": {
+          "go": 2352,
+          "java": 2352,
+          "python": 2352
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 16,
+        "performance_evaluated": false
+      },
+      "case_count": 16,
+      "transactions": {
+        "go": 1165,
+        "java": 1163,
+        "python": 1160
+      },
+      "counts": {
+        "captures": 17,
+        "cgroup_replacements": 1,
+        "limit_changes": 0,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 4
+      },
+      "resources": {
+        "resource_rows": 2270,
+        "error_rows": 0,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 102162432,
+        "sampled_max_fds": 61,
+        "worker_reaped_records": 23,
+        "completed_worker_cpu_ns": 2326166000
+      },
+      "posthoc_limit_fields": {
+        "captures": 0,
+        "errors": [],
+        "values": []
+      },
+      "bounded_gc_recoveries": [
+        [
+          {
+            "status": "failed",
+            "reason": "CPython interpreter GC generations are invalid",
+            "event_index": 2
+          },
+          {
+            "status": "complete",
+            "reason": "",
+            "event_index": 3
+          }
+        ]
+      ],
+      "sha256": {
+        "supervisor.json": "0843880d28d34bc1dec12093ff63f8448ee77c32905a24b421ef81bca3c3e552",
+        "evidence/audit.json": "e36fd849666de73d558a12004c246dec7b67cf57ca9159c13922d87d327c4e5d",
+        "evidence/summary.json": "1a4556d941852388ecd7f6c76ceb97065733e9e054a560c49b72e73faac9a9b8",
+        "evidence/campaign.json": "9b60c470335fc3d3b357bef279064f29b2a20fae21c21b45b306158e931c7f7b",
+        "evidence/manifest.json": "f37e3e2afe1623f5fa162f2d9029d1d1c429ae97d7ee07fda94a9c2b2325cf2f",
+        "evidence/environment.json": "58cd1ac024975ee1bd8498a63557d64e06d73ac7e09527314ed4df35e47cd80b"
+      },
+      "failure_classification": "unresolved limit-change capture timeout"
+    },
+    {
+      "id": "worker-memburst-fault-matrix-20261102-v7",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 770.1520180609987
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "executed cases do not match the complete plan"
+        ],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": false,
+        "total_work_requests": {
+          "go": 7637,
+          "java": 7637,
+          "python": 7637
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 61,
+        "performance_evaluated": false
+      },
+      "case_count": 61,
+      "transactions": {
+        "go": 3780,
+        "java": 3778,
+        "python": 3766
+      },
+      "counts": {
+        "captures": 49,
+        "cgroup_replacements": 4,
+        "limit_changes": 0,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 19
+      },
+      "resources": {
+        "resource_rows": 7403,
+        "error_rows": 0,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 180326400,
+        "sampled_max_fds": 58,
+        "worker_reaped_records": 186,
+        "completed_worker_cpu_ns": 14757976000
+      },
+      "posthoc_limit_fields": {
+        "captures": 0,
+        "errors": [],
+        "values": []
+      },
+      "bounded_gc_recoveries": [],
+      "sha256": {
+        "supervisor.json": "da7f1282a3edb32fea6690eeb29ee2d2629bf4cb29b08f4f2e8d31cd5518fadb",
+        "evidence/audit.json": "15acb522e3ae7fe9cab2f95aa5c291c3e7b89210a8481aaddfaf63708a8bc365",
+        "evidence/summary.json": "28e502ff84931caab2fb690cdb4bb354279febeeb0016dca1a00c62c7a11b11f",
+        "evidence/campaign.json": "490fe1aa2b817ccccb6096bf67104924b8dfeb37edc85955e281d3461cf84235",
+        "evidence/manifest.json": "30fb9fd69dc3e8f722a0328b76f3dc23122c24d08be216fdc403326ed1ee5af6",
+        "evidence/environment.json": "e6006bf4dab635e10bccf2994585244c0bd905f857b123fd4f8ec454c111c44d"
+      },
+      "failure_classification": "recovery pressure inside unchanged Agent cooldown"
+    },
+    {
+      "id": "worker-memburst-fault-matrix-20261102-v8",
+      "supervisor": {
+        "status": "FAIL",
+        "reason": "",
+        "returncode": 1,
+        "cleanup_errors": [],
+        "elapsed_seconds": 994.5512557549991
+      },
+      "audit": {
+        "status": "FAIL",
+        "evidence_errors": [
+          "executed cases do not match the complete plan"
+        ],
+        "business_errors": {},
+        "business_audit_status": "PASS",
+        "adapter_audit_completed": false,
+        "total_work_requests": {
+          "go": 9885,
+          "java": 9885,
+          "python": 9885
+        },
+        "unexpected_agent_logs": {},
+        "case_count": 86,
+        "performance_evaluated": false
+      },
+      "case_count": 86,
+      "transactions": {
+        "go": 4888,
+        "java": 4886,
+        "python": 4874
+      },
+      "counts": {
+        "captures": 68,
+        "cgroup_replacements": 5,
+        "limit_changes": 0,
+        "observed_pid_reuse": 0,
+        "agent_replacements": 33
+      },
+      "resources": {
+        "resource_rows": 9589,
+        "error_rows": 1,
+        "unavailable_worker_samples": 0,
+        "sampled_max_rss_bytes": 176480256,
+        "sampled_max_fds": 60,
+        "worker_reaped_records": 267,
+        "completed_worker_cpu_ns": 23848742000
+      },
+      "posthoc_limit_fields": {
+        "captures": 0,
+        "errors": [],
+        "values": []
+      },
+      "bounded_gc_recoveries": [
+        [
+          {
+            "status": "failed",
+            "reason": "CPython interpreter GC generations are invalid",
+            "event_index": 4
+          },
+          {
+            "status": "complete",
+            "reason": "",
+            "event_index": 5
+          }
+        ]
+      ],
+      "sha256": {
+        "supervisor.json": "e69a6e0e84e75286ff36c78f7450fc22ecb862424888a1db624303914c2775c6",
+        "evidence/audit.json": "21d59e1fa86a13a4a6daff9e3e252b298e2644dbfeca00a0e0baf1f5dd9f9f94",
+        "evidence/summary.json": "f26f2c8b296d62b5456a33e05c62a012d8df4901284f98266785acd836257f4f",
+        "evidence/campaign.json": "377aab62190ccf5939d89c87ddf24c468d7461195677642f8a4ea42002461323",
+        "evidence/manifest.json": "15baef71209e53c099f45fc0be5b9083fb0ca1f90a483571a5a81274aa5983d2",
+        "evidence/environment.json": "9eaa85f33766b757b3624eb6dc59802e896102948f45fdcef5a7739476fabfa8"
+      },
+      "failure_classification": "short-lived child loses VmRSS while sampled"
+    }
+  ],
+  "cleanup": {
+    "status": "PASS",
+    "journals": 16,
+    "owned_resources_checked": 301,
+    "errors": [],
+    "unknown_kinds": [],
+    "intentionally_retained_empty_worker_subtree": {
+      "root": {
+        "cgroup.procs": "",
+        "memory.limit_in_bytes": "536870912",
+        "memory.memsw.limit_in_bytes": "536870912"
+      },
+      "0": {
+        "cgroup.procs": "",
+        "memory.limit_in_bytes": "268435456",
+        "memory.memsw.limit_in_bytes": "268435456"
+      },
+      "1": {
+        "cgroup.procs": "",
+        "memory.limit_in_bytes": "268435456",
+        "memory.memsw.limit_in_bytes": "268435456"
+      }
+    }
+  },
+  "build": {
+    "revision": "12a7ff0442003427e64cec01449ca96fc5145fe8",
+    "go": "go version go1.24.3 linux/amd64",
+    "sha256": {
+      "agent": "bf5d677be4c87e59735fbbb4ca6c006b166cc9bd6ef03430a50f8cc93fd22cc4",
+      "agent-fault": "e6af5ea7f16eb31ed9848074bb854beb9de62552dded263952db60a9f09cbc1b",
+      "business-go": "73a3bf8e0bbb8da8337e119bd200892d0891cbc60268604dd426fca76a6ad03f",
+      "deny-readv": "5de15d4fae58111887d48b6ec66d4bd25c660d2ed4f5a26ee3c91bde149aa645",
+      "huatuo-memsnapshot-worker": "e8fff2a0de7f65ed9b737a1b26ab5a047e065ce9f61e1971780e83bf6debe7f9",
+      "huatuo-memsnapshot-worker-fault": "13ba7b163d579249dcfde73b7523eb2dfd80c21c86c3b3c8f7a4a2351637fb36"
+    },
+    "test_only_overlay": true,
+    "worker_isolation": true,
+    "architecture": "linux/amd64"
+  },
+  "offline_replay": {
+    "runtime": "Python 3.9",
+    "campaigns": 5,
+    "entry_points": [
+      "stability.py --audit",
+      "audit.py"
+    ],
+    "all_passed": true,
+    "auditor_source": "worker-auditor-source-20261103-v8.tar.gz",
+    "compatibility_fix": "Reuse existing nanosecond-compatible timestamp parser for lifecycle warning attribution; preserve CID/time/reason restrictions."
+  },
+  "native_verification": [
+    {
+      "environment": "Linux 5.10/cgroup v1",
+      "race": true,
+      "top_level_tests_passed": 15,
+      "failures": 0,
+      "skips": 0,
+      "oom_kill_values": [
+        1,
+        0
+      ],
+      "log_sha256": "7fb5d1168391c8ac80da4987beffa41abc66a649ee9657d49c33d7d868d97450"
+    },
+    {
+      "environment": "Linux 7.2-rc2/cgroup v2",
+      "race": true,
+      "top_level_tests_passed": 15,
+      "failures": 0,
+      "skips": 0,
+      "oom_kill_values": [
+        2,
+        0
+      ],
+      "log_sha256": "0bdb9c34864a6ac87a7b611d289b6dd29783bfef483930947252aa01bf5a84aa"
+    }
+  ],
+  "native_binary_sha256": "597061b0d24aaa673a74db36ae3b524338476bfa6e03ec11633b06360cbadb35",
+  "release_flags_helper_smoke": "PASS; CGO_ENABLED=1, netgo osusergo, -gcflags=all=-N -l, -ldflags=-s -w -extldflags -static; not a full release image test",
+  "scope_limits": [
+    "real uninterruptible kernel D-state not reproduced",
+    "first fork/exec precedes shell cgroup join; no atomic pre-exec containment claim",
+    "full real-Agent cgroup v2 E2E not run",
+    "post-worker real-Agent OOM/FD exhaustion not rerun",
+    "no post-worker same-Agent 30-minute memburst run",
+    "no 72-hour soak",
+    "no formal post-worker performance or host-wide contention evaluation"
+  ],
+  "artifact_index": {
+    "historical-attempts.tar.gz": {
+      "bytes": 69142285,
+      "sha256": "d4f93adb5341cea6a0d705563d2f9268b6507acb64c139228124f8a633fd43b1"
+    },
+    "base-12a7ff044.tar.gz": {
+      "bytes": 72644127,
+      "sha256": "dd50a9226b2f5d17ea70a8d4530b9a1a9d952fb65a3c1ea96a27d00d205dffed"
+    },
+    "accepted-matrices.tar.gz": {
+      "bytes": 18880369,
+      "sha256": "12891e25d418556dd084647586b9e2499eccfb343a787fe3f51f5da1ccd49fbe"
+    },
+    "accepted-final.tar.gz": {
+      "bytes": 27014108,
+      "sha256": "3f4c4eaf38a0bfde37067cf595306419e830d384baf469d3240a68619bdde397"
+    },
+    "additional-attempts-and-producers.tar.gz": {
+      "bytes": 28468074,
+      "sha256": "3a4db10298786a6eced69d685055c4bd0b228dfcc5b21dffe10dbf5a5293d4e1"
+    },
+    "worker-auditor-source-20261103-v8.tar.gz": {
+      "bytes": 192712,
+      "sha256": "667f77385579542eda1b4269ea14bf893b837278e3e78639bfac6e995d59fb17"
+    },
+    "source-e74db8395.tar.gz": {
+      "bytes": 72661085,
+      "sha256": "1630d7d9df30fec183132af42cd1d3002764de6b6b36acfc3851447a87e1751f"
+    },
+    "execution-inputs.tar.gz": {
+      "bytes": 5895780,
+      "sha256": "ba8123a53b95c05c964a3626576731a34203056d7afd11a135d7fe3f9eaa47cd"
+    },
+    "offline-matrix-audits-v2.json": {
+      "bytes": 461,
+      "sha256": "2325ffc2c84c34be09c5593df43862efc2a732b1450e233de9d431897377f818"
+    },
+    "offline-final-audits-v2.json": {
+      "bytes": 695,
+      "sha256": "14364ff71e356c2c467c81a4e7ae1d2f9c95843f02953a714bacbd3f8a913778"
+    },
+    "worker-cleanup-audit-20261103.json": {
+      "bytes": 583,
+      "sha256": "e3cc1cf5d143d1131825ff318166cdc647e3716c3db4f68368c41b9a583b8193"
+    },
+    "source-v5/committed-source-match-e74db8395.json": {
+      "bytes": 1592950,
+      "sha256": "21d5c7f8f5e4f3f6b9e2e83c9edaf5432eb4b1433b308060974cc39042f5bd2d"
+    },
+    "builds/reliability-worker-build-20261102-v5/build.json": {
+      "bytes": 761,
+      "sha256": "94e202fb8913767e631f1e18be52145d675225b53d9ac48dca409fc6185457b4"
+    },
+    "builds/reliability-worker-build-20261102-v1/build.json": {
+      "bytes": 761,
+      "sha256": "bc573101474955991406e395c7e2fed118f1326edb56686ad5b7ec8d5f5bddbb"
+    },
+    "builds/reliability-worker-build-20261102-v2/build.json": {
+      "bytes": 761,
+      "sha256": "1c325d98176f7659dd3864c43df34dbc570a002c4dd1b246adf64f8973a3153b"
+    },
+    "builds/reliability-worker-build-20261102-v3/build.json": {
+      "bytes": 761,
+      "sha256": "6efb5a58d230fd958d04660c3995a276f3c50bc3ca5eb85ea1c179bffd591425"
+    },
+    "builds/reliability-worker-build-20261102-v4/build.json": {
+      "bytes": 761,
+      "sha256": "87c4ab6b15e7e9da63b720c9eb1b59b922e947404500793332b54cf44ca8c88c"
+    },
+    "builds/reliability-worker-watch-diagnostic-20261102-v1/build.json": {
+      "bytes": 800,
+      "sha256": "ad2e136831e91c835ba7c61bac70ab2aec35451e631c366ec1fd8724b0b4a83a"
+    }
+  }
+}

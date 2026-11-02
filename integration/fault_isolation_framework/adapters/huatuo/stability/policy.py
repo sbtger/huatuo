@@ -1,7 +1,6 @@
 # Copyright 2026 The HuaTuo Authors. Licensed under the Apache License, Version 2.0.
 """Bind repeated phase claims to exact raw event indices and fault markers."""
 import json
-import datetime as dt
 import re
 from pathlib import Path
 from ....core.documents import read_documents
@@ -11,6 +10,7 @@ from ..memsnapshot.trigger import event_after_request
 from ..memsnapshot.assertions import validate_fault
 from ..memsnapshot.worker import capture_metadata_errors, worker_contract_errors, audit_worker_capture
 from ..memsnapshot.log_policy import unexpected_logs
+from ..discovery import parse_timestamp
 
 
 def captures(detail):
@@ -155,7 +155,7 @@ def audit_artifacts(output, summary, manifest):
         kept = []
         for line in bad:
             stamp = re.search(r'time="([^"]+)"', line)
-            when = dt.datetime.fromisoformat(stamp.group(1)).timestamp() if stamp else 0
+            when = parse_timestamp(stamp.group(1)).timestamp() if stamp else 0
             transient = any(
                 r["cid"] in line and r["window_started"] <= when <= r["window_finished"]
                 for r in lifecycle_windows
