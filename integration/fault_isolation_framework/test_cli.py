@@ -154,3 +154,33 @@ class ExternalPerformanceCLITest(unittest.TestCase):
             command=json.loads(result.stdout)[0]['command']
             self.assertIn('--redis',command);self.assertEqual(command[command.index('--qps')+1],'80')
             self.assertFalse(output.exists())
+
+
+class NativeSnapshotCostCLITest(unittest.TestCase):
+    def test_native_plan_uses_only_matched_b_d_groups(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            command=[sys.executable,str(Path(__file__).parent/'performance.py'),'--business','etcd',
+                '--module','memory_threshold_snapshot','--experiment','pulse','--native-root',tmp,
+                '--snapshot-helper',tmp+'/helper','--load-controller-url','http://127.0.0.1:19890',
+                '--load-token-file',tmp+'/token','--build',tmp,'--bpf-dir',tmp,'--output',tmp+'/out','--plan']
+            result=subprocess.run(command,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertTrue(all(sorted(r['groups'])==['B','D'] for r in json.loads(result.stdout)['schedule']))
+            self.assertFalse((Path(tmp)/'out').exists())
+            bad=subprocess.run(command+['--hold','10'],capture_output=True,text=True)
+            self.assertEqual(bad.returncode,2)
+
+
+class ResidentPressureCLITest(unittest.TestCase):
+    def test_resident_plan_uses_abc_and_requires_90_before_95(self):
+        import json
+        command=[sys.executable,str(Path(__file__).parent/'performance.py'),'--business','resident',
+            '--module','memory_threshold_snapshot','--output','/tmp/unused-resident-plan','--build','/tmp/build',
+            '--bpf-dir','/tmp/bpf','--snapshot-helper','/tmp/helper','--resident-go','/tmp/resident-go',
+            '--load-controller-url','http://127.0.0.1:19890','--load-token-file','/tmp/path-only','--plan']
+        result=subprocess.run(command,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertTrue(all(sorted(row['groups'])==['A','B','C'] for row in json.loads(result.stdout)['schedule']))
+        bad=subprocess.run(command+['--pressure-levels','95'],capture_output=True,text=True)
+        self.assertEqual(bad.returncode,2)

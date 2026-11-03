@@ -50,6 +50,20 @@ def audit(output):
 
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--business",choices=["fixture","etcd","kafka","mitmproxy","resident"],default="fixture")
+    p.add_argument("--native-root",default="")
+    p.add_argument("--snapshot-helper",default="")
+    p.add_argument("--snapshot-count",type=int,default=1)
+    p.add_argument("--snapshot-interval",type=float,default=5)
+    p.add_argument("--dataset-mib",type=int,default=32)
+    p.add_argument("--resident-language",choices=["go","java","python"],default="go")
+    p.add_argument("--resident-go",default="")
+    p.add_argument("--pressure-levels",default="60,80,90")
+    p.add_argument("--pressure-tolerance",type=float,default=2)
+    p.add_argument("--business-cpus",type=float,default=4)
+    p.add_argument("--allow-95",action="store_true")
+    p.add_argument("--rates",default="100,200")
+    p.add_argument("--slo-p99-ms",type=float)
     p.add_argument("--module", choices=["memburst", "memory_threshold_snapshot"])
     p.add_argument("--experiment", choices=["idle", "pulse"], default="idle")
     p.add_argument("--build")
@@ -109,7 +123,13 @@ def main():
     a.log_debug = False
     output = Path(a.output).resolve()
     if a.report:
-        from fault_isolation_framework.adapters.huatuo.performance import report
+        config=json.loads((output/"results.json").read_text())["config"]
+        if config.get("business")=="resident":
+            from fault_isolation_framework.adapters.huatuo.resident_performance import report
+        elif config.get("business","fixture")!="fixture":
+            from fault_isolation_framework.adapters.huatuo.real_business import report
+        else:
+            from fault_isolation_framework.adapters.huatuo.performance import report
         checked = audit(output)
         print(json.dumps(checked, indent=2))
         if checked["status"] != "PASS":
@@ -132,7 +152,7 @@ def main():
         p.error("pressure targets exceed selected registered containers")
     if not 1 <= a.threshold_percent <= 100 or not 1 <= a.top_k <= 100:
         p.error("threshold-percent and top-k must be in [1,100]")
-    if not 1 <= a.pressure_mib <= 600 or a.memory_limit_mib < a.pressure_mib+64:
+    if a.business=="fixture" and (not 1 <= a.pressure_mib <= 600 or a.memory_limit_mib < a.pressure_mib+64):
         p.error("fixture pressure must be 1..600 MiB with >=64 MiB container headroom")
     if a.hold <= a.poll_interval*2 and a.module == "memburst":
         p.error("memburst hold must exceed two sampling intervals")
@@ -153,17 +173,43 @@ def main():
         p.error("service and forwarded port ranges must fit nonprivileged TCP ports")
     if a.load_controller_url and (count>64 or math.ceil((a.warmup+a.baseline+a.hold+a.recovery)*a.qps)*(count if a.load_all else len(languages)+a.pressure_targets+2)>250000):
         p.error("external load exceeds controller route/request budget")
+    if a.business == "resident":
+        if not a.load_controller_url or not a.snapshot_helper or not a.resident_go:p.error("resident KV requires separate load controller, --snapshot-helper and --resident-go")
+        if not 256<=a.memory_limit_mib<=4096 or not math.isfinite(a.business_cpus) or not 0<a.business_cpus<=4:p.error("resident business requires256..4096MiB and<=4CPUs")
+        if not math.isfinite(a.pressure_tolerance) or not 0<a.pressure_tolerance<=3:p.error("pressure tolerance must be0..3 percentage points")
+        try:
+            levels=[int(v) for v in a.pressure_levels.split(",")]
+            if not levels or len(set(levels))!=len(levels) or not set(levels)<={60,80,90,95}:raise ValueError()
+            if 95 in levels and (not a.allow_95 or 90 not in levels or levels.index(95)<levels.index(90)):raise ValueError()
+        except ValueError:p.error("pressure levels must beunique60/80/90/95;95requires --allow-95 after90")
+        if not 1<=a.snapshot_count<=10 or not math.isfinite(a.snapshot_interval) or a.snapshot_interval<a.capture_timeout or 1+(a.snapshot_count-1)*a.snapshot_interval+a.capture_timeout>=a.hold:p.error("resident snapshot schedule exceeds capture window")
+    elif a.business != "fixture":
+        if not a.native_root or not a.load_controller_url or not a.snapshot_helper:p.error("native business requires --native-root, --snapshot-helper and separate load controller")
+        if not 1<=a.dataset_mib<=256 or not 1<=a.snapshot_count<=10 or not math.isfinite(a.snapshot_interval) or a.snapshot_interval<a.capture_timeout:p.error("native dataset/capture count/interval outside budget")
+        if 12+(a.snapshot_count-1)*a.snapshot_interval+a.capture_timeout>=a.hold:p.error("snapshot schedule must fit after wrk2 calibration and before trigger window ends")
+        if a.experiment != "pulse":p.error("native business currently requires B/D pulse comparison")
+        if min(a.warmup,a.baseline,a.hold,a.recovery)<20 or any(int(v)!=v for v in (a.warmup,a.baseline,a.hold,a.recovery)):p.error("native tool windows must be integer seconds >=20")
+        try:
+            rates=[int(v) for v in a.rates.split(",")]
+            if not rates or len(set(rates))!=len(rates) or not all(1<=r<=50000 and r*max(a.warmup,a.baseline,a.hold,a.recovery)<=1000000 for r in rates):raise ValueError()
+        except ValueError:p.error("native rates must be unique integers within rate/request budget")
+        if a.slo_p99_ms is not None and (not math.isfinite(a.slo_p99_ms) or a.slo_p99_ms<=0):p.error("SLO must be finite and positive")
     if a.plan:
         import random
         rng = random.Random(a.seed)
         schedule = []
         for repeat in range(a.repeats):
-            groups = experiment_groups(a.experiment)
+            groups = experiment_groups(a.experiment) if a.business == "fixture" else (["A","B","C"] if a.business=="resident" else ["B","D"])
             rng.shuffle(groups)
             schedule.append(dict(repeat=repeat, groups=groups))
         print(json.dumps(dict(config=vars(a), schedule=schedule), indent=2))
         return 0
-    from fault_isolation_framework.adapters.huatuo.performance import campaign, report
+    if a.business == "fixture":
+        from fault_isolation_framework.adapters.huatuo.performance import campaign, report
+    elif a.business == "resident":
+        from fault_isolation_framework.adapters.huatuo.resident_performance import campaign, report
+    else:
+        from fault_isolation_framework.adapters.huatuo.real_business import campaign, report
     if a.worker:
         def interrupted(signum, frame):
             raise KeyboardInterrupt("performance worker interrupted")

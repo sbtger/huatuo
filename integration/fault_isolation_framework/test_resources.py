@@ -674,3 +674,156 @@ class RemoteClockGuardTest(unittest.TestCase):
                 remote=RemoteLoad('http://127.0.0.1:%d'%server.server_port,root/'token',root/'out',max_clock_error=.1)
                 with self.assertRaisesRegex(ValueError,'clock'):remote.calibrate()
         finally:server.shutdown();server.server_close();thread.join()
+
+
+class NativeJobGuardTest(unittest.TestCase):
+    def test_native_job_rejects_command_injection_and_unbounded_work(self):
+        from fault_isolation_framework.load_controller import JobManager
+        import time
+        with tempfile.TemporaryDirectory() as tmp:
+            manager=JobManager(tmp,'127.0.0.1',[12345],10,native_tools={})
+            spec=dict(native='etcd',url='http://127.0.0.1:12345',rate=10,duration=20,
+                      start_monotonic=time.monotonic()+1,records=200,connections=2)
+            manager.validate(spec)
+            for changed in (dict(command=['sh']),dict(native='shell'),dict(rate=float('nan')),
+                            dict(records=1000001),dict(url='http://example.com:12345')):
+                with self.assertRaises(ValueError):manager.validate(dict(spec,**changed))
+
+    def test_native_process_cancellation_reaps_process_group_and_accounts_cpu(self):
+        import sys,threading,time
+        from fault_isolation_framework.workloads.native_tools import bounded_process
+        with tempfile.TemporaryDirectory() as tmp:
+            stop=threading.Event();timer=threading.Timer(.2,stop.set);timer.start()
+            result=bounded_process([sys.executable,'-c','while True: pass'],Path(tmp),'busy',stop,3)
+            self.assertTrue(result['cancelled'])
+            self.assertGreater(result['cpu_seconds'],0)
+            self.assertGreater(result['peak_rss_bytes'],0)
+            self.assertFalse(Path('/proc/%s'%result['pid']).exists())
+            timer.join()
+
+    def test_failed_native_job_retains_verified_raw_then_acknowledges_transfer(self):
+        import threading,time
+        from fault_isolation_framework.load_controller import create_server
+        from fault_isolation_framework.environments.remote_load import RemoteLoad
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'token').write_text('secret')
+            server=create_server(('127.0.0.1',0),root/'server','secret','127.0.0.1',[12345])
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            try:
+                remote=RemoteLoad('http://127.0.0.1:%d'%server.server_port,root/'token',root/'client',max_clock_error=.1)
+                with self.assertRaisesRegex(RuntimeError,'native job failed'):
+                    remote.run_native(dict(native='etcd',url='http://127.0.0.1:12345',rate=1,duration=20,records=20,connections=1,start_monotonic=time.monotonic()+.1))
+                result=json.loads((root/'client/native-result.json').read_text())
+                self.assertFalse(result['valid']);self.assertTrue(result['errors'])
+                self.assertTrue(server.manager.jobs[remote.job]['acked'])
+            finally:server.shutdown();server.server_close();thread.join()
+
+
+class ResidentResourceContractTest(unittest.TestCase):
+    def test_v1_failure_count_is_distinct_from_oom_kills_and_missing_psi(self):
+        from fault_isolation_framework.environments.performance import cgroup_memory
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            for name,value in {'memory.usage_in_bytes':'90','memory.limit_in_bytes':'100','memory.max_usage_in_bytes':'95','memory.failcnt':'7','memory.oom_control':'under_oom 0\noom_kill 2\n','memory.stat':'rss 80\ncache 10\n'}.items():(root/name).write_text(value)
+            sample=cgroup_memory(root)
+            self.assertEqual(sample['oom_kills'],2);self.assertEqual(sample['allocation_failures'],7)
+            self.assertEqual(sample['current_bytes'],90)
+            self.assertNotIn('memory.pressure',sample['raw'])
+
+    def test_v2_missing_peak_remains_unavailable(self):
+        from fault_isolation_framework.environments.performance import cgroup_memory
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            for name,value in {'memory.current':'90','memory.max':'100','memory.events':'oom 1\noom_kill 0\n'}.items():(root/name).write_text(value)
+            sample=cgroup_memory(root)
+            self.assertIsNone(sample['lifetime_peak_bytes']);self.assertIsNone(sample['allocation_failures'])
+            self.assertIsNone(sample['raw']['memory.pressure']);self.assertEqual(sample['oom_kills'],0)
+
+    def test_phase_memory_uses_time_aligned_counters_and_disjoint_sum(self):
+        from fault_isolation_framework.adapters.huatuo.resident_performance import memory_window
+        def sample(current,oom,fail):return dict(current_bytes=current,lifetime_peak_bytes=999,oom_kills=oom,allocation_failures=fail)
+        rows=[dict(time=t,business_memory={'kv':sample(b,o,f)},memory_scopes={'agent':sample(a,0,0),'helper':sample(h,0,0),'worker-0':sample(w,0,0),'observer_parent':sample(1000,0,0)}) for t,b,o,f,a,h,w in [(0,50,0,1,10,20,0),(1,70,0,2,20,10,30),(2,60,1,4,10,15,0)]]
+        window=memory_window(rows,0,2,'kv')
+        self.assertEqual(window['business']['allocation_failures_delta'],1)
+        self.assertEqual(window['business']['oom_kills_delta'],0)
+        self.assertEqual(window['collector_simultaneous_sampled_peak_bytes'],60)
+        self.assertEqual(window['collector_peak_above_baseline_bytes'],30)
+        self.assertEqual(window['business']['lifetime_peak_bytes'],999)
+
+
+class ResidentWindowBoundaryTest(unittest.TestCase):
+    def test_canonical_arrivals_partition_each_ordinal_once_despite_clock_mapping(self):
+        from fault_isolation_framework.adapters.huatuo.resident_performance import canonical_window_rows
+        for offset in (-.00001,.00001):
+            rows=[dict(ordinal=i,scheduled=100+i/10+offset) for i in range(30)]
+            windows=[canonical_window_rows(rows,100,10,100+i,101+i) for i in range(3)]
+            self.assertEqual([[r['ordinal'] for r in w] for w in windows],[list(range(i*10,(i+1)*10)) for i in range(3)])
+            self.assertEqual(sum(len(w) for w in windows),30)
+
+
+class ResidentHelperOutputTest(unittest.TestCase):
+    def test_live_partial_row_can_complete_without_false_protocol_failure(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.adapters.huatuo.resident_performance import capture_rows
+        with tempfile.TemporaryDirectory() as tmp:
+            owner=SimpleNamespace(out=Path(tmp));path=owner.out/'snapshot-helper.jsonl'
+            path.write_text('{"ready":true}\n{"id":1,"pid":7}\n{"id":2')
+            self.assertEqual([r['id'] for r in capture_rows(owner)],[1])
+            with path.open('a') as stream:stream.write(',"pid":7}\n')
+            self.assertEqual([r['id'] for r in capture_rows(owner)],[1,2])
+            with path.open('a') as stream:stream.write('{bad}\n')
+            with self.assertRaisesRegex(ValueError,'malformed helper JSON'):capture_rows(owner)
+
+    def test_truncated_helper_output_cannot_bypass_cleanup_and_saved_failure(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.core.evidence import EvidenceStore
+        from fault_isolation_framework.adapters.huatuo.resident_performance import finalize_trial
+        with tempfile.TemporaryDirectory() as tmp:
+            evidence=EvidenceStore(Path(tmp)/'trial');called=[]
+            owner=SimpleNamespace(out=evidence.output,cleanup=lambda:called.append('cleanup'))
+            raw=b'{"ready":true}\n{"id":1,"pid":7}\n{"id":2,"pid":'
+            path=owner.out/'snapshot-helper.jsonl';path.write_bytes(raw)
+            outcome=dict(valid=True,errors=[],captures=[])
+            finalize_trial(owner,outcome,evidence)
+            saved=json.loads((owner.out/'summary.json').read_text())
+            self.assertEqual(called,['cleanup']);self.assertFalse(saved['valid'])
+            self.assertEqual([r['id'] for r in saved['captures']],[1])
+            self.assertTrue(any('unterminated' in error for error in saved['errors']))
+            self.assertEqual(path.read_bytes(),raw)
+
+
+class ResidentReplayPreflightTest(unittest.TestCase):
+    def test_bounded_baseline_replays_keep_every_replica_before_freezing(self):
+        from fault_isolation_framework.adapters.huatuo.resident_performance import bounded_replay_calibration
+        calls=[];rounds=[]
+        plan=dict(records=10000,limit_bytes=100,requested_percent=90,tolerance_percent=2)
+        def replay(candidate,round_index,replica_index):
+            calls.append((round_index,replica_index,candidate['records'],candidate['fill_recipe']))
+            value=(85+replica_index) if round_index==0 else (89+replica_index)
+            return dict(valid=True,pressure_samples=[value]*5,directory='attempt-%d-%d'%(round_index,replica_index))
+        result=bounded_replay_calibration(plan,replay,rounds.append)
+        self.assertEqual(len(calls),4);self.assertTrue(result['frozen'])
+        self.assertGreater(calls[2][2],calls[0][2])
+        self.assertEqual(calls[2][3][0]['records'],1024)
+        self.assertEqual([row['decision']['status'] for row in rounds],['REFINE','FROZEN'])
+
+    def test_variance_failure_does_not_loop_until_a_lucky_replica(self):
+        from fault_isolation_framework.adapters.huatuo.resident_performance import bounded_replay_calibration
+        calls=[];rounds=[]
+        def replay(candidate,round_index,replica_index):
+            calls.append(replica_index)
+            return dict(valid=True,pressure_samples=[85 if replica_index==0 else 95]*5)
+        plan=dict(records=10000,limit_bytes=100,requested_percent=90,tolerance_percent=2)
+        with self.assertRaisesRegex(RuntimeError,'variance'):bounded_replay_calibration(plan,replay,rounds.append)
+        self.assertEqual(calls,[0,1]);self.assertEqual(len(rounds),1)
+
+    def test_replay_calibration_stops_after_three_predetermined_rounds(self):
+        from fault_isolation_framework.adapters.huatuo.resident_performance import bounded_replay_calibration
+        calls=[];rounds=[]
+        def replay(candidate,round_index,replica_index):
+            calls.append((round_index,replica_index))
+            return dict(valid=True,pressure_samples=[85+replica_index]*5)
+        plan=dict(records=10000,limit_bytes=100,requested_percent=90,tolerance_percent=2)
+        with self.assertRaisesRegex(RuntimeError,'three predetermined'):bounded_replay_calibration(plan,replay,rounds.append)
+        self.assertEqual(calls,[(r,i) for r in range(3) for i in range(2)])
+        self.assertEqual(len(rounds),3)

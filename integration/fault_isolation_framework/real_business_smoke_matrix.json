@@ -1,0 +1,5 @@
+[
+  {"name":"etcd-snapshot-cost","options":{"business":"etcd","module":"memory_threshold_snapshot","experiment":"pulse","rates":"100","repeats":1,"warmup":20,"baseline":20,"hold":20,"recovery":20,"dataset-mib":32,"snapshot-count":1}},
+  {"name":"kafka-snapshot-cost","options":{"business":"kafka","module":"memory_threshold_snapshot","experiment":"pulse","rates":"100","repeats":1,"warmup":20,"baseline":20,"hold":20,"recovery":20,"dataset-mib":32,"snapshot-count":1}},
+  {"name":"mitmproxy-snapshot-cost","options":{"business":"mitmproxy","module":"memory_threshold_snapshot","experiment":"pulse","rates":"100","repeats":1,"warmup":20,"baseline":20,"hold":20,"recovery":20,"dataset-mib":32,"snapshot-count":1}}
+]

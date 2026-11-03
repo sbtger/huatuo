@@ -84,6 +84,15 @@ class PerformanceSampler:
                     "memory.usage_in_bytes", "memory.max_usage_in_bytes", "memory.failcnt", "memory.stat")}
             except (OSError, ValueError, KeyError) as exc:
                 row["errors"].append(key+": "+repr(exc))
+        helper=getattr(self.owner,'snapshot_helper',None)
+        if helper is not None:
+            try:
+                if helper.poll() is not None:raise ProcessLookupError('snapshot helper exited')
+                row['processes']['snapshot-helper']=process_sample(helper.pid)
+                for pid in descendants(helper.pid):
+                    try:row['processes']['snapshot-child-%d'%pid]=process_sample(pid)
+                    except (FileNotFoundError,ProcessLookupError):continue
+            except (OSError,ValueError,KeyError) as exc:row['errors'].append('snapshot helper: '+repr(exc))
         if self.owner.agent is not None:
             try:
                 if self.owner.agent.poll() is not None:
@@ -97,6 +106,8 @@ class PerformanceSampler:
                         continue
             except (OSError, ValueError, KeyError) as exc:
                 row["errors"].append("agent: "+repr(exc))
+        row["business_memory"] = {target["id"]:cgroup_memory(target["cgroup"]) for target in getattr(self.owner,"measurement_targets",self.owner.targets)}
+        row["memory_scopes"] = {name:cgroup_memory(path) for name,path in getattr(self.owner,"memory_scopes",{}).items()}
         row["host"] = {name: read_optional("/proc/"+name) for name in (
             "stat", "meminfo", "vmstat", "pressure/cpu", "pressure/memory", "pressure/io")}
         self.rows.append(row)
@@ -170,3 +181,18 @@ def resource_metrics(rows, start, end):
         counter_delta["rss_peak_bytes"] = max(p["rss_bytes"] for p in samples)
         result["business"][key] = counter_delta
     return result
+
+
+def cgroup_memory(path):
+    path=Path(path);v2=(path/'memory.current').exists()
+    names=('memory.current','memory.max','memory.peak','memory.events','memory.stat','memory.pressure','cpu.stat','io.stat') if v2 else ('memory.usage_in_bytes','memory.limit_in_bytes','memory.max_usage_in_bytes','memory.failcnt','memory.oom_control','memory.stat')
+    raw={name:(path/name).read_text().strip() if (path/name).exists() else None for name in names}
+    current=raw['memory.current' if v2 else 'memory.usage_in_bytes'];limit=raw['memory.max' if v2 else 'memory.limit_in_bytes']
+    events={}
+    for line in (raw['memory.events' if v2 else 'memory.oom_control'] or '').splitlines():
+        words=line.split()
+        if len(words)==2 and words[1].isdigit():events[words[0]]=int(words[1])
+    return dict(version=2 if v2 else 1,current_bytes=int(current) if current else None,limit_bytes=int(limit) if limit and limit!='max' else None,
+                lifetime_peak_bytes=int(raw['memory.peak' if v2 else 'memory.max_usage_in_bytes']) if raw.get('memory.peak' if v2 else 'memory.max_usage_in_bytes') else None,
+                oom_kills=events.get('oom_kill'),allocation_failures=None if v2 else int(raw['memory.failcnt']) if raw.get('memory.failcnt') is not None else None,
+                psi_scope='business cgroup' if v2 and raw.get('memory.pressure') else 'unavailable at cgroup scope',raw=raw)

@@ -137,6 +137,10 @@ def main():
     sec = out / "deny_readv.c"
     sec.write_text((Path(__file__).parent / "deny_readv.c").read_text())
     run("cc", "-O2", "-o", str(out / "deny-readv"), str(sec))
+    run("go", "build", "-mod=vendor", "-o", str(out / "snapshot-cost"),
+        "./integration/fault_isolation_framework/workloads/snapshot_cost", cwd=repo, env=env)
+    run("go", "build", "-mod=vendor", "-o", str(out / "resident-go"),
+        "./integration/fault_isolation_framework/workloads/resident", cwd=repo, env=env)
     files = {
         name: hashlib.sha256((out / name).read_bytes()).hexdigest()
         for name in ("agent", "agent-fault", "business-go", "deny-readv", "huatuo-memsnapshot-worker", "huatuo-memsnapshot-worker-fault")
@@ -151,6 +155,8 @@ def main():
         "sha256": files,
         "test_only_overlay": True,
         "worker_isolation": True,
+        "resident_go_sha256": hashlib.sha256((out / "resident-go").read_bytes()).hexdigest(),
+        "snapshot_cost_sha256": hashlib.sha256((out / "snapshot-cost").read_bytes()).hexdigest(),
         "architecture": "linux/amd64",
     }
     (out / "build.json").write_text(json.dumps(manifest, indent=2) + "\n")

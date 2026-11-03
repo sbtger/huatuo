@@ -1,5 +1,11 @@
 # Memory snapshot performance experiments
 
+**Primary strategy:** [MEMSNAPSHOT_PRESSURE_PLAN.md](MEMSNAPSHOT_PRESSURE_PLAN.md)
+measures controlled resident KV objects under fixed business cgroup pressure.
+[REAL_BUSINESS_PLAN.md](REAL_BUSINESS_PLAN.md) is an optional native second tier;
+its matrices are stopped. Fixture measurements below remain historical
+framework validation and cannot be relabeled as business acceptance.
+
 This opt-in suite measures feature costs separately from memory-pressure costs.
 It reuses the fault-isolation framework's real services, discovery, ownership,
 plain Agent build and event storage. It does not change production features.

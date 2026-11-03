@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 
 sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
 from fault_isolation_framework.workloads.performance_load import run_load
+from fault_isolation_framework.workloads.native_tools import validate_native, run_native
 
 
 def sha256(path):
@@ -28,9 +29,20 @@ def sha256(path):
     return digest.hexdigest()
 
 
+def tool_hash(path):
+    path=Path(path)
+    if path.is_file():return sha256(path)
+    if not path.is_dir():raise ValueError('native tool path missing: '+str(path))
+    digest=hashlib.sha256()
+    for entry in sorted(path.rglob('*')):
+        if entry.is_file():
+            digest.update(str(entry.relative_to(path)).encode()+b'\0'+sha256(entry).encode()+b'\n')
+    return digest.hexdigest()
+
+
 def driver_hashes():
     root=Path(__file__).resolve().parent
-    return {name:sha256(root/name) for name in ('load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py')}
+    return {name:sha256(root/name) for name in ('load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py','workloads/native_tools.py','workloads/resident_protocol.py')}
 
 
 def usage():
@@ -44,23 +56,28 @@ def usage():
 
 
 class JobManager:
-    def __init__(self,root,target_host,ports,lease_seconds):
+    def __init__(self,root,target_host,ports,lease_seconds,native_tools=None):
         self.root=Path(root);self.root.mkdir(parents=True,exist_ok=True)
         self.target_host,self.ports,self.lease_seconds=target_host,set(ports),lease_seconds
-        self.jobs={};self.lock=threading.Lock()
+        self.jobs={};self.lock=threading.Lock();self.native_tools=native_tools or {}
+        self.native_tool_hashes={name:tool_hash(path) for name,path in self.native_tools.items()}
 
     def validate(self,spec):
+        if 'native' in spec:
+            validate_native(spec,self.target_host,self.ports);return
         targets=spec.get('targets',[])
         if not isinstance(targets,list) or not 1<=len(targets)<=32:raise ValueError('expected 1..32 targets')
         ids=set()
         for t in targets:
-            if set(t)-{'id','url','kind','expected_b64','keys','value_bytes'}:raise ValueError('unsupported target fields')
+            if set(t)-{'id','url','kind','expected_b64','keys','value_bytes','seed','records'}:raise ValueError('unsupported target fields')
             if not isinstance(t.get('id'),str) or t['id'] in ids or len(t['id'])>100:raise ValueError('invalid target identity')
             ids.add(t['id'])
             u=urlsplit(t['url']);kind=t.get('kind','http')
-            if kind not in ('http','redis') or u.scheme!=('redis' if kind=='redis' else 'http') or u.hostname!=self.target_host or u.port not in self.ports or u.username or u.password or u.path not in ('','/') or u.query or u.fragment:
+            if kind not in ('http','redis','resident') or u.scheme!=('redis' if kind=='redis' else 'http') or u.hostname!=self.target_host or u.port not in self.ports or u.username or u.password or u.path not in ('','/') or u.query or u.fragment:
                 raise ValueError('destination is outside configured fixture routes')
-            if kind=='http':
+            if kind=='resident':
+                if not isinstance(t.get('seed'),int) or not 0<=t['seed']<=1000000 or not isinstance(t.get('records'),int) or not 1024<=t['records']<=1000000:raise ValueError('resident seed/record budget invalid')
+            elif kind=='http':
                 wanted=base64.b64decode(t['expected_b64'],validate=True)
                 if not 1<=len(wanted)<=4096:raise ValueError('HTTP checksum body missing/oversized')
             elif not 1<=t.get('keys',128)<=4096 or not 1<=t.get('value_bytes',65536)<=1<<20:
@@ -81,7 +98,7 @@ class JobManager:
             ident=uuid.uuid4().hex;directory=self.root/ident;directory.mkdir()
             job=dict(id=ident,root=directory,stop=threading.Event(),done=threading.Event(),last_seen=time.monotonic(),
                      meta=dict(id=ident,state='running',recorded=0,error='',driver_sha256=driver_hashes(),
-                               pid=os.getpid(),kernel=os.uname().release,cpu_count=os.cpu_count()))
+                               pid=os.getpid(),kernel=os.uname().release,cpu_count=os.cpu_count(),native_tool_sha256=self.native_tool_hashes))
             self.jobs[ident]=job
         (directory/'request.json').write_text(json.dumps(spec,indent=2)+'\n')
         threading.Thread(target=self.execute,args=(job,spec),daemon=True).start()
@@ -101,6 +118,12 @@ class JobManager:
         watcher=threading.Thread(target=observe,daemon=True)
         before=usage();stream.write(json.dumps(before)+'\n');watcher.start()
         try:
+            if 'native' in spec:
+                for name,expected in self.native_tool_hashes.items():
+                    if tool_hash(self.native_tools[name])!=expected:raise ValueError('native tool changed since controller start: '+name)
+                result=run_native(spec,directory,stop,self.native_tools)
+                job['meta'].update(state='cancelled' if stop.is_set() else ('finished' if result['valid'] else 'failed'),native=result)
+                return
             targets=[dict(t) for t in spec['targets']]
             for t in targets:
                 if t.get('kind','http')=='http':t['_expected']=base64.b64decode(t['expected_b64'])
@@ -116,7 +139,7 @@ class JobManager:
             after=usage();stream.write(json.dumps(after)+'\n');stream.close()
             job['meta'].update(cpu_seconds=after['cpu_seconds']-before['cpu_seconds'],
                                elapsed_seconds=after['time']-before['time'],
-                               files={p.name:dict(sha256=sha256(p),bytes=p.stat().st_size) for p in (directory/'requests.jsonl',directory/'load-resources.jsonl') if p.exists()})
+                               files={p.name:dict(sha256=sha256(p),bytes=p.stat().st_size) for p in directory.iterdir() if p.is_file() and p.name not in ('job.json','request.json')})
             (directory/'job.json').write_text(json.dumps(job['meta'],indent=2)+'\n')
             job['sealed']=True
 
@@ -129,8 +152,8 @@ class JobManager:
             return job,meta
 
 
-def create_server(address,root,token,target_host,ports,lease_seconds=10):
-    manager=JobManager(root,target_host,ports,lease_seconds)
+def create_server(address,root,token,target_host,ports,lease_seconds=10,native_tools=None):
+    manager=JobManager(root,target_host,ports,lease_seconds,native_tools)
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args):pass
         def reply(self,status,body):
@@ -147,13 +170,15 @@ def create_server(address,root,token,target_host,ports,lease_seconds=10):
                 parts=urlsplit(self.path).path.strip('/').split('/')
                 if parts==['health']:
                     return self.reply(200,dict(monotonic=time.monotonic(),epoch=time.time(),pid=os.getpid(),
-                                               kernel=os.uname().release,cpu_count=os.cpu_count(),driver_sha256=driver_hashes()))
+                                               kernel=os.uname().release,cpu_count=os.cpu_count(),driver_sha256=driver_hashes(),
+                                               native_tool_sha256=manager.native_tool_hashes))
                 if len(parts)<2 or parts[0]!='jobs':raise KeyError('unknown route')
                 job,meta=manager.get(parts[1])
                 if len(parts)==2:return self.reply(200,meta)
                 names={'requests':'requests.jsonl','resources':'load-resources.jsonl'}
-                if len(parts)!=3 or parts[2] not in names or not job.get('sealed'):raise KeyError('artifact unavailable')
-                path=job['root']/names[parts[2]]
+                name=names.get(parts[2]) if len(parts)==3 else (parts[3] if len(parts)==4 and parts[2]=='artifacts' else None)
+                if not name or name not in meta.get('files',{}) or not job.get('sealed'):raise KeyError('artifact unavailable')
+                path=job['root']/name
                 self.send_response(200);self.send_header('Content-Length',str(path.stat().st_size));self.end_headers()
                 with path.open('rb') as stream:
                     for block in iter(lambda:stream.read(65536),b''):self.wfile.write(block)
@@ -183,12 +208,15 @@ def create_server(address,root,token,target_host,ports,lease_seconds=10):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--native-tools',help='local JSON mapping: benchmark, kafka distribution directory, wrk2; never accepted from a job')
     p.add_argument('--bind',default='0.0.0.0');p.add_argument('--port',type=int,default=19890)
     p.add_argument('--token-file',required=True);p.add_argument('--output',required=True)
     p.add_argument('--target-host',required=True);p.add_argument('--port-start',type=int,required=True);p.add_argument('--port-count',type=int,default=64)
     a=p.parse_args();token=Path(a.token_file).read_text().strip()
     if len(token)<32:p.error('use a random token of at least32 characters')
-    server=create_server((a.bind,a.port),a.output,token,a.target_host,range(a.port_start,a.port_start+a.port_count))
+    native_tools=json.loads(Path(a.native_tools).read_text()) if a.native_tools else {}
+    if set(native_tools)-{'benchmark','kafka','wrk2'}:p.error('unsupported native tool mapping')
+    server=create_server((a.bind,a.port),a.output,token,a.target_host,range(a.port_start,a.port_start+a.port_count),native_tools=native_tools)
     try:server.serve_forever()
     finally:
         for job in server.manager.jobs.values():job['stop'].set()

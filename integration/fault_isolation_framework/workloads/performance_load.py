@@ -16,6 +16,7 @@ import urllib.request
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from fault_isolation_framework.workloads.redis_protocol import load_request as redis_load, payload as redis_payload
+from fault_isolation_framework.workloads.resident_protocol import expected as kv_expected, operation as kv_operation
 
 
 def run_load(targets, output, qps, duration, workers=16, pending=64,
@@ -46,9 +47,12 @@ def run_load(targets, output, qps, duration, workers=16, pending=64,
                 if target.get("kind") == "redis":
                     row["redis_counter"] = redis_load(target, row["ordinal"], timeout)
                 else:
-                    with urllib.request.urlopen(target["url"]+"/work", timeout=timeout) as response:
+                    resident=target.get("kind")=="resident"
+                    path=("/op?ordinal=%d&seed=%d"%(row["ordinal"],target["seed"])) if resident else "/work"
+                    if resident:row["operation"],row["key"]=kv_operation(row["ordinal"],target["seed"],target["records"])
+                    with urllib.request.urlopen(target["url"]+path, timeout=timeout) as response:
                         body = response.read(4097)
-                        wanted = target.get("_expected", expected)
+                        wanted = kv_expected(row["ordinal"],target["seed"],target["records"]) if resident else target.get("_expected", expected)
                         if response.status != 200 or (wanted is not None and body != wanted):
                             raise ValueError("HTTP status/body mismatch")
                 row["ok"] = True

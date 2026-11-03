@@ -29,8 +29,10 @@ class RemoteLoad:
             if not isinstance(health.get('monotonic'),(int,float)) or not math.isfinite(health['monotonic']):raise ValueError('invalid remote clock sample')
             samples.append(dict(rtt=after-before,offset=(before+after)/2-health['monotonic']))
         best=min(samples,key=lambda x:x['rtt'])
-        if best['rtt']/2>self.max_clock_error:raise ValueError('remote clock uncertainty exceeds budget')
-        required={'load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py'}
+        if best['rtt']/2>self.max_clock_error:
+            (self.output/'clock-rejected.json').write_text(json.dumps(dict(samples=samples,health=health),indent=2)+'\n')
+            raise ValueError('remote clock uncertainty exceeds budget')
+        required={'load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py','workloads/native_tools.py','workloads/resident_protocol.py'}
         if set(health.get('driver_sha256',{}))!=required:raise ValueError('load-controller source proof incomplete')
         root=Path(__file__).resolve().parents[1]
         for name,expected in health['driver_sha256'].items():
@@ -97,4 +99,31 @@ class RemoteLoad:
         finally:
             if self.job is not None:
                 self.cancel()
+            (self.output/'remote-load.json').write_text(json.dumps(meta,indent=2)+'\n')
+
+
+    def run_native(self,spec):
+        if self.clock is None:self.calibrate()
+        spec=dict(spec,start_monotonic=spec['start_monotonic']-self.clock['offset'])
+        meta=dict(clock_before=self.clock,spec=spec)
+        try:
+            self.job=self.request('/jobs',spec)['id']
+            deadline=time.monotonic()+spec['duration']*3+150
+            while True:
+                status=self.request('/jobs/'+self.job)
+                if status['state']!='running':break
+                if time.monotonic()>deadline:raise TimeoutError('native job deadline exceeded')
+                time.sleep(.2)
+            meta.update(status)
+            for name,expected in status['files'].items():
+                if Path(name).name!=name:raise ValueError('unsafe native artifact name')
+                self.download(self.job,'artifacts/'+name,self.output/name,expected)
+            after=self.calibrate();meta['clock_after']=after
+            if abs(after['offset']-self.clock['offset'])+after['rtt']/2+self.clock['rtt']/2>self.max_clock_error:
+                raise ValueError('native remote clock drift/uncertainty exceeds budget')
+            self.request('/jobs/'+self.job+'/ack',dict(files=status['files']))
+            if status['state']!='finished':raise RuntimeError('native job failed: '+repr(status.get('native',status.get('error'))))
+            return status['native']
+        finally:
+            if self.job is not None:self.cancel()
             (self.output/'remote-load.json').write_text(json.dumps(meta,indent=2)+'\n')

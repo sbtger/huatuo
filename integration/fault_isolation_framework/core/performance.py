@@ -6,7 +6,7 @@ import statistics
 
 def percentile(values, p):
     # Require at least ten expected observations in the upper tail.
-    minimum = 1 if p <= 50 else math.ceil(10 / (1 - p / 100))
+    minimum = 1 if p <= 50 else math.ceil(1000 / (100 - p) - 1e-9)
     if len(values) < minimum:
         return None
     ordered = sorted(values)
@@ -15,7 +15,7 @@ def percentile(values, p):
 
 def distribution(values):
     return dict(n=len(values), p50=percentile(values, 50),
-                p95=percentile(values, 95), p99=percentile(values, 99),
+                p95=percentile(values, 95), p99=percentile(values, 99), p999=percentile(values, 99.9),
                 max=max(values) if values else None)
 
 
