@@ -12,7 +12,7 @@ from .native_tools import bounded_process,parse_etcd
 def validate_application(spec,host,ports):
     allowed={'application','url','rate','duration','start_monotonic','records','seed',
              'connections','warmup','baseline','hold','trace_margin','diagnostic'}
-    if set(spec)!=allowed or spec.get('application') not in ('cache','etcd-sdk','etcd-reference'):
+    if set(spec)-{'trace_scope'}!=allowed or spec.get('application') not in ('cache','etcd-sdk','etcd-reference'):
         raise ValueError('application job requires the complete fixed schema')
     route=urlsplit(spec['url'])
     if route.scheme!='http' or route.hostname!=host or route.port not in ports or route.username or route.password or route.path not in ('','/') or route.query or route.fragment:
@@ -28,8 +28,20 @@ def validate_application(spec,host,ports):
         raise ValueError('application count/duration budget exceeded')
     if not 0<=spec['warmup']<=120 or not 5<=spec['baseline']<=180 or not 5<=spec['hold']<=180 or spec['warmup']+spec['baseline']+spec['hold']>spec['duration'] or not 1<=spec['trace_margin']<=10:
         raise ValueError('application phase/trace budget exceeded')
+    scope=spec.get('trace_scope','capture')
+    if scope not in ('capture','measured_phases'):raise ValueError('unknown application trace scope')
+    if scope=='measured_phases' and spec['rate']*(spec['duration']-spec['warmup']+2*spec['trace_margin'])>250000:
+        raise ValueError('full measured-phase trace exceeds250000 arrival budget')
     if not time.monotonic()-.2<=spec['start_monotonic']<=time.monotonic()+60:
         raise ValueError('application start outside bounded horizon')
+
+
+def application_trace_window(spec):
+    start=spec['start_monotonic'];margin=spec['trace_margin']
+    if spec.get('trace_scope','capture')=='measured_phases':
+        return start+spec['warmup']-margin,start+spec['duration']+margin
+    capture=start+spec['warmup']+spec['baseline']+2
+    return capture-margin,capture+3+margin
 
 
 def histogram_metrics(histogram):
@@ -75,8 +87,9 @@ def run_application(spec,root,stop,tools):
     root=Path(root);result=dict(kind=spec['application'],valid=False,errors=[])
     before=dict(monotonic=time.monotonic(),epoch=time.time())
     start_epoch=before['epoch']+spec['start_monotonic']-before['monotonic']
-    capture=spec['start_monotonic']+spec['warmup']+spec['baseline']+2
-    trace_begin=capture-spec['trace_margin'];trace_end=capture+3+spec['trace_margin']
+    result['scheduled_start_epoch']=start_epoch
+    trace_begin,trace_end=application_trace_window(spec)
+    result['trace_scope']=spec.get('trace_scope','capture')
     try:
         if stop.wait(max(0,spec['start_monotonic']-time.monotonic())):raise RuntimeError('cancelled before application start')
         if spec['application']=='cache':

@@ -144,6 +144,7 @@ def execute(args,directory,group,pressure,fill_plan,rate,probe=False,diagnostic=
             except Exception as exc:outcome['errors'].append('phase observer: '+repr(exc))
         observer=threading.Thread(target=observe,daemon=True);observer.start()
         spec=dict(application='etcd-sdk' if args.application=='etcd' else 'cache',url='http://%s:%d'%(args.load_target_host,args.load_target_base_port),rate=rate,duration=duration,start_monotonic=start,records=fill_plan['records'],seed=args.seed,connections=args.workers,warmup=warmup,baseline=baseline,hold=hold,trace_margin=4,diagnostic=diagnostic)
+        spec['trace_scope']=getattr(args,'application_trace_scope','capture')
         native=remote.run_native(spec);outcome['native']=native
         observer.join(args.capture_timeout+20);require(not observer.is_alive(),'phase observer stuck')
         outcome['phase_stats']['end']=dict(time=time.monotonic(),stats=owner.kv.stats(),memory=owner.kv.memory())
@@ -171,7 +172,7 @@ def execute(args,directory,group,pressure,fill_plan,rate,probe=False,diagnostic=
         client_meta=json.loads((trial_out/'remote-load.json').read_text())
         probe_summary=dict(offered_rps=rate,success_rps=loads['baseline']['success_rps'],errors=max(loads['baseline']['response_errors'],whole_job_errors)+sum(bool(row.get('error')) for row in native.get('maintenance',[])),timeouts=counters.get('timeouts',0),body_errors=counters.get('body_errors',0),trace_overflow=counters.get('trace_overflow',0),client_cpu_cores=(native['process']['cpu_seconds']+client_meta.get('cpu_seconds',0))/duration,client_cores=min(native['generator_parallelism'],client_meta['clock_before']['health']['cpu_count']),initial_p99_ms=first['p99_ms'],final_p99_ms=last['p99_ms'],initial_backlog_ms=first_lag['p99_ms'],final_backlog_ms=last_lag['p99_ms'])
         outcome['capacity_probe']=dict(probe_summary,decision=capacity_state(probe_summary),scope='baseline60s throughput/tails only; all-job errors gate, raw categories authoritative (HTTP events may overlap); clientCPU whole job inclnative child')
-        rows=read_timeline(trial_out,native,remote.clock['offset']);outcome['timeline_scope']='complete records near planned capture±timeout margin plus every error; all-response HDR elsewhere'
+        rows=read_timeline(trial_out,native,remote.clock['offset']);outcome['timeline_scope']=('complete baseline/capture/recovery records plus margin and every error' if spec['trace_scope']=='measured_phases' else 'complete records near planned capture±timeout margin plus every error; all-response HDR elsewhere')
         for name,window in outcome['windows'].items():
             window['load']['transport_error_events']={}
             for row in rows:

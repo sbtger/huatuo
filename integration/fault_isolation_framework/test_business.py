@@ -372,3 +372,34 @@ class ApplicationProbeWindowTest(unittest.TestCase):
                 self.assertFalse(business_quality({'counters':{key:1}},windows,throughput_windows={'baseline'})['valid'])
         bad=dict(windows,capture=dict(windows['capture'],response_errors=1))
         self.assertFalse(business_quality({'counters':{}},bad,throughput_windows={'baseline'})['valid'])
+
+
+class ApplicationTraceScopeTest(unittest.TestCase):
+    def test_measured_phase_trace_is_bounded_and_preserves_default_capture_scope(self):
+        from fault_isolation_framework.workloads import application_tools as tools
+        import time
+        start=time.monotonic()+3
+        job=dict(application='cache',url='http://10.0.2.2:40000',rate=721,duration=240,
+                 start_monotonic=start,records=288739,seed=923,connections=128,
+                 warmup=60,baseline=60,hold=60,trace_margin=4,diagnostic=False)
+        extended=dict(job,trace_scope='measured_phases')
+        try:tools.validate_application(extended,'10.0.2.2',{40000})
+        except ValueError as exc:self.fail('bounded full measured-phase trace rejected: '+str(exc))
+        self.assertEqual(tools.application_trace_window(extended),(start+56,start+244))
+        self.assertEqual(tools.application_trace_window(job),(start+118,start+129))
+        with self.assertRaises(ValueError):
+            tools.validate_application(dict(job,trace_scope='unknown'),'10.0.2.2',{40000})
+        with self.assertRaises(ValueError):
+            tools.validate_application(dict(extended,rate=50000),'10.0.2.2',{40000})
+
+    def test_native_result_keeps_exact_epoch_anchor_when_cancelled_before_start(self):
+        from fault_isolation_framework.workloads.application_tools import run_application
+        import threading,time
+        stop=threading.Event();stop.set()
+        spec=dict(application='cache',start_monotonic=time.monotonic()+3,warmup=60,
+                  baseline=60,duration=240,trace_margin=4,trace_scope='measured_phases')
+        with tempfile.TemporaryDirectory() as tmp:
+            result=run_application(spec,tmp,stop,{})
+        self.assertIn('scheduled_start_epoch',result)
+        anchor=result['clock_before']
+        self.assertEqual(result['scheduled_start_epoch'],anchor['epoch']+spec['start_monotonic']-anchor['monotonic'])
