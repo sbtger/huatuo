@@ -52,6 +52,7 @@ def capacity_summary(cases, slo_p99_ms, max_error_rate):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--matrix", required=True, help="JSON list of {name,options}; option names use hyphens")
+    p.add_argument("--common-options", help="JSON object merged before per-cell options")
     p.add_argument("--build", required=True)
     p.add_argument("--bpf-dir", required=True)
     p.add_argument("--output", required=True)
@@ -63,6 +64,8 @@ def main():
         p.error("slo-p99-ms must be finite and positive")
     if not 0 <= a.max_error_rate <= 1:
         p.error("max-error-rate must be in [0,1]")
+    common=json.loads(Path(a.common_options).read_text()) if a.common_options else {}
+    if not isinstance(common,dict):p.error("common-options must be a JSON object")
     cases = json.loads(Path(a.matrix).read_text())
     if not isinstance(cases, list) or not cases:
         p.error("matrix must be a nonempty list")
@@ -71,18 +74,18 @@ def main():
     root = Path(a.output).resolve()
     script = Path(__file__).with_name("performance.py")
     for case in cases:
-        name, options = case["name"], case["options"]
+        name, options = case["name"], {**common, **case["options"]}
         if not name or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for c in name) or name in names:
             p.error("matrix cell names must be unique safe directory names")
         names.add(name)
         command = [sys.executable, str(script), "--build", str(Path(a.build).resolve()),
                    "--bpf-dir", str(Path(a.bpf_dir).resolve()), "--output", str(root/name)]
         for key, value in options.items():
-            if key in ("output", "build", "bpf-dir", "worker", "report", "plan") or not isinstance(value, (str, int, float)) or (isinstance(value, bool) and key != "load-all"):
+            if key in ("output", "build", "bpf-dir", "worker", "report", "plan") or not isinstance(value, (str, int, float)) or (isinstance(value, bool) and key not in ("load-all", "redis")):
                 p.error("invalid matrix option: "+key)
-            if key == "load-all":
+            if key in ("load-all", "redis"):
                 if value:
-                    command += ["--load-all"]
+                    command += ["--"+key]
             else:
                 command += ["--"+key, str(value)]
         # Let the real parser validate every cell before creating any output.
@@ -95,6 +98,7 @@ def main():
         return 0
     root.mkdir(parents=True, exist_ok=False)
     (root/"matrix.json").write_text(json.dumps(cases, indent=2)+"\n")
+    (root/"common-options.json").write_text(json.dumps(common,indent=2)+"\n")
     completed = []
     for case in planned:
         with (root/(case["name"]+".log")).open("x") as log:

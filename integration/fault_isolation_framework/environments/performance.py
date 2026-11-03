@@ -163,9 +163,10 @@ def resource_metrics(rows, start, end):
     for key in sorted(keys):
         samples = [row["processes"][key] for row in window if key in row["processes"]]
         counter_delta = {}
-        for field in ("cpu_seconds", "minor_faults", "major_faults", "voluntary_switches", "involuntary_switches"):
+        for field in ("cpu_seconds", "waited_children_cpu_seconds", "minor_faults", "major_faults", "voluntary_switches", "involuntary_switches"):
             if field in samples[0] and samples[0]["identity"] == samples[-1]["identity"]:
                 counter_delta[field] = max(0, samples[-1][field]-samples[0][field])
+        counter_delta["total_cpu_seconds"] = counter_delta.get("cpu_seconds", 0)+counter_delta.get("waited_children_cpu_seconds", 0)
         counter_delta["rss_peak_bytes"] = max(p["rss_bytes"] for p in samples)
         result["business"][key] = counter_delta
     return result

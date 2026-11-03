@@ -246,6 +246,31 @@ class PerformanceTest(unittest.TestCase):
             server.server_close()
             thread.join()
 
+    def test_cancel_does_not_send_already_queued_arrivals(self):
+        import threading, time
+        from fault_isolation_framework.workloads.performance_load import run_load
+        stop=threading.Event()
+        calls=[]
+        class Response:
+            status=200
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+            def read(self,n):return b"ok"
+        def request(*args,**kwargs):
+            calls.append(time.monotonic())
+            stop.wait(2)
+            return Response()
+        timer=threading.Timer(.1,stop.set)
+        with tempfile.TemporaryDirectory() as tmp, patch("urllib.request.urlopen",side_effect=request):
+            timer.start()
+            rows=run_load([dict(id="go",url="http://127.0.0.1:1")],Path(tmp)/"requests.jsonl",
+                          qps=1000,duration=1,workers=1,pending=128,expected=b"ok",stop=stop)
+            timer.join()
+        self.assertGreater(len(rows),10,"test did not queue requests before cancellation")
+        self.assertEqual(len(calls),1,"cancelled queued arrivals still sent traffic")
+        self.assertEqual(sum(r["sent"] is not None for r in rows),1)
+        self.assertTrue(all(r.get("load_invalid") for r in rows if r["sent"] is None))
+
     def test_proc_stat_parser_handles_spaces_in_name_and_cpu_units(self):
         from fault_isolation_framework.environments.performance import parse_stat
         fields = ["S"] + ["0"]*49
@@ -466,3 +491,186 @@ class SoakSamplingTest(unittest.TestCase):
         self.assertEqual(resource_sample_interval("soak", True), 2)
         self.assertEqual(resource_sample_interval("short", True), .1)
         self.assertEqual(resource_sample_interval("short", False), 2)
+
+
+class SelectionPolicyPerformanceTest(unittest.TestCase):
+    def test_threshold_accepts_one_selected_candidate_not_all_pressure_edges(self):
+        from fault_isolation_framework.adapters.huatuo.performance import captures_cover_targets
+        records=[dict(pid=1, successful=True)]
+        self.assertTrue(captures_cover_targets(records, {1,2,3}, module="memory_threshold_snapshot"))
+        self.assertFalse(captures_cover_targets(records, {1,2,3}, module="memburst"))
+        self.assertFalse(captures_cover_targets([dict(pid=9,successful=True)], {1}, module="memory_threshold_snapshot"))
+        self.assertFalse(captures_cover_targets([dict(pid=1,successful=False)], {1}, module="memory_threshold_snapshot"))
+
+
+class RedisProtocolPerformanceTest(unittest.TestCase):
+    def test_resp_bulk_null_array_and_errors(self):
+        import io
+        from fault_isolation_framework.workloads.redis_protocol import read_reply
+        self.assertEqual(read_reply(io.BytesIO(b"*3\r\n+OK\r\n$3\r\nabc\r\n:2\r\n")), [b"OK",b"abc",2])
+        self.assertIsNone(read_reply(io.BytesIO(b"$-1\r\n")))
+        for payload in (b"$3\r\nab", b"-ERR failed\r\n", b"$999999999\r\n"):
+            with self.subTest(payload=payload), self.assertRaises((ValueError,EOFError)):
+                read_reply(io.BytesIO(payload))
+
+    def test_redis_load_checks_body_and_counts_a_real_protocol_exchange(self):
+        import socketserver,threading
+        from fault_isolation_framework.workloads.redis_protocol import read_reply, load_request
+        class Redis(socketserver.StreamRequestHandler):
+            def handle(self):
+                set_args=read_reply(self.rfile)
+                get_args=read_reply(self.rfile)
+                count_args=read_reply(self.rfile)
+                assert set_args[0]==b"SET" and get_args[0]==b"GET" and count_args[0]==b"INCR"
+                body=set_args[2]
+                self.wfile.write(b"+OK\r\n$"+str(len(body)).encode()+b"\r\n"+body+b"\r\n:1\r\n")
+        server=socketserver.ThreadingTCPServer(("127.0.0.1",0),Redis)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            self.assertEqual(load_request(dict(url="redis://127.0.0.1:%d"%server.server_address[1],value_bytes=32,keys=2),0),1)
+        finally:
+            server.shutdown();server.server_close();thread.join()
+
+
+class RemoteLoadPerformanceTest(unittest.TestCase):
+    def test_controller_auth_and_destination_allowlist(self):
+        import threading,urllib.request,urllib.error
+        from fault_isolation_framework.load_controller import create_server
+        with tempfile.TemporaryDirectory() as tmp:
+            server=create_server(("127.0.0.1",0),Path(tmp),"secret","127.0.0.1",[12345],lease_seconds=.2)
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            base="http://127.0.0.1:%d"%server.server_port
+            try:
+                with self.assertRaises(urllib.error.HTTPError) as err:urllib.request.urlopen(base+"/health",timeout=2)
+                self.assertEqual(err.exception.code,401)
+                body=json.dumps(dict(targets=[dict(id="bad",url="http://example.com:12345",expected_b64="b2s=")],qps=1,duration=.2,workers=1,pending=1,start_monotonic=0)).encode()
+                request=urllib.request.Request(base+"/jobs",data=body,headers={"Authorization":"Bearer secret"})
+                with self.assertRaises(urllib.error.HTTPError) as err:urllib.request.urlopen(request,timeout=2)
+                self.assertEqual(err.exception.code,400)
+                self.assertEqual(list(Path(tmp).glob("*/requests.jsonl")),[])
+            finally:server.shutdown();server.server_close();thread.join()
+
+    def test_abandoned_job_lease_cancels_future_load(self):
+        import threading,time,urllib.request
+        from fault_isolation_framework.load_controller import create_server
+        with tempfile.TemporaryDirectory() as tmp:
+            server=create_server(("127.0.0.1",0),Path(tmp),"secret","127.0.0.1",[12345],lease_seconds=.15)
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            base="http://127.0.0.1:%d"%server.server_port
+            def request(path,body=None):
+                req=urllib.request.Request(base+path,data=json.dumps(body).encode() if body is not None else None,headers={"Authorization":"Bearer secret"})
+                with urllib.request.urlopen(req,timeout=2) as reply:return json.load(reply)
+            try:
+                job=request("/jobs",dict(targets=[dict(id="future",url="http://127.0.0.1:12345",expected_b64="b2s=")],qps=1,duration=5,workers=1,pending=1,start_monotonic=time.monotonic()+1))
+                time.sleep(.5)
+                status=request("/jobs/"+job["id"])
+                self.assertEqual(status["state"],"cancelled")
+                self.assertEqual(status["recorded"],0)
+            finally:server.shutdown();server.server_close();thread.join()
+
+    def test_remote_requests_are_checksummed_and_mapped_to_dut_clock(self):
+        import http.server,threading,time
+        from fault_isolation_framework.load_controller import create_server
+        from fault_isolation_framework.environments.remote_load import RemoteLoad
+        class Business(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):self.send_response(200);self.end_headers();self.wfile.write(b"ok")
+            def log_message(self,*args):pass
+        business=http.server.ThreadingHTTPServer(("127.0.0.1",0),Business)
+        bt=threading.Thread(target=business.serve_forever,daemon=True);bt.start()
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/"token").write_text("secret")
+            server=create_server(("127.0.0.1",0),root/"server","secret","127.0.0.1",[business.server_port])
+            st=threading.Thread(target=server.serve_forever,daemon=True);st.start()
+            try:
+                remote=RemoteLoad("http://127.0.0.1:%d"%server.server_port,root/"token",root/"client",max_clock_error=.1)
+                remote.calibrate()
+                rows=remote.run([dict(id="go",url="http://127.0.0.1:%d"%business.server_port)],10,.3,1,2,b"ok",time.monotonic()+.2)
+                self.assertEqual(len(rows),3)
+                self.assertTrue(all(r["ok"] and "remote_scheduled" in r for r in rows))
+                self.assertTrue((root/"client/remote-requests.jsonl").exists())
+                self.assertEqual(json.loads((root/"client/remote-load.json").read_text())["recorded"],3)
+            finally:
+                server.shutdown();server.server_close();st.join()
+                business.shutdown();business.server_close();bt.join()
+
+
+class RedisForkAccountingTest(unittest.TestCase):
+    def test_reaped_redis_child_cpu_is_in_business_total(self):
+        from fault_isolation_framework.environments.performance import resource_metrics
+        rows=[dict(time=t,errors=[],processes={'neighbor-redis':dict(identity=[1,1],cpu_seconds=cpu,
+            waited_children_cpu_seconds=child,rss_bytes=100,fds=1,threads=1)})
+            for t,cpu,child in [(0,1,0),(1,2,.5)]]
+        result=resource_metrics(rows,0,1)['business']['neighbor-redis']
+        self.assertAlmostEqual(result['total_cpu_seconds'],1.5)
+
+
+class RemoteSourceGuardTest(unittest.TestCase):
+    def test_empty_source_hashes_cannot_validate_a_controller(self):
+        import http.server,threading,time
+        from fault_isolation_framework.environments.remote_load import RemoteLoad
+        class Missing(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                body=json.dumps(dict(monotonic=time.monotonic(),driver_sha256={})).encode()
+                self.send_response(200);self.end_headers();self.wfile.write(body)
+            def log_message(self,*args):pass
+        server=http.server.ThreadingHTTPServer(("127.0.0.1",0),Missing)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);(root/'token').write_text('secret')
+                remote=RemoteLoad('http://127.0.0.1:%d'%server.server_port,root/'token',root/'out',max_clock_error=.1)
+                with self.assertRaisesRegex(ValueError,'source'):remote.calibrate()
+        finally:server.shutdown();server.server_close();thread.join()
+
+
+class RedisForkWitnessTest(unittest.TestCase):
+    def test_redis5_requires_new_successful_rdb_not_a_missing_fork_counter(self):
+        from fault_isolation_framework.workloads.performance_redis import completed_fork
+        before=dict(latest_fork_usec='0')
+        after=dict(latest_fork_usec='150',rdb_bgsave_in_progress='0',rdb_last_bgsave_status='ok')
+        self.assertTrue(completed_fork(before,after,1,2))
+        self.assertFalse(completed_fork(before,after,2,2))
+        self.assertFalse(completed_fork(before,dict(after,rdb_last_bgsave_status='err'),1,2))
+        self.assertFalse(completed_fork(dict(before,total_forks='3'),dict(after,total_forks='3'),1,2))
+
+
+class MixedPerformanceFixtureTest(unittest.TestCase):
+    def test_memory_pressure_release_does_not_treat_redis_as_an_allocator(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.adapters.huatuo.performance import PerformanceTrigger
+        with tempfile.TemporaryDirectory() as tmp:
+            ctl=Path(tmp);(ctl/'target_mb').write_text('500');(ctl/'memory.usage_in_bytes').write_text('0')
+            owner=SimpleNamespace(targets=[dict(ctl=ctl,cgroup=ctl),dict(kind='redis',role='neighbor')])
+            PerformanceTrigger(owner).release_all()
+            self.assertEqual((ctl/'target_mb').read_text(),'0')
+
+
+class ArrivalProtocolTest(unittest.TestCase):
+    def test_duplicate_arrivals_and_nonfinite_times_are_invalid(self):
+        from fault_isolation_framework.core.performance import arrival_errors
+        rows=[dict(target='go',ordinal=i,scheduled=i,sent=i,ended=i+.01,dispatch_lag=0,ok=True) for i in range(2)]
+        self.assertEqual(arrival_errors(rows,{'go'},1,2),[])
+        self.assertTrue(arrival_errors([rows[0],rows[0]],{'go'},1,2))
+        self.assertTrue(arrival_errors(rows+[rows[1]],{'go'},1,2))
+        self.assertTrue(arrival_errors([dict(rows[0],ended=float('nan')),rows[1]],{'go'},1,2))
+        self.assertTrue(arrival_errors([dict(rows[0],target='unknown'),rows[1]],{'go'},1,2))
+
+
+class RemoteClockGuardTest(unittest.TestCase):
+    def test_nonfinite_clock_cannot_validate_a_controller(self):
+        import http.server,threading,time
+        from fault_isolation_framework.environments.remote_load import RemoteLoad
+        from fault_isolation_framework.load_controller import driver_hashes
+        class Invalid(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200);self.end_headers()
+                self.wfile.write(json.dumps(dict(monotonic=float('nan'),driver_sha256=driver_hashes())).encode())
+            def log_message(self,*args):pass
+        server=http.server.ThreadingHTTPServer(('127.0.0.1',0),Invalid)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);(root/'token').write_text('secret')
+                remote=RemoteLoad('http://127.0.0.1:%d'%server.server_port,root/'token',root/'out',max_clock_error=.1)
+                with self.assertRaisesRegex(ValueError,'clock'):remote.calibrate()
+        finally:server.shutdown();server.server_close();thread.join()

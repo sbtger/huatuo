@@ -64,6 +64,19 @@ def parser():
     p.add_argument("--copies", type=int, default=1, help="registered containers per runtime")
     p.add_argument("--pressure-targets", type=int, default=1)
     p.add_argument("--load-all", action="store_true", help="load every registered container; default loads first copy, pressure targets and neighbor")
+    p.add_argument("--burst-max-targets", type=int, default=3)
+    p.add_argument("--driver-pressure-mib", type=int, default=320)
+    p.add_argument("--redis", action="store_true")
+    p.add_argument("--redis-server", default="/usr/bin/redis-server")
+    p.add_argument("--redis-keys", type=int, default=128)
+    p.add_argument("--redis-value-bytes", type=int, default=65536)
+    p.add_argument("--redis-fork-interval", type=float, default=0)
+    p.add_argument("--load-controller-url", default="")
+    p.add_argument("--load-token-file", default="")
+    p.add_argument("--service-port-base", type=int, default=30000)
+    p.add_argument("--load-target-host", default="10.0.2.2")
+    p.add_argument("--load-target-base-port", type=int, default=40000)
+    p.add_argument("--max-clock-error", type=float, default=.02)
     p.add_argument("--pressure-mib", type=int, default=500)
     p.add_argument("--memory-limit-mib", type=int, default=768)
     p.add_argument("--extra-processes", type=int, default=0)
@@ -123,6 +136,23 @@ def main():
         p.error("fixture pressure must be 1..600 MiB with >=64 MiB container headroom")
     if a.hold <= a.poll_interval*2 and a.module == "memburst":
         p.error("memburst hold must exceed two sampling intervals")
+    if not 1 <= a.burst_max_targets <= 3 or not 256 <= a.driver_pressure_mib <= 600:
+        p.error("burst-max-targets must be1..3 and driver-pressure-mib256..600")
+    if a.module == "memburst" and a.pressure_targets > a.burst_max_targets:
+        p.error("pressure target count exceeds memburst capture limit")
+    if not 1 <= a.redis_keys <= 4096 or not 1 <= a.redis_value_bytes <= 1<<20 or a.redis_keys*a.redis_value_bytes > 32<<20:
+        p.error("Redis dataset must fit32MiB with bounded key/value sizes")
+    if not math.isfinite(a.redis_fork_interval) or a.redis_fork_interval < 0 or (0 < a.redis_fork_interval < 1) or (a.redis_fork_interval and not a.redis):
+        p.error("Redis fork interval must be0 or >=1 seconds and requires --redis")
+    if not math.isfinite(a.max_clock_error) or a.max_clock_error <= 0:
+        p.error("max-clock-error must be finite and positive")
+    if bool(a.load_controller_url) != bool(a.load_token_file):
+        p.error("external load requires both controller URL and token file")
+    count=a.copies*len(languages)+1+int(a.redis)
+    if not 1024 <= a.service_port_base <= 65535-count or not 1024 <= a.load_target_base_port <= 65535-count:
+        p.error("service and forwarded port ranges must fit nonprivileged TCP ports")
+    if a.load_controller_url and (count>64 or math.ceil((a.warmup+a.baseline+a.hold+a.recovery)*a.qps)*(count if a.load_all else len(languages)+a.pressure_targets+2)>250000):
+        p.error("external load exceeds controller route/request budget")
     if a.plan:
         import random
         rng = random.Random(a.seed)

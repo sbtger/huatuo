@@ -122,3 +122,35 @@ from fault_isolation_framework.core import models,runner,evidence,audit,document
             self.assertEqual(first.stdout, second.stdout)
             self.assertTrue(all(sorted(r["groups"]) == ["A", "B", "D"] for r in json.loads(first.stdout)["schedule"]))
             self.assertFalse((Path(tmp)/"run").exists())
+
+
+class ExternalPerformanceCLITest(unittest.TestCase):
+    def invoke(self,*extra):
+        script=Path(__file__).parent/'performance.py'
+        return subprocess.run([sys.executable,str(script),'--module','memory_threshold_snapshot','--experiment','pulse',
+            '--build','/tmp/build','--bpf-dir','/tmp/bpf','--output','/tmp/unused-performance-plan','--plan']+list(extra),capture_output=True)
+
+    def test_external_redis_plan_has_no_side_effects(self):
+        import json
+        result=self.invoke('--redis','--redis-fork-interval','10','--load-controller-url','http://127.0.0.1:12345','--load-token-file','/tmp/token-path-only')
+        self.assertEqual(result.returncode,0,result.stderr)
+        config=json.loads(result.stdout)['config']
+        self.assertTrue(config['redis']);self.assertEqual(config['service_port_base'],30000)
+
+    def test_incomplete_external_credentials_fail_before_output(self):
+        result=self.invoke('--load-controller-url','http://127.0.0.1:12345')
+        self.assertNotEqual(result.returncode,0)
+        self.assertIn(b'external load requires',result.stderr)
+
+    def test_matrix_common_options_merge_without_creating_output(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);matrix=root/'matrix.json';common=root/'common.json';output=root/'out'
+            matrix.write_text(json.dumps([dict(name='redis',options=dict(module='memory_threshold_snapshot',qps=80))]))
+            common.write_text(json.dumps({'redis':True,'qps':40,'load-controller-url':'http://127.0.0.1:12345','load-token-file':'/tmp/path-only'}))
+            result=subprocess.run([sys.executable,str(Path(__file__).parent/'performance_matrix.py'),'--matrix',str(matrix),'--common-options',str(common),
+                '--build',tmp,'--bpf-dir',tmp,'--output',str(output),'--plan'],capture_output=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            command=json.loads(result.stdout)[0]['command']
+            self.assertIn('--redis',command);self.assertEqual(command[command.index('--qps')+1],'80')
+            self.assertFalse(output.exists())

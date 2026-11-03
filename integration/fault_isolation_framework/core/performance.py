@@ -87,3 +87,26 @@ def strict_documents(path):
             raise ValueError("event must be an object")
         result.append(value)
     return result
+
+
+def arrival_errors(rows,target_ids,qps,duration,start=None):
+    """Check every planned arrival once; malformed timing cannot score as fast."""
+    count=math.ceil(qps*duration);seen={key:[] for key in target_ids};errors=set()
+    def finite(value):
+        try:return isinstance(value,(int,float)) and not isinstance(value,bool) and math.isfinite(value)
+        except OverflowError:return False
+    for row in rows:
+        key=row.get('target');ordinal=row.get('ordinal')
+        if key not in seen:errors.add('unknown load target');continue
+        if not isinstance(ordinal,int) or isinstance(ordinal,bool):errors.add('invalid arrival ordinal');continue
+        seen[key].append(ordinal)
+        if not isinstance(row.get('ok'),bool):errors.add('invalid response verdict')
+        if not all(finite(row.get(k)) for k in ('scheduled','ended','dispatch_lag')):
+            errors.add('nonfinite/missing request timing');continue
+        if row['dispatch_lag'] < -1e-6 or row['ended'] < row['scheduled']-1e-6:errors.add('request timeline reversed')
+        if row.get('sent') is not None and (not finite(row['sent']) or not row['scheduled']-1e-6 <= row['sent'] <= row['ended']):
+            errors.add('invalid send/end ordering')
+        if start is not None and abs(row['scheduled']-(start+ordinal/qps))>1e-4:errors.add('scheduled arrival differs from planned ordinal')
+    for key,ordinals in seen.items():
+        if sorted(ordinals)!=list(range(count)):errors.add('missing/duplicate/extra arrivals: '+key)
+    return sorted(errors)

@@ -4,6 +4,7 @@
     "options": {
       "module": "memburst",
       "experiment": "idle",
+      "redis": true,
       "qps": 40
     }
   },
@@ -12,6 +13,7 @@
     "options": {
       "module": "memburst",
       "experiment": "idle",
+      "redis": true,
       "qps": 40,
       "extra-processes": 100
     }
@@ -21,6 +23,7 @@
     "options": {
       "module": "memburst",
       "experiment": "idle",
+      "redis": true,
       "qps": 40,
       "poll-interval": 5
     }
@@ -30,6 +33,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "idle",
+      "redis": true,
       "qps": 40
     }
   },
@@ -38,6 +42,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "idle",
+      "redis": true,
       "qps": 40,
       "copies": 3
     }
@@ -47,7 +52,9 @@
     "options": {
       "module": "memburst",
       "experiment": "pulse",
-      "qps": 40
+      "redis": true,
+      "qps": 40,
+      "burst-max-targets": 1
     }
   },
   {
@@ -55,9 +62,11 @@
     "options": {
       "module": "memburst",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "pressure-languages": "go,java,python",
-      "pressure-targets": 3
+      "pressure-targets": 3,
+      "burst-max-targets": 3
     }
   },
   {
@@ -65,6 +74,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "pressure-languages": "go"
     }
@@ -74,6 +84,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "pressure-languages": "java"
     }
@@ -83,6 +94,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "pressure-languages": "python"
     }
@@ -92,6 +104,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "pressure-languages": "go,java,python",
       "pressure-targets": 3
@@ -102,6 +115,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "memory-limit-mib": 640
     }
@@ -111,6 +125,7 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "top-k": 1
     }
@@ -120,8 +135,51 @@
     "options": {
       "module": "memory_threshold_snapshot",
       "experiment": "pulse",
+      "redis": true,
       "qps": 40,
       "capture-timeout": 1
+    }
+  },
+  {
+    "name": "burst-redis-fork",
+    "options": {
+      "module": "memburst",
+      "experiment": "pulse",
+      "redis": true,
+      "qps": 40,
+      "burst-max-targets": 1,
+      "redis-fork-interval": 10,
+      "redis-keys": 512
+    }
+  },
+  {
+    "name": "threshold-redis-fork",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "redis": true,
+      "qps": 40,
+      "redis-fork-interval": 10,
+      "redis-keys": 512
+    }
+  },
+  {
+    "name": "burst-q80",
+    "options": {
+      "module": "memburst",
+      "experiment": "pulse",
+      "redis": true,
+      "qps": 80,
+      "burst-max-targets": 1
+    }
+  },
+  {
+    "name": "threshold-q80",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "redis": true,
+      "qps": 80
     }
   }
 ]

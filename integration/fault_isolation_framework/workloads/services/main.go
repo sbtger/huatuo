@@ -123,7 +123,15 @@ func main() {
 		}
 		retained = append(retained, data)
 	}
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	bind := os.Getenv("HUATUO_TEST_BIND")
+	if bind == "" {
+		bind = "127.0.0.1"
+	}
+	port := os.Getenv("HUATUO_TEST_PORT")
+	if port == "" {
+		port = "0"
+	}
+	listener, err := net.Listen("tcp", net.JoinHostPort(bind, port))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -165,7 +173,7 @@ func main() {
 		}
 	}()
 	server := &http.Server{Handler: s, ReadHeaderTimeout: time.Second, IdleTimeout: 30 * time.Second}
-	if err := json.NewEncoder(os.Stdout).Encode(map[string]any{"url": "http://" + listener.Addr().String(), "pid": os.Getpid(), "expected_body": expectedBody, "runtime": runtime.Version(), "profile_rate": runtime.MemProfileRate, "heap_mib": heap}); err != nil {
+	if err := json.NewEncoder(os.Stdout).Encode(map[string]any{"url": "http://" + net.JoinHostPort("127.0.0.1", strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)), "pid": os.Getpid(), "expected_body": expectedBody, "runtime": runtime.Version(), "profile_rate": runtime.MemProfileRate, "heap_mib": heap}); err != nil {
 		fmt.Fprintln(os.Stderr, "write business readiness:", err)
 		os.Exit(1)
 	}

@@ -8,8 +8,8 @@ plain Agent build and event storage. It does not change production features.
 
 | Experiment | Groups | Identical conditions | Comparison |
 |---|---|---|---|
-| idle | A: no Agent; B: feature disabled; C: enabled | no induced pressure; same requested HTTP rate | C−B feature residency; C−A total residency |
-| pulse | A: no Agent; B: disabled; D: enabled | same pressure MiB, timing, container limits and HTTP rate | D−B feature increment under pressure; D−A total impact |
+| idle | A: no Agent; B: feature disabled; C: enabled | no induced pressure; same requested HTTP/Redis rate | C−B feature residency; C−A total residency |
+| pulse | A: no Agent; B: disabled; D: enabled | same pressure MiB, timing, container limits and offered rate | D−B feature increment under pressure; D−A total impact |
 
 Do not label D−C from different pressure trajectories as capture overhead.
 Group order is randomized with a recorded seed. Each group gets fresh fixtures
@@ -36,21 +36,30 @@ application's allocation/GC behavior.
 | Question | Controls / evidence |
 |---|---|
 | memburst residency and process scale | `--experiment idle --extra-processes N --poll-interval S`; actual process count and per-process readiness |
-| memburst trigger and up to three targets | `--experiment pulse --pressure-languages go,java,python --pressure-targets 3`; actual selected PIDs and records |
+| memburst trigger and up to three targets | `--experiment pulse --pressure-languages go,java,python --pressure-targets 3 --burst-max-targets 3`; actual selected PIDs, raw cardinality and records |
 | threshold listener scale | `--copies N`: N registered containers **per selected runtime**; additional neighbor is not registered |
-| simultaneous container edges | `--pressure-targets N` among selected `--pressure-languages`; report actual captures, not assumed parallel execution |
+| simultaneous container edges | `--pressure-targets N` among selected `--pressure-languages`; threshold arbitrates one eligible container per admitted batch; require a nonempty successful eligible subset, retain every selected PID and do not assert all edges are captured |
 | runtime differences | Go required as pressure driver; choose pressure runtime with `--pressure-languages`; all loaded businesses retain separate results |
 | memory headroom | `--memory-limit-mib`, `--pressure-mib`, `--threshold-percent`; observed cgroup usage must confirm pressure |
 | output/deadline sensitivity | threshold `--top-k`, `--capture-timeout`; retain entries/truncation/status/output bytes; memburst keeps its shipping fixed limits |
 | business load and capacity sweep | `--qps`, explicit JSON matrix and optional p99 SLO; target and neighbor latency/throughput per window |
+| Redis neighbor and fork | `--redis`; each logical request pipelines SET, GET with payload verification, and INCR; `--redis-fork-interval 10 --redis-keys 512` adds scheduled BGSAVE on a 32 MiB dataset |
+| independent load | `--load-controller-url` and `--load-token-file`; separate load VM, bounded fixed-arrival jobs, clock/source/artifact verification, lease cancellation and client CPU/RSS/PSI |
 | repeated captures | repeats create independent groups; use separate stability suite for repeated same-Agent captures |
 
-Pressure allocation uses the existing fixtures (including Java direct memory);
+Pressure allocation uses the existing fixtures: Go private anonymous mappings,
+Java file-backed mappings and Python shared anonymous mappings;
 it is not a claim about Java heap exhaustion. Pressure is limited to 600 MiB by
 the current fixture, with at least 64 MiB configured container headroom. This
 suite does not deliberately induce OOM. Object-shape generators, forced slow
-syscalls, cold-cache manipulation, runtime GC logs and a fully managed remote
-load-controller remain extensions; they are not silently simulated here.
+syscalls, cold-cache manipulation and runtime GC logs remain extensions. Redis is
+a separate uncollected neighbor, not an additional supported snapshot runtime.
+The fork witness requires a BGSAVE acknowledgment, a newly completed RDB file,
+successful INFO state and nonzero fork duration. Redis versions exposing
+`total_forks` also require an increased counter. Observed child PIDs, COW bytes
+when supported, INFO, Redis binary hash, logs and RDB files are retained. Every
+acknowledged request must match the server work counter. Dataset size is bounded
+to 32 MiB; Redis uses its own 256 MiB cgroup and no global daemon is changed.
 
 ## Commands
 
@@ -77,14 +86,57 @@ creating output. Short validation may use `--repeats 1 --warmup 3 --baseline 4
 Default warmup is 60 seconds, followed by 30 seconds baseline, 30 seconds hold
 and 30 seconds recovery. Runtime-specific warmup still needs calibration.
 
-The built-in fixed-arrival HTTP driver is bounded per target. Latency is measured
-from intended arrival, with send delay and service time retained. Queue overflow,
-dispatch lag, timeouts, incorrect responses and missing rows cannot disappear.
-Co-located client/observer CPU can distort measurements. Calibrate it and repeat
-important results with a separate host/load tool before publishing overhead.
-The standalone `workloads/performance_load.py` accepts a JSON list of reachable
-`{id,url}` targets, rate, duration and optional epoch start time for external
-experiments. The campaign currently orchestrates its co-located driver only.
+The built-in fixed-arrival HTTP/Redis driver is bounded per target. Latency is
+measured from intended arrival, with send delay and service time retained.
+Queue overflow, dispatch lag, timeouts, incorrect responses and missing rows
+invalidate a trial. Request identity and ordinal coverage are checked, including
+warmup; no missing/duplicate/extra arrivals are accepted. Each logical request
+uses a fresh TCP connection consistently across all groups. Redis requests use
+one connection for the SET/GET/INCR pipeline. Calibrate the network path and
+hypervisor FD limits before a formal run.
+
+### Separate load VM
+
+Use a private test network. On the load VM, install the exact same framework
+revision and provision a random token file with mode 0600 on both VMs. The token
+is never written to reports. Start the typed job service on the load VM:
+
+```sh
+python3 integration/fault_isolation_framework/load_controller.py \
+  --token-file /root/load-token --output /data/load-jobs \
+  --target-host DUT_PRIVATE_IP --port-start 30000 --port-count 64
+```
+
+Run the DUT campaign with the endpoint reachable from the DUT:
+
+```sh
+python3 integration/fault_isolation_framework/performance.py \
+  --module memburst --experiment pulse --burst-max-targets 1 \
+  --build /data/build --bpf-dir /data/bpf --redis \
+  --redis-server /usr/bin/redis-server --redis-fork-interval 10 \
+  --redis-keys 512 --load-controller-url http://LOAD_PRIVATE_IP:19890 \
+  --load-token-file /root/load-token --load-target-host DUT_PRIVATE_IP \
+  --service-port-base 30000 --load-target-base-port 30000 \
+  --output /data/perf-burst-redis
+```
+
+Only the configured host/port range and fixed HTTP/Redis jobs are accepted; no
+arbitrary shell commands are exposed. Each job requires authentication,
+heartbeat lease renewal, bounded queues and duration, cancellation and draining.
+The client verifies the three load-driver source hashes, clock uncertainty and
+drift (default 20 ms bound), and raw artifact byte counts/SHA-256 before
+acknowledging transfer. Acknowledgment deletes transferred raw files only on the
+load VM. The DUT retains remote raw monotonic timestamps and converted copies,
+clock samples, source hashes, remote CPU/RSS/PSI and job metadata. Clock offset
+is subtracted, not silently included in measured service latency.
+
+External mode binds owned business ports to 0.0.0.0; defaults remain ephemeral
+loopback ports for existing suites. Keep these ports and the bearer-token HTTP
+service confined to the private lab network. The host and port seen by the load
+VM may differ from the DUT bind ports when using explicit NAT forwarding.
+The 140 deployment uses host-loopback QEMU forwards, without a DUT SSH tunnel.
+Separate VMs remove load CPU from the DUT, but share a physical host and its
+network emulator; this is a disclosed limitation of published VM results.
 
 ## Explicit matrices and rate sweeps
 
@@ -101,10 +153,14 @@ Example `matrix.json`:
 ```sh
 python3 integration/fault_isolation_framework/performance_matrix.py \
   --matrix matrix.json --build /root/build --bpf-dir /root/project/bpf \
+  --common-options /root/remote-options.json \
   --slo-p99-ms 20 --output /root/perf-matrix
 ```
 
-All cells are validated before execution, run sequentially and keep independent
+`--common-options` is a JSON object of CLI option names and values (without
+leading `--`). It supplies runtime paths and remote-load settings to every cell;
+a cell can override a common value. Common options are retained in the matrix
+output. All cells are validated before execution, run sequentially and keep independent
 reports. The optional capacity report groups only identical configurations
 apart from QPS, and reports the **highest tested rate** satisfying the supplied
 SLO in every repeat. It does not interpolate or prove maximum capacity. At least
@@ -113,7 +169,9 @@ are unavailable, never zero. Tail percentiles are not averaged across runs.
 
 ## Measurements and artifacts
 
-- `REPORT.md`, `analysis.json`: trial validity and paired absolute deltas.
+- `REPORT.md`, `analysis.json`: trial validity and paired absolute/percentage
+  deltas by baseline, trigger, recovery and combined measured window. Percent
+  change is unavailable for a zero baseline; repeat medians never average tails.
 - `results.json`, `command.json`, `supervisor.json`: configuration, order, results,
   campaign termination and ownership cleanup outcome.
 - Per-trial `requests.jsonl`: every intended arrival, dispatch lag, send/end
@@ -121,6 +179,8 @@ are unavailable, never zero. Tail percentiles are not averaged across runs.
 - `resources.jsonl`: Agent, observed descendants and businesses; CPU counters,
   RSS, FD/thread counts, faults, switches, I/O; cgroup usage/lifetime peak/failcnt;
   host meminfo/vmstat/CPU counters and available PSI.
+- `remote-load.json`, raw remote requests/resources and `redis.json`: placement,
+  source/clock/hash proof, load resources, actual writes and completed forks.
 - `pressure.json`: atomic pressure commands, release and first-observed event
   times; events include target PIDs, provider duration, status and output limits.
 - `environment.json`, configs/logs/events, `executed-framework.tar.gz`, and
@@ -150,32 +210,42 @@ python3 integration/fault_isolation_framework/performance.py \
 acceptance is separately `NOT_EVALUATED`; no arbitrary universal overhead budget
 is installed. A short VM run cannot establish production throughput or p99 SLOs.
 
-## Current-worker execution stages
+## Execution stages and reference coverage
 
-1. Run `performance_smoke_matrix.json`: six cells, one randomized repeat per
-   cell, 3 s warmup, 4 s baseline, 12 s trigger, 4 s recovery, 20 requests/s per
-   business. These validate measurement and capture coverage, not performance
-   acceptance. Every requested pressure target must have a successful capture;
-   a subset of successful captures cannot validate a concurrent trial.
-2. Calibrate load with A/B controls, runtime warmup, observer cost and dispatch
-   lag. Use a separately reachable load machine for published overhead results.
-   The present 140 guests each use isolated QEMU NAT with the same guest IP;
-   the short campaign uses the explicitly recorded co-located client. An SSH
-   tunnel would add DUT CPU and must not be presented as an independent baseline.
-3. Run `performance_reference_matrix.json` with the default five independent
-   repeats and 60/30/30/30 s windows. At 40 requests/s each 30 s window has 1200
-   intended arrivals, enough for p99 only if the load and response checks pass.
-   This rate is a starting point for calibration, not a proven capacity.
-4. Compare C-B and C-A for residency, D-B and D-A under matched pressure. Report
-   CPU seconds, sampled RSS peak, actual target count/status/entries, target and
-   neighbor throughput and window tails. Retain failed cells and reasons.
-   Agree application-specific throughput/tail and resource budgets before
-   declaring performance acceptance. No universal percentage budget is assumed.
+1. Run short validation of idle, burst-one, burst-three, threshold-three and
+   both Redis-fork cells, one randomized repeat with 3/4/12/4 s windows.
+   These validate orchestration and capture coverage, not performance acceptance.
+   For memburst require every requested target and at most the configured
+   one/three selection slots in every raw event. For threshold require actual
+   successful eligible selections, consistent with one-container batch arbitration.
+2. Calibrate no-Agent A and disabled-feature B controls, runtime warmup,
+   observer cost, client CPU and dispatch lag. Infrastructure errors invalidate
+   controls as well as enabled trials. Preserve failures; repeat in a new output
+   directory only after recording the cause and environment change.
+3. Run `performance_reference_matrix.json`: 18 cells, five independent repeats,
+   randomized group order, 60 s warmup and 30 s baseline/trigger/recovery.
+   At 40 requests/s each 30 s window has 1200 intended arrivals per loaded target;
+   p99 remains unavailable when fewer than 1000 valid requests are present.
+   The matrix covers process scale/poll interval, listeners, one/three targets,
+   Go/Java/Python, headroom, top-k, timeout, Redis writes/fork and 40/80 rate cells.
+   Each case includes both an HTTP neighbor and a real Redis write neighbor;
+   fork cells additionally schedule BGSAVE every 10 s after warmup.
+4. Compare C-B/C-A for residency and D-B/D-A under matched pressure. Report CPU
+   seconds including reaped child CPU, sampled RSS peak, actual target count,
+   status/entries, target/neighbor throughput and window tails. Failed cells
+   remain visible and are excluded from valid paired cost conclusions.
+5. Keep calibration and formally repeated evidence separate. Preserve commands,
+   kernels, CPU/memory sizes, QEMU/network configuration and limits, runtime
+   versions, source and six-binary hashes. Rebuild and rerun all control groups
+   after an environment or kernel change; never combine incompatible baselines.
 
-The reference matrix varies one factor against its matching base cell: process
-scale and polling interval, listener scale, one/three pressure targets, runtime,
-container headroom and output/deadline limits. Top-k and timeout cells report
-actual status and truncation; they do not guarantee the fixture will hit the
-limit. A deadline failure is retained and excluded from successful-capture cost
-comparisons. Capacity sweeps and independent-host trials remain separate from
-short-cycle validation.
+Top-k/timeout cells report actual status and truncation; they do not guarantee
+this fixture hits a limit. Failed captures are retained. Agree workload-specific
+throughput/tail/resource budgets before declaring acceptance. The 40/80 cells
+are a small tested rate sweep, not maximum-capacity or production SLO proof.
+Long-duration reliability, injected failures, allocation/memory-bandwidth
+microbenchmarks, other runtime/kernel versions and real Kubernetes discovery
+are outside this performance matrix and must be reported separately.
+
+See [independent-load short validation](PERFORMANCE_COMPLETION_VALIDATION.md)
+for retained failures, calibration and actual Redis fork witnesses.

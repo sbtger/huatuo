@@ -116,7 +116,7 @@ def progress():
 
 threading.Thread(target=progress, daemon=True).start()
 threading.Thread(target=background, daemon=True).start()
-server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+server = ThreadingHTTPServer((os.environ.get("HUATUO_TEST_BIND", "127.0.0.1"), int(os.environ.get("HUATUO_TEST_PORT", "0"))), Handler)
 print(
     json.dumps(
         {

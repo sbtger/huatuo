@@ -6,7 +6,7 @@ from ..core.util import require, run
 from .http_probe import EXPECTED, request_http
 
 
-def launch_services(environment, output, languages, java_home, python, go_heap_mib=32):
+def launch_services(environment, output, languages, java_home, python, go_heap_mib=32, bind_host="127.0.0.1", port_base=0):
     output = Path(output)
     targets = []
     workloads = Path(__file__).parent / "services"
@@ -16,7 +16,7 @@ def launch_services(environment, output, languages, java_home, python, go_heap_m
         str(output / "java"),
         str(workloads / "SnapshotBusiness.java"),
     )
-    for language in languages:
+    for index, language in enumerate(languages):
         ctl = output / (language + "-control")
         ctl.mkdir()
         write_control(ctl / "target_mb", "0")
@@ -38,6 +38,7 @@ def launch_services(environment, output, languages, java_home, python, go_heap_m
             "-v",
             str(output / "java") + ":/classes:ro",
         ]
+        args += ["-e", "HUATUO_TEST_BIND="+bind_host, "-e", "HUATUO_TEST_PORT="+str(port_base+index if port_base else 0)]
         if language != "go":
             for root in ("/usr", "/lib", "/lib64"):
                 args += ["-v", root + ":" + root + ":ro"]

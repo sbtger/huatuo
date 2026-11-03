@@ -78,3 +78,20 @@ class IndependentProgressTest(unittest.TestCase):
         finally:
             p.terminate()
             p.communicate(timeout=5)
+
+
+class PerformanceListenerTest(unittest.TestCase):
+    def test_python_fixture_can_bind_a_requested_external_port(self):
+        import os,socket
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1",0));port=listener.getsockname()[1]
+        env=dict(os.environ,HUATUO_TEST_BIND="0.0.0.0",HUATUO_TEST_PORT=str(port))
+        process=subprocess.Popen([sys.executable,str(Path(__file__).parent/"workloads/services/python_service.py"),"1"],
+                                 env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        try:
+            ready=json.loads(process.stdout.readline())
+            self.assertEqual(ready["url"],"http://127.0.0.1:%d"%port)
+            with urllib.request.urlopen(ready["url"]+"/work",timeout=2) as response:
+                self.assertEqual(response.status,200)
+        finally:
+            process.terminate();process.communicate(timeout=5)

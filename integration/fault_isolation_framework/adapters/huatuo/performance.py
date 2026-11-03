@@ -9,10 +9,13 @@ import random
 import threading
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
+from ...environments.remote_load import RemoteLoad
+from ...workloads.performance_redis import RedisFixture
 
 from ...core.documents import read_documents
 from ...core.evidence import EvidenceStore
-from ...core.performance import experiment_groups, paired_comparisons, summarize_requests, strict_documents
+from ...core.performance import experiment_groups, paired_comparisons, summarize_requests, strict_documents, arrival_errors
 from ...core.util import require, run, wait_for, write_control
 from ...environments.docker import DockerEnvironment
 from ...environments.linux import ManagedProcess, identity
@@ -23,6 +26,7 @@ from ...workloads.performance_load import run_load
 from .agent import verify_build
 from .discovery import Discovery, parse_timestamp
 from .stability.adapter import StabilityAdapter
+from .stability.trigger import StabilityTrigger
 
 
 def capture_records(module, documents, target_pids, not_before=None, not_after=None):
@@ -47,8 +51,11 @@ def capture_records(module, documents, target_pids, not_before=None, not_after=N
     return result
 
 
-def captures_cover_targets(records, requested):
-    return bool(requested) and {r["pid"] for r in records} == set(requested) and all(r["successful"] for r in records)
+def captures_cover_targets(records, requested, module="memburst"):
+    selected={r["pid"] for r in records}
+    valid=bool(requested) and bool(selected) and selected <= set(requested) and all(r["successful"] for r in records)
+    # Threshold arbitrates one eligible container per batch, not every edge.
+    return valid and (module == "memory_threshold_snapshot" or selected == set(requested))
 
 
 def select_load_targets(targets, pressured, load_all=False):
@@ -57,7 +64,18 @@ def select_load_targets(targets, pressured, load_all=False):
             or t["id"].startswith("target-000-") or t["pid"] in selected]
 
 
+class PerformanceTrigger(StabilityTrigger):
+    def release_all(self):
+        for target in self.owner.targets:
+            if target.get("kind") != "redis":
+                self.release(target)
+
+
 class PerformanceAdapter(StabilityAdapter):
+    def __init__(self,args,evidence):
+        super().__init__(args,evidence)
+        self.trigger=PerformanceTrigger(self)
+
     def watch_targets(self):
         return [t for t in self.targets if t["role"] == "target"]
 
@@ -68,6 +86,7 @@ class PerformanceAdapter(StabilityAdapter):
         text = text.replace("RunTracingToolTimeout = 3", "RunTracingToolTimeout = %d" % self.a.capture_timeout)
         if self.tracer_name == "memburst":
             text = text.replace("Interval = 1\n", "Interval = %d\n" % self.a.poll_interval)
+            text = text.replace("DumpProcessMaxNum = 10", "DumpProcessMaxNum = %d" % self.a.burst_max_targets)
         return text
 
     def prepare(self):
@@ -78,16 +97,20 @@ class PerformanceAdapter(StabilityAdapter):
         self.discovery.start()
         self.server, self.api = self.discovery.server, self.environment.api
         self.targets, self.pressured, self.extra_processes = [], [], []
+        self.redis = None
+        external = bool(self.a.load_controller_url)
+        bind = "0.0.0.0" if external else "127.0.0.1"
+        width = len(self.a.languages.split(","))
         for copy in range(self.a.copies):
             directory = self.out/("target-%03d" % copy)
             directory.mkdir()
-            for target in launch_services(self.environment, directory, self.a.languages.split(","), self.a.java_home, self.a.python):
+            for target in launch_services(self.environment, directory, self.a.languages.split(","), self.a.java_home, self.a.python, bind_host=bind, port_base=self.a.service_port_base+copy*width if external else 0):
                 target.update(id="target-%03d-%s" % (copy, target["language"]), role="target")
                 self.targets.append(target)
                 self.discovery.register(target)
         directory = self.out/"neighbor"
         directory.mkdir()
-        for target in launch_services(self.environment, directory, ["go"], self.a.java_home, self.a.python, go_heap_mib=1):
+        for target in launch_services(self.environment, directory, ["go"], self.a.java_home, self.a.python, go_heap_mib=1, bind_host=bind, port_base=self.a.service_port_base+self.a.copies*width if external else 0):
             target.update(id="neighbor-go", role="neighbor")
             self.targets.append(target)
         for target in self.targets:
@@ -97,6 +120,10 @@ class PerformanceAdapter(StabilityAdapter):
             target["initial_state"] = json.loads(request_http(target["url"], "/txn?seq=1", True))
             require(target["initial_state"]["total"] == 13, "initial business transaction mismatch")
             self.evidence.register(target["id"]+"-business.log", "business_log")
+        if self.a.redis:
+            port = self.a.service_port_base+self.a.copies*width+1
+            self.redis = RedisFixture(self, port, bind)
+            self.targets.append(self.redis.target)
         selected = set(self.a.pressure_languages.split(","))
         self.pressured = [t for t in self.targets if t["role"] == "target" and t["language"] in selected][:self.a.pressure_targets]
         require(len(self.pressured) == self.a.pressure_targets, "not enough selected pressure targets")
@@ -116,7 +143,7 @@ class PerformanceAdapter(StabilityAdapter):
         manifest = json.loads((self.build/"build.json").read_text())
         manifest.update(performance_evaluated=True, claim="validation fixture; not production benchmark",
                         kernel=os.uname().release, machine=platform.machine(), cgroup="v1",
-                        cpu_count=os.cpu_count(), load_generator="co-located stdlib fixed-arrival",
+                        cpu_count=os.cpu_count(), load_generator="remote VM fixed-arrival" if external else "co-located stdlib fixed-arrival",
                         java=run(self.a.java_home+"/bin/java", "-version").stderr,
                         python=run(self.a.python, "--version").stdout,
                         targets=[{k:v for k,v in t.items() if k not in ("ctl", "cgroup")} for t in self.targets],
@@ -127,6 +154,11 @@ class PerformanceAdapter(StabilityAdapter):
 
     def cleanup(self):
         errors = []
+        if getattr(self, "redis", None):
+            try:
+                self.redis.close()
+            except Exception as exc:
+                errors.append(repr(exc))
         try:
             self.stop_agent(kill=True)
         except Exception as exc:
@@ -149,6 +181,8 @@ class PerformanceAdapter(StabilityAdapter):
                 errors.append(repr(exc))
         if hasattr(self, "discovery"):
             self.discovery.cleanup()
+        if getattr(self, "redis", None):
+            self.redis.save()
         require(not errors, "performance cleanup failed: "+"; ".join(errors))
 
 
@@ -163,8 +197,9 @@ def drive_pressure(owner, args, group, start, pressure, stop):
             for target in targets:
                 if stop.is_set():
                     break
-                command = dict(target=target["id"], mib=args.pressure_mib, time=time.monotonic(), epoch=time.time())
-                write_control(target["ctl"]/"target_mb", str(args.pressure_mib))
+                mib = args.driver_pressure_mib if owner.driver is not None and target["pid"] == owner.driver["pid"] else args.pressure_mib
+                command = dict(target=target["id"], mib=mib, time=time.monotonic(), epoch=time.time())
+                write_control(target["ctl"]/"target_mb", str(mib))
                 applied.append(target)
                 pressure["commands"].append(command)
         until, seen = start+args.warmup+args.baseline+args.hold, 0
@@ -189,7 +224,7 @@ def drive_pressure(owner, args, group, start, pressure, stop):
 def execute_trial(args, directory, group, repeat):
     evidence = EvidenceStore(directory)
     owner = PerformanceAdapter(args, evidence)
-    sampler, pressure_thread = None, None
+    sampler, pressure_thread, remote = None, None, None
     outcome = dict(group=group, repeat=repeat, valid=False, errors=[], metrics={})
     pressure = dict(commands=[], events=[], errors=[])
     control_stop = threading.Event()
@@ -202,14 +237,35 @@ def execute_trial(args, directory, group, repeat):
         evidence.register("requests.jsonl", "performance_requests", format="jsonl")
         evidence.register("pressure.json", "performance_pressure", format="json")
         duration = args.warmup+args.baseline+args.hold+args.recovery
-        start = time.monotonic()+.5
-        scheduled_epoch = time.time()+.5
+        if args.load_controller_url:
+            remote = RemoteLoad(args.load_controller_url, args.load_token_file, evidence.output, args.max_clock_error)
+            remote.calibrate()
+        lead = 3 if remote else .5
+        start = time.monotonic()+lead
+        scheduled_epoch = time.time()+lead
         sampler.start()
         pressure_thread = threading.Thread(target=drive_pressure, args=(owner, args, group, start, pressure, control_stop), daemon=True)
         pressure_thread.start()
         targets = [dict(id=t["id"], url=t["url"]) for t in owner.measurement_targets]
-        rows = run_load(targets, evidence.output/"requests.jsonl", args.qps, duration,
-                        args.workers, args.pending, expected=EXPECTED, start_at=scheduled_epoch, start_monotonic=start)
+        for t, original in zip(targets, owner.measurement_targets):
+            if original.get("kind") == "redis":
+                t.update(kind="redis", keys=args.redis_keys, value_bytes=args.redis_value_bytes)
+            if remote:
+                port=urlsplit(t["url"]).port
+                t["url"]=("redis" if t.get("kind")=="redis" else "http")+"://%s:%d"%(args.load_target_host,args.load_target_base_port+port-args.service_port_base)
+        if owner.redis:
+            owner.redis.start(start, duration)
+        if remote:
+            rows=remote.run(targets,args.qps,duration,args.workers,args.pending,EXPECTED,start)
+        else:
+            rows = run_load(targets, evidence.output/"requests.jsonl", args.qps, duration,
+                            args.workers, args.pending, expected=EXPECTED, start_at=scheduled_epoch, start_monotonic=start)
+        issues=arrival_errors(rows,{t["id"] for t in targets},args.qps,duration,start=start)
+        require(not issues,"load arrival protocol invalid: "+repr(issues))
+        outcome["arrival_protocol_verified"]=True
+        if owner.redis:
+            owner.redis.finish(rows)
+            outcome["redis"]=owner.redis.data
         pressure_thread.join(10)
         require(not pressure_thread.is_alive(), "pressure controller did not stop")
         sampler.close()
@@ -225,12 +281,19 @@ def execute_trial(args, directory, group, repeat):
                        trigger=(measured_start+args.baseline, measured_end-args.recovery),
                        recovery=(measured_end-args.recovery, measured_end))
         for name, (begin, end) in windows.items():
-            outcome["windows"][name] = dict(begin=begin, end=end, targets={})
+            window_resources=resource_metrics(sampler.rows,begin,end)
+            outcome["windows"][name] = dict(begin=begin, end=end, targets={}, resources=window_resources)
+            for key in ("cpu_seconds", "sampled_agent_tree_rss_peak_bytes"):
+                outcome["metrics"][name+"."+key]=window_resources[key]
             for target in targets:
-                chosen = [r for r in rows if r["target"] == target["id"] and begin <= r["scheduled"] < end]
+                chosen = [r for r in rows if r["target"] == target["id"] and begin <= start+r["ordinal"]/args.qps < end]
                 expected_count = sum(1 for n in range(math.ceil(duration*args.qps)) if begin <= start+n/args.qps < end)
                 stats = summarize_requests(chosen, expected_count, end-begin, args.max_dispatch_lag)
                 outcome["windows"][name]["targets"][target["id"]] = stats
+                prefix=target["id"]+"."+name+"."
+                outcome["metrics"].update({prefix+"rps":stats["success_rps"], prefix+"p95_ms":stats["latency_ms"]["p95"],
+                                          prefix+"p99_ms":stats["latency_ms"]["p99"],prefix+"max_ms":stats["latency_ms"]["max"],
+                                          prefix+"errors":stats["errors"]})
                 if name == "measured":
                     outcome["load"][target["id"]] = stats
                     outcome["metrics"][target["id"]+".rps"] = stats["success_rps"]
@@ -242,6 +305,8 @@ def execute_trial(args, directory, group, repeat):
         for target in owner.targets:
             require(identity(target["pid"]) == target["identity"], "business process changed")
             require((target["cgroup"]/"memory.failcnt").read_text().strip() == target["oom_before"], "business memory allocation hit limit")
+            if target.get("kind") == "redis":
+                continue
             require(request_http(target["url"], "/work") == EXPECTED, "business checksum mismatch")
             state = json.loads(request_http(target["url"], "/txn?seq=2", True))
             require(state["seq"] == 2 and state["total"] == 39 and state["ticks"] > target["initial_state"]["ticks"], "business state/progress mismatch")
@@ -259,6 +324,8 @@ def execute_trial(args, directory, group, repeat):
         all_records = capture_records(args.module, documents, {t["pid"] for t in owner.targets})
         neighbor_pids = {t["pid"] for t in owner.targets if t["role"] == "neighbor"}
         neighbor_selected = any(r["pid"] in neighbor_pids for r in all_records)
+        outcome["selection_policy"] = "one eligible container per admitted batch" if args.module == "memory_threshold_snapshot" else "RSS ranking with configured target limit"
+        outcome["actual_unique_business_targets"] = len({r["pid"] for r in all_records})
         outcome.update(captures=records, all_business_captures=all_records, neighbor_selected=neighbor_selected, persisted_events=len(documents),
                        selected_pids=sorted(set(r["pid"] for r in records)),
                        requested_target_pids=[t["pid"] for t in owner.pressured],
@@ -271,8 +338,10 @@ def execute_trial(args, directory, group, repeat):
                 peaks = [int(r["cgroups"][target["id"]]["memory.usage_in_bytes"]) for r in sampler.rows if target["id"] in r.get("cgroups", {})]
                 require(max(peaks, default=0) >= args.pressure_mib*.85*(1<<20), "requested pressure was not observed")
         if group == "D":
+            if args.module == "memburst":
+                require(all(len(d.get("tracer_data",{}).get("process_snapshots",[]))<=args.burst_max_targets for d in documents), "snapshot count exceeds configured memburst target limit")
             require(not neighbor_selected, "neighbor was selected for collection; cannot claim uncollected-neighbor impact")
-            require(captures_cover_targets(records, {t["pid"] for t in owner.pressured}), "missing or failed requested-target capture; never score incomplete collection as cheap success")
+            require(captures_cover_targets(records, {t["pid"] for t in owner.pressured}, args.module), "missing or failed requested-target capture; never score incomplete collection as cheap success")
         else:
             require(not documents, "unexpected capture in non-trigger control")
         outcome["valid"] = not outcome["errors"]
@@ -280,6 +349,11 @@ def execute_trial(args, directory, group, repeat):
         outcome["errors"].append(repr(exc))
     finally:
         control_stop.set()
+        if remote is not None:
+            try:
+                remote.cancel()
+            except Exception as exc:
+                outcome["errors"].append("remote cleanup: "+repr(exc))
         if pressure_thread and pressure_thread.is_alive():
             pressure_thread.join(5)
             if pressure_thread.is_alive():
@@ -294,6 +368,12 @@ def execute_trial(args, directory, group, repeat):
         except Exception as exc:
             outcome["errors"].append(repr(exc))
         outcome["valid"] = outcome["valid"] and not outcome["errors"]
+        if remote is not None:
+            for name in ("remote-requests.jsonl", "remote-load-resources.jsonl", "remote-load.json"):
+                if (evidence.output/name).exists():
+                    evidence.register(name, "remote_load", format="jsonl" if name.endswith("jsonl") else "json")
+        if sampler and not (evidence.output/"requests.jsonl").exists():
+            (evidence.output/"requests.jsonl").touch()
         (evidence.output/"pressure.json").write_text(json.dumps(pressure, indent=2)+"\n")
         evidence.save(outcome)
     return outcome
@@ -333,15 +413,20 @@ def report(output):
                    valid_trials=sum(t["valid"] for t in trials), total_trials=len(trials), supervisor=supervisor)
     (output/"analysis.json").write_text(json.dumps(summary, indent=2)+"\n")
     text = ["# Memory snapshot performance validation", "", "Status: "+status,
-            "", "Performance acceptance: NOT_EVALUATED. Co-located validation fixture; no production SLO claim.",
+            "", "Performance acceptance: NOT_EVALUATED. Fixed-arrival fixture; no production SLO claim.",
             "", "Module: `%s`; experiment: `%s`; repeats: %d." % (config["module"], config["experiment"], config["repeats"]),
+            "", "Load placement: "+("remote VM" if config.get("load_controller_url") else "co-located")+". Redis: "+str(config.get("redis", False))+".",
+            "", "Threshold chooses one eligible container per batch; multiple pressure edges are not assumed parallel captures.",
             "", "| Trial | Valid | Captures | Errors |", "|---|---|---:|---|"]
     for t in trials:
         text.append("| %s | %s | %d | %s |" % (t["directory"], t["valid"], len(t.get("captures", [])), "; ".join(t["errors"]).replace("|", "/")))
-    text += ["", "## Paired absolute deltas", "", "Only valid pairs; p99 needs >=1000 requests per target/window.", "", "| Comparison | Metric | Median delta | Min | Max | Pairs |", "|---|---|---:|---:|---:|---:|"]
+    text += ["", "## Paired absolute deltas", "", "Only valid pairs; p99 needs >=1000 requests per target/window.", "", "| Comparison | Metric | Median delta | Median paired change % | Min | Max | Pairs |", "|---|---|---:|---:|---:|---:|---:|"]
     for comparison in comparisons:
         for key, value in comparison["absolute_delta"].items():
-            text.append("| %s−%s | %s | %.6g | %.6g | %.6g | %d |" % (comparison["enabled"], comparison["baseline"], key, value["median"], value["min"], value["max"], value["n"]))
+            import statistics
+            changes=[p["delta"][key]["percent"] for p in comparison["pairs"] if key in p["delta"] and p["delta"][key]["percent"] is not None]
+            percent="%.6g"%statistics.median(changes) if changes else "N/A (zero baseline)"
+            text.append("| %s−%s | %s | %.6g | %s | %.6g | %.6g | %d |" % (comparison["enabled"], comparison["baseline"], key, value["median"], percent, value["min"], value["max"], value["n"]))
     text += ["", "CPU is Agent self plus waited-child delta; child CPU is attributed at reap. Live/unreaped children at window boundaries are excluded; sampled-tree CPU is separate.",
              "RSS is a sampled simultaneous sum, not unique physical memory or an exact peak.",
              "Raw per-target latency, pressure commands, events, host PSI and cgroup observations are retained per trial.",

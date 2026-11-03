@@ -10,16 +10,22 @@ import concurrent.futures
 import json
 import math
 import threading
+import sys
 import time
 import urllib.request
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from fault_isolation_framework.workloads.redis_protocol import load_request as redis_load, payload as redis_payload
 
 
 def run_load(targets, output, qps, duration, workers=16, pending=64,
-             expected=None, start_at=None, timeout=2, start_monotonic=None):
+             expected=None, start_at=None, timeout=2, start_monotonic=None, stop=None):
     if qps <= 0 or duration <= 0 or workers < 1 or pending < 1 or not targets:
         raise ValueError("load requires positive rate/duration/capacity and targets")
     # Each target owns capacity, so a slow target cannot starve its neighbor.
+    for t in targets:
+        if t.get("kind") == "redis":
+            t["_payload"] = redis_payload(t.get("value_bytes", 65536))
     gates = {t["id"]: threading.BoundedSemaphore(pending) for t in targets}
     rows, lock = [], threading.Lock()
     start = start_monotonic if start_monotonic is not None else time.monotonic() + max(0, (start_at or time.time())-time.time())
@@ -32,12 +38,19 @@ def run_load(targets, output, qps, duration, workers=16, pending=64,
                 stream.flush()
 
         def work(target, row):
-            row["sent"] = time.monotonic()
             try:
-                with urllib.request.urlopen(target["url"]+"/work", timeout=timeout) as response:
-                    body = response.read(4097)
-                    if response.status != 200 or (expected is not None and body != expected):
-                        raise ValueError("HTTP status/body mismatch")
+                if stop is not None and stop.is_set():
+                    row.update(error="load cancelled before send", load_invalid=True)
+                    return
+                row["sent"] = time.monotonic()
+                if target.get("kind") == "redis":
+                    row["redis_counter"] = redis_load(target, row["ordinal"], timeout)
+                else:
+                    with urllib.request.urlopen(target["url"]+"/work", timeout=timeout) as response:
+                        body = response.read(4097)
+                        wanted = target.get("_expected", expected)
+                        if response.status != 200 or (wanted is not None and body != wanted):
+                            raise ValueError("HTTP status/body mismatch")
                 row["ok"] = True
             except Exception as exc:
                 row.update(ok=False, error=repr(exc))
@@ -49,8 +62,14 @@ def run_load(targets, output, qps, duration, workers=16, pending=64,
         try:
             for ordinal in range(math.ceil(duration*qps)):
                 due = start + ordinal/qps
-                time.sleep(max(0, due-time.monotonic()))
+                delay=max(0, due-time.monotonic())
+                if stop is not None:
+                    if stop.wait(delay):break
+                else:
+                    time.sleep(delay)
                 for target in targets:
+                    if stop is not None and stop.is_set():
+                        break
                     now = time.monotonic()
                     row = dict(target=target["id"], ordinal=ordinal, scheduled=due,
                                epoch_scheduled=time.time()+(due-now), dispatch_lag=now-due,

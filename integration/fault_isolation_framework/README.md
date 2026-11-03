@@ -226,6 +226,9 @@ The separate opt-in [performance plan](PERFORMANCE_PLAN.md) adds plain-Agent
 idle and matched-pressure comparisons for memburst and threshold snapshots.
 See the [short validation](PERFORMANCE_VALIDATION.md) and
 [structured results](PERFORMANCE_RESULTS.json).
+The performance suite also supports a separate authenticated load VM and a real
+Redis write/BGSAVE neighbor; its 18-cell reference matrix retains selection,
+clock, raw-load and fork evidence. See the plan for deployment and calibration.
 Run `performance.py --help` for individual experiments and
 `performance_matrix.py --help` for explicit sequential matrices/rate sweeps.
 Raw requests, process/cgroup observations, real capture events and source hashes

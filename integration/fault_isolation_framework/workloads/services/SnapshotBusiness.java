@@ -50,7 +50,7 @@ public class SnapshotBusiness {
         });background.setDaemon(true);background.start();
         Thread progress=new Thread(()->{for(;;){ticks.incrementAndGet();try{Thread.sleep(100);}catch(InterruptedException e){return;}}});
         progress.setDaemon(true);progress.start();
-        HttpServer server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),64);
+        HttpServer server=HttpServer.create(new InetSocketAddress(System.getenv().getOrDefault("HUATUO_TEST_BIND","127.0.0.1"),Integer.parseInt(System.getenv().getOrDefault("HUATUO_TEST_PORT","0"))),64);
         server.setExecutor(Executors.newFixedThreadPool(16));
         server.createContext("/state",exchange->{byte[] body=state().getBytes(StandardCharsets.UTF_8);exchange.sendResponseHeaders(200,body.length);exchange.getResponseBody().write(body);exchange.close();});
         server.createContext("/txn",exchange->{
