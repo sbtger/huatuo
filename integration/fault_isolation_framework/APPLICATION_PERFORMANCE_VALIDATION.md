@@ -86,3 +86,59 @@ source archive and manifests remain retained. The earlier failed 5s probe
 attempt remains separate; its fix changed only the probe throughput gate.
 Final supervisor exit was 0 with no cleanup errors, Docker was empty,
 and the campaign unit was inactive. No subsequent experiment was launched.
+
+## Continuous-job repeat with matched arrivals
+
+A separate single-job repeat used source
+`30232b03ef2e102a3f3d37c082746dee45c1937c` (framework identity
+`c2bf2c89a5626ae7400fdbc7af20a834feacb2ca7541b25c312e3c40b8fd7b17`).
+Only raw retention and its exact native epoch anchor changed; the pacer,
+Lua oracle, business, Agent and provider bytes were unchanged.
+One wrk2 process (load PID 179093, job
+`19df68da70664929bf45f762fa3adf76`) served one target
+(PID 354593, start ticks 2679647) continuously:
+60s warmup, 60s idle **B′**, 60s **C**, 60s recovery **R**.
+The original 721 RPS, seed, object count, fill recipe and logical digest
+were retained. This does not replace the earlier cross-process B/C pair.
+
+Full measured-phase raw coverage matched HDR counts exactly:
+
+| Observation | B′ idle baseline | C phase | R recovery |
+|---|---:|---:|---:|
+| Raw / HDR response count | 43,263 / 43,263 | 43,259 / 43,259 | 43,267 / 43,267 |
+| Planned sliding max, 1 / 5 / 10 ms | 2 / 5 / 9 | 2 / 5 / 9 | 2 / 5 / 9 |
+| Success cohort RPS | 721.050 | 720.983 | 721.117 |
+| P99 ms | 7.119 | 6.439 | 6.355 |
+| P999 ms | 57.343 | 11.255 | 11.135 |
+| Business target CPU s | 34.030 | 34.360 | 34.310 |
+| Collector CPU s | 1.340 | 1.210 | 1.320 |
+| GC completed collections increment | 1 | 0 | 0 |
+| GC callback wall ms increment | 76.958 | 0 | 0 |
+| GC collecting-thread CPU ms increment | 76.943 | 0 | 0 |
+
+Using one global native epoch origin, folded connection phases
+(period 128,000,000/721 microseconds) differed from B′ by total variation
+0.000112 in C and 0.000090 in R. No measured ordinal was duplicated.
+The complete job checked all 173,053 response bodies; its 132,677 raw
+records include the measured phases and trace margins. Business quality,
+measurement protocol and the declared arrival-matching check passed.
+Frozen pre-capture pressure was 58.6072%, normal GC remained enabled,
+and no business error, timeout, OOM or charge failure was observed.
+
+**The actual snapshot failed**, so this repeat cannot measure normal
+snapshot performance. At 11:52:54.590 UTC it returned
+`CPython interpreter GC generations are invalid`, no object entries,
+2 ms provider duration and 26.2 ms full wall duration. These low costs
+are failed-call observations, not a cheap successful snapshot. No retry
+replaced the failure. Zero completed GC increments in C does not establish
+the instantaneous callback state during those 26 ms; generation head/link
+values were not retained, and the failure cause is not proven.
+
+Overall capture validity was false, while evidence audit passed
+(47 files) and cleanup had no errors. The authoritative output is
+`/data/huatuo-performance/application-c2bf2c89a562/run-fastapi-matched60-01`:
+`results.json`, `arrival-shape.json`, `audit.json`, the full helper result,
+and `failure-diagnosis/` retain the outcome and read-only process evidence.
+The latter records the actual CPython 3.12.3 executable and mapped
+libpython hashes after failure while that same target was alive.
+No further experiment or collector invocation was started.
