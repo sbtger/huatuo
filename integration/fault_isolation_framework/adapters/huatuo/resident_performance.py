@@ -73,11 +73,12 @@ def memory_window(rows,begin,end,target_id):
 
 
 class ResidentAdapter(PerformanceAdapter):
+    workload_factory=ResidentKV
     def prepare(self,group):
-        verify_build(self.build);self.group=group;self.extra_processes=[];self.redis=None;self.targets=[];self.snapshot_helper=None
+        verify_build(self.build);self.group=group;self.extra_processes=[];self.redis=None;self.targets=[];self.snapshot_helper=None;self.helper_process=None;self.scope_directories=[];self.memory_scopes={}
         self.environment=DockerEnvironment(self.out);self.environment.build_image(self.build/'business-go')
         self.discovery=Discovery(self.environment.driver);self.discovery.start();self.server,self.api=self.discovery.server,self.environment.api
-        self.kv=ResidentKV(self,self.a.resident_language);self.targets=[self.kv.start()];self.measurement_targets=self.targets;self.pressured=self.targets;self.driver=None
+        self.kv=self.workload_factory(self,self.a.resident_language);self.targets=[self.kv.start()];self.measurement_targets=self.targets;self.pressured=self.targets;self.driver=None
         self.discovery.register(self.targets[0]);self.memory_scopes={};self.scope_directories=[]
         memory_path=next(line.split(':',2)[2] for line in Path('/proc/self/cgroup').read_text().splitlines() if 'memory' in line.split(':')[1].split(','))
         self.memory_scopes['observer_parent']=self.environment.mount/memory_path.lstrip('/')
@@ -109,7 +110,7 @@ class ResidentAdapter(PerformanceAdapter):
 
     def cleanup(self):
         errors=[]
-        for operation in [lambda:self.stop_agent(kill=True),lambda:self.helper_process.stop() if self.helper_process else None]:
+        for operation in [lambda:self.stop_agent(kill=True),lambda:self.helper_process.stop() if getattr(self,'helper_process',None) else None]:
             try:operation()
             except Exception as exc:errors.append(repr(exc))
         if hasattr(self,'worker_root') and self.worker_root.exists():
@@ -122,8 +123,12 @@ class ResidentAdapter(PerformanceAdapter):
             try:scope.rmdir()
             except Exception as exc:errors.append(repr(exc))
         if hasattr(self,'environment'):
-            for target in self.targets:
-                log=run('docker','logs',target['cid'],check=False);(self.out/'business.log').write_text(log.stdout+log.stderr)
+            for index,cid in enumerate(self.environment.containers):
+                try:
+                    log=run('docker','logs',cid,check=False)
+                    name='business.log' if len(self.environment.containers)==1 else 'business-%d.log'%index
+                    (self.out/name).write_text(log.stdout+log.stderr)
+                except Exception as exc:errors.append('owned container log preservation: '+repr(exc))
             try:self.environment.cleanup([])
             except Exception as exc:errors.append(repr(exc))
         if hasattr(self,'discovery'):self.discovery.cleanup()

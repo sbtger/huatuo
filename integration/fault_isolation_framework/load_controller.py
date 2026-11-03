@@ -9,6 +9,7 @@ import json
 import math
 import os
 import resource
+import shutil
 import sys
 import threading
 import time
@@ -20,6 +21,7 @@ from urllib.parse import urlsplit
 sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
 from fault_isolation_framework.workloads.performance_load import run_load
 from fault_isolation_framework.workloads.native_tools import validate_native, run_native
+from fault_isolation_framework.workloads.application_tools import validate_application, run_application
 
 
 def sha256(path):
@@ -42,7 +44,7 @@ def tool_hash(path):
 
 def driver_hashes():
     root=Path(__file__).resolve().parent
-    return {name:sha256(root/name) for name in ('load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py','workloads/native_tools.py','workloads/resident_protocol.py')}
+    return {name:sha256(root/name) for name in ('load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py','workloads/native_tools.py','workloads/resident_protocol.py','workloads/application_tools.py','workloads/application_protocol.py')}
 
 
 def usage():
@@ -63,6 +65,8 @@ class JobManager:
         self.native_tool_hashes={name:tool_hash(path) for name,path in self.native_tools.items()}
 
     def validate(self,spec):
+        if 'application' in spec:
+            validate_application(spec,self.target_host,self.ports);return
         if 'native' in spec:
             validate_native(spec,self.target_host,self.ports);return
         targets=spec.get('targets',[])
@@ -92,6 +96,7 @@ class JobManager:
 
     def start(self,spec):
         self.validate(spec)
+        if ('application' in spec or 'native' in spec) and shutil.disk_usage(self.root).free<1<<30:raise ValueError('native job requires1GiBfree for bounded512MiBoutput plus reserve')
         with self.lock:
             if any(not j.get('sealed') for j in self.jobs.values()):raise ValueError('another load job is active')
             if sum(not j.get('acked') for j in self.jobs.values())>=4:raise ValueError('unacknowledged artifacts require collection')
@@ -110,6 +115,8 @@ class JobManager:
         def observe():
             next_sample=0
             while not job['done'].wait(.05):
+                if ('application' in spec or 'native' in spec) and sum(path.stat().st_size for path in directory.iterdir() if path.is_file())>512<<20:
+                    job['meta']['error']='native output exceeded512MiB per-job budget';stop.set()
                 if time.monotonic()-job['last_seen']>self.lease_seconds:
                     lease_expired.set();stop.set()
                 if time.monotonic()>=next_sample:
@@ -118,11 +125,14 @@ class JobManager:
         watcher=threading.Thread(target=observe,daemon=True)
         before=usage();stream.write(json.dumps(before)+'\n');watcher.start()
         try:
-            if 'native' in spec:
+            if 'native' in spec or 'application' in spec:
                 for name,expected in self.native_tool_hashes.items():
                     if tool_hash(self.native_tools[name])!=expected:raise ValueError('native tool changed since controller start: '+name)
-                result=run_native(spec,directory,stop,self.native_tools)
-                job['meta'].update(state='cancelled' if stop.is_set() else ('finished' if result['valid'] else 'failed'),native=result)
+                runner=run_application if 'application' in spec else run_native
+                result=runner(spec,directory,stop,self.native_tools)
+                job['meta'].update(state='cancelled' if stop.is_set() else ('finished' if result['valid'] else 'failed'),
+                                   native={key:result[key] for key in ('kind','valid','errors','method') if key in result},
+                                   result_artifact='application-result.json' if 'application' in spec else 'native-result.json')
                 return
             targets=[dict(t) for t in spec['targets']]
             for t in targets:
@@ -142,6 +152,25 @@ class JobManager:
                                files={p.name:dict(sha256=sha256(p),bytes=p.stat().st_size) for p in directory.iterdir() if p.is_file() and p.name not in ('job.json','request.json')})
             (directory/'job.json').write_text(json.dumps(job['meta'],indent=2)+'\n')
             job['sealed']=True
+
+    def ack(self,ident,files):
+        with self.lock:
+            if ident not in self.jobs:raise KeyError('unknown job')
+            job=self.jobs[ident];meta=job['meta']
+            if not job.get('sealed') or files!=meta.get('files'):raise ValueError('artifact hashes must be acknowledged')
+            for name in files:
+                path=job['root']/name
+                if Path(name).name!=name or path.is_symlink():raise ValueError('unsafe owned artifact path')
+            for name in files:(job['root']/name).unlink(missing_ok=True)
+            job['acked']=True
+            acknowledged=[key for key,value in self.jobs.items() if value.get('acked')]
+            for key in acknowledged[:-64]:
+                old=self.jobs.pop(key);directory=old['root']
+                entries=list(directory.iterdir())
+                if all(path.name in ('job.json','request.json') and path.is_file() and not path.is_symlink() for path in entries):
+                    for path in entries:path.unlink()
+                    directory.rmdir()
+            return dict(acked=True)
 
     def get(self,ident):
         with self.lock:
@@ -196,9 +225,7 @@ def create_server(address,root,token,target_host,ports,lease_seconds=10,native_t
                 if parts[2]=='cancel':
                     job['stop'].set();return self.reply(200,dict(cancelled=True))
                 if parts[2]=='ack':
-                    if not job.get('sealed') or body.get('files')!=meta.get('files'):raise ValueError('artifact hashes must be acknowledged')
-                    for name in meta['files']:(job['root']/name).unlink(missing_ok=True)
-                    job['acked']=True;return self.reply(200,dict(acked=True))
+                    return self.reply(200,manager.ack(parts[1],body.get('files')))
                 raise KeyError('unknown route')
             except KeyError as exc:self.reply(404,dict(error=str(exc)))
             except (OSError,TypeError,ValueError) as exc:self.reply(400,dict(error=str(exc)))
@@ -215,7 +242,7 @@ def main():
     a=p.parse_args();token=Path(a.token_file).read_text().strip()
     if len(token)<32:p.error('use a random token of at least32 characters')
     native_tools=json.loads(Path(a.native_tools).read_text()) if a.native_tools else {}
-    if set(native_tools)-{'benchmark','kafka','wrk2'}:p.error('unsupported native tool mapping')
+    if set(native_tools)-{'benchmark','kafka','wrk2','wrk2_measured','cache_lua','etcd_sdk','wrk2_build_proof','cache_recipe','etcd_sdk_build_proof'}:p.error('unsupported native tool mapping')
     server=create_server((a.bind,a.port),a.output,token,a.target_host,range(a.port_start,a.port_start+a.port_count),native_tools=native_tools)
     try:server.serve_forever()
     finally:

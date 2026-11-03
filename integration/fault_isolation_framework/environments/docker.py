@@ -38,17 +38,17 @@ class DockerEnvironment:
 
         own("image", self.image)
 
-    def launch(self, args, command):
+    def launch(self, args, command, retain_exit_logs=False):
         cid = run(
             *(
                 [
                     "docker",
                     "run",
                     "-d",
-                    "--rm",
                     "--name",
                     "fault-isolation-" + uuid.uuid4().hex[:8],
                 ]
+                + ([] if retain_exit_logs else ["--rm"])
                 + args
                 + [self.image]
                 + command

@@ -184,3 +184,32 @@ class ResidentPressureCLITest(unittest.TestCase):
         self.assertTrue(all(sorted(row['groups'])==['A','B','C'] for row in json.loads(result.stdout)['schedule']))
         bad=subprocess.run(command+['--pressure-levels','95'],capture_output=True,text=True)
         self.assertEqual(bad.returncode,2)
+
+class ApplicationPlanTest(unittest.TestCase):
+    def test_real_application_plan_defaults_to_one_round_without_starting_jobs(self):
+        from fault_isolation_framework.application_performance import parser,plan
+        args=parser().parse_args(['--application','spring','--output','/unused','--plan'])
+        result=plan(args)
+        self.assertEqual(result['groups'],['B','C'])
+        self.assertEqual(result['repeats'],1)
+        self.assertEqual(result['scenarios'],[{'pressure_percent':60,'load':'normal'},{'pressure_percent':90,'load':'normal'},{'pressure_percent':90,'load':'high'}])
+        self.assertEqual(result['captures_per_C'],1)
+        self.assertGreaterEqual(result['phase_seconds']['baseline'],60)
+        with self.assertRaises(ValueError):plan(parser().parse_args(['--application','spring','--output','/unused','--repeats','5']))
+
+class ApplicationBudgetTest(unittest.TestCase):
+    def test_invalid_native_measurement_budgets_fail_before_any_VM_work(self):
+        from fault_isolation_framework.application_performance import parser,plan
+        for option,value in [('--business-cpus','-1'),('--business-cpus','nan'),('--memory-limit-mib','-1'),('--sample-interval','0'),('--capture-timeout','4'),('--warmup','inf'),('--workers','0')]:
+            with self.subTest(option=option,value=value):
+                args=parser().parse_args(['--application','spring','--output','/unused',option,value])
+                with self.assertRaises(ValueError):plan(args)
+
+
+class ApplicationDiagnosticPlanTest(unittest.TestCase):
+    def test_diagnostic_only_default_all_never_reuses_directory_for_ninety_percent(self):
+        from fault_isolation_framework.application_performance import parser,plan
+        result=plan(parser().parse_args(['--application','fastapi','--output','/unused','--diagnostic-only']))
+        self.assertEqual(result['scenarios'],[dict(pressure_percent=60,load='normal')])
+        self.assertEqual(result['captures_per_C'],0)
+        self.assertNotIn('C',result['groups'])

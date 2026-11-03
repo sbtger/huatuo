@@ -827,3 +827,105 @@ class ResidentReplayPreflightTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'three predetermined'):bounded_replay_calibration(plan,replay,rounds.append)
         self.assertEqual(calls,[(r,i) for r in range(3) for i in range(2)])
         self.assertEqual(len(rounds),3)
+
+class ApplicationControllerTest(unittest.TestCase):
+    def test_typed_application_job_uses_native_budget_not_legacy_row_cap(self):
+        from fault_isolation_framework.load_controller import JobManager
+        import time
+        with tempfile.TemporaryDirectory() as tmp:
+            manager=JobManager(tmp,'10.0.2.2',[40000],10)
+            job=dict(application='cache',url='http://10.0.2.2:40000',rate=10000,duration=210,
+                     start_monotonic=time.monotonic()+3,records=100000,seed=923,connections=64,
+                     warmup=30,baseline=60,hold=60,trace_margin=4,diagnostic=False)
+            manager.validate(job)
+            with self.assertRaises(ValueError):manager.validate(dict(job,command=['sh']))
+
+class ApplicationCPUQuotaTest(unittest.TestCase):
+    def test_cpu_quota_throttle_units_and_missing_counters_are_explicit(self):
+        from fault_isolation_framework.workloads.application_workloads import read_cpu_scope
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)
+            empty=read_cpu_scope(path)
+            self.assertIsNone(empty['throttled_seconds']);self.assertIsNone(empty['cpu_seconds'])
+            (path/'cpu.stat').write_text('nr_periods 100\nnr_throttled 7\nthrottled_time 9000000\n')
+            (path/'cpuacct.usage').write_text('2500000000\n')
+            (path/'cpu.cfs_quota_us').write_text('400000\n');(path/'cpu.cfs_period_us').write_text('100000\n')
+            measured=read_cpu_scope(path)
+            self.assertEqual(measured['quota_cores'],4);self.assertEqual(measured['cpu_seconds'],2.5)
+            self.assertEqual(measured['throttled_seconds'],.009)
+            self.assertEqual(measured['throttled_periods'],7)
+
+class ApplicationStartupFailureTest(unittest.TestCase):
+    def test_prepare_failure_still_preserves_owned_container_logs_and_cleans(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from fault_isolation_framework.adapters.huatuo.resident_performance import ResidentAdapter
+        with tempfile.TemporaryDirectory() as tmp:
+            calls=[];owner=ResidentAdapter.__new__(ResidentAdapter);owner.out=Path(tmp);owner.targets=[]
+            owner.stop_agent=lambda **_:calls.append('agent')
+            owner.environment=SimpleNamespace(containers=['owned-startup-failure'],cleanup=lambda _:calls.append('container'))
+            owner.discovery=SimpleNamespace(cleanup=lambda:calls.append('discovery'))
+            result=SimpleNamespace(stdout='{"application_launch":true}\n',stderr='Tomcat startup failed: missing writable tempdir\n')
+            with patch('fault_isolation_framework.adapters.huatuo.resident_performance.run',return_value=result):owner.cleanup()
+            self.assertIn('Tomcat startup failed',(owner.out/'business.log').read_text())
+            self.assertEqual(calls,['agent','container','discovery'])
+
+class ApplicationArtifactRetentionTest(unittest.TestCase):
+    def test_large_histograms_are_artifacts_not_bounded_status_JSON(self):
+        from unittest.mock import patch
+        from fault_isolation_framework.load_controller import JobManager
+        import time
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);manager=JobManager(root,'127.0.0.1',[12345],10)
+            spec=dict(application='cache',url='http://127.0.0.1:12345',rate=100,duration=20,start_monotonic=time.monotonic(),records=1024,seed=923,connections=16,warmup=5,baseline=5,hold=5,trace_margin=4,diagnostic=False)
+            def execute(spec,path,*_):
+                result=dict(kind='cache',valid=True,errors=[],histograms={'large':'x'*(2<<20)})
+                (path/'application-result.json').write_text(json.dumps(result));return result
+            with patch('fault_isolation_framework.load_controller.run_application',execute):
+                ident=manager.start(spec)['id']
+                while not manager.jobs[ident].get('sealed'):time.sleep(.001)
+            _,meta=manager.get(ident)
+            self.assertLess(len(json.dumps(meta)),10000)
+            self.assertEqual(meta['result_artifact'],'application-result.json')
+            self.assertGreater(meta['files']['application-result.json']['bytes'],2<<20)
+
+    def test_280_verified_ACKs_bound_metadata_without_pruning_unacked_jobs(self):
+        from unittest.mock import patch
+        from fault_isolation_framework.load_controller import JobManager
+        import time
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);manager=JobManager(root,'127.0.0.1',[12345],10)
+            def execute(spec,path,*_):
+                result=dict(kind='cache',valid=True,errors=[])
+                (path/'application-result.json').write_text(json.dumps(result));return result
+            with patch('fault_isolation_framework.load_controller.run_application',execute):
+                for index in range(281):
+                    spec=dict(application='cache',url='http://127.0.0.1:12345',rate=100,duration=20,start_monotonic=time.monotonic(),records=1024,seed=923,connections=16,warmup=5,baseline=5,hold=5,trace_margin=4,diagnostic=False)
+                    ident=manager.start(spec)['id']
+                    while not manager.jobs[ident].get('sealed'):time.sleep(.001)
+                    job,meta=manager.get(ident)
+                    if index<280:manager.ack(ident,meta['files'])
+                self.assertEqual(len(manager.jobs),65)
+                self.assertIn(ident,manager.jobs);self.assertFalse(job.get('acked',False))
+                self.assertEqual(sum(not row.get('acked',False) for row in manager.jobs.values()),1)
+
+class ApplicationOwnedDBTest(unittest.TestCase):
+    def test_success_removes_only_verified_owned_DB_and_failure_preserves_it(self):
+        from types import SimpleNamespace
+        from fault_isolation_framework.workloads.application_workloads import finish_owned_database
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);directory=root/('a'*32);directory.mkdir();output=root/'evidence';output.mkdir()
+            marker=dict(token='a'*32,output=str(output));(directory/'.huatuo-owned.json').write_text(json.dumps(marker));(directory/'data').write_bytes(b'database')
+            finish_owned_database(directory,marker,output,False,'digest')
+            self.assertTrue((directory/'data').exists())
+            finish_owned_database(directory,marker,output,True,'digest')
+            self.assertFalse(directory.exists())
+            self.assertFalse(json.loads((output/'business-data-lifecycle.json').read_text())['retained'])
+
+    def test_owned_DB_cleanup_refuses_changed_marker(self):
+        from fault_isolation_framework.workloads.application_workloads import finish_owned_database
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);directory=root/('b'*32);directory.mkdir();output=root/'evidence';output.mkdir()
+            marker=dict(token='b'*32,output=str(output));(directory/'.huatuo-owned.json').write_text(json.dumps(dict(marker,token='someoneelse')))
+            with self.assertRaises(ValueError):finish_owned_database(directory,marker,output,True,'digest')
+            self.assertTrue(directory.exists())

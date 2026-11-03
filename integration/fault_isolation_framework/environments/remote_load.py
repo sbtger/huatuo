@@ -32,7 +32,7 @@ class RemoteLoad:
         if best['rtt']/2>self.max_clock_error:
             (self.output/'clock-rejected.json').write_text(json.dumps(dict(samples=samples,health=health),indent=2)+'\n')
             raise ValueError('remote clock uncertainty exceeds budget')
-        required={'load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py','workloads/native_tools.py','workloads/resident_protocol.py'}
+        required={'load_controller.py','workloads/performance_load.py','workloads/redis_protocol.py','workloads/native_tools.py','workloads/resident_protocol.py','workloads/application_tools.py','workloads/application_protocol.py'}
         if set(health.get('driver_sha256',{}))!=required:raise ValueError('load-controller source proof incomplete')
         root=Path(__file__).resolve().parents[1]
         for name,expected in health['driver_sha256'].items():
@@ -80,8 +80,10 @@ class RemoteLoad:
                 if time.monotonic()>deadline:raise TimeoutError('remote job deadline exceeded')
                 time.sleep(.2)
             meta.update(status)
+            if set(status['files'])!={'requests.jsonl','load-resources.jsonl'}:raise ValueError('unexpected HTTP artifact set; no unverified ACK')
             for kind,name in [('requests','requests.jsonl'),('resources','load-resources.jsonl')]:
                 self.download(self.job,kind,self.output/('remote-'+name),status['files'][name])
+            self.request('/jobs/'+self.job+'/ack',dict(files=status['files']))
             clock_after=self.calibrate();meta['clock_after']=clock_after
             if abs(clock_after['offset']-self.clock['offset'])+clock_after['rtt']/2+self.clock['rtt']/2>self.max_clock_error:
                 raise ValueError('remote clock drift/uncertainty exceeds budget')
@@ -94,7 +96,6 @@ class RemoteLoad:
                             row['remote_'+key]=row[key];row[key]+=self.clock['offset']
                     converted.write(json.dumps(row)+'\n');rows.append(row)
             if status['state']!='finished':raise RuntimeError('remote job failed/cancelled: '+status.get('error',''))
-            self.request('/jobs/'+self.job+'/ack',dict(files=status['files']))
             return rows
         finally:
             if self.job is not None:
@@ -118,12 +119,14 @@ class RemoteLoad:
             for name,expected in status['files'].items():
                 if Path(name).name!=name:raise ValueError('unsafe native artifact name')
                 self.download(self.job,'artifacts/'+name,self.output/name,expected)
+            self.request('/jobs/'+self.job+'/ack',dict(files=status['files']))
             after=self.calibrate();meta['clock_after']=after
             if abs(after['offset']-self.clock['offset'])+after['rtt']/2+self.clock['rtt']/2>self.max_clock_error:
                 raise ValueError('native remote clock drift/uncertainty exceeds budget')
-            self.request('/jobs/'+self.job+'/ack',dict(files=status['files']))
             if status['state']!='finished':raise RuntimeError('native job failed: '+repr(status.get('native',status.get('error'))))
-            return status['native']
+            name=status.get('result_artifact','native-result.json')
+            if Path(name).name!=name or name not in status['files']:raise ValueError('unsafe/missing native result artifact')
+            return json.loads((self.output/name).read_text())
         finally:
             if self.job is not None:self.cancel()
             (self.output/'remote-load.json').write_text(json.dumps(meta,indent=2)+'\n')
