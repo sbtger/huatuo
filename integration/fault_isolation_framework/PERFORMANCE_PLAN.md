@@ -126,8 +126,13 @@ are unavailable, never zero. Tail percentiles are not averaged across runs.
 - `environment.json`, configs/logs/events, `executed-framework.tar.gz`, and
   `integrity.json`: binary/BPF/source evidence and raw artifact hashes.
 
-Resource sampling defaults to 100 ms. CPU is a sampled counter delta; short-lived
-children may escape observations. RSS sums shared pages and is not unique memory.
+Resource sampling defaults to 100 ms. `cpu_seconds` is Agent self CPU plus
+waited-child CPU from `/proc/PID/stat` (cutime+cstime). This includes workers
+that exit between samples. Child CPU is attributed when reaped, so work crossing
+window boundaries is not prorated and live/unreaped children are excluded.
+`sampled_tree_cpu_seconds` remains a separate lower-bound diagnostic; never add
+it to the waited-child total, which would double-count observed workers.
+RSS sums shared pages and is not unique memory.
 Cgroup peak counters cover the container lifetime, not only the trigger window.
 The trial summary `selected_pids` is the requested-target intersection; complete
 ranked selection, including Agent/self captures, remains in the raw events.
@@ -144,3 +149,33 @@ python3 integration/fault_isolation_framework/performance.py \
 `VALIDATION_PASS` means a complete, valid measurement workflow. Performance
 acceptance is separately `NOT_EVALUATED`; no arbitrary universal overhead budget
 is installed. A short VM run cannot establish production throughput or p99 SLOs.
+
+## Current-worker execution stages
+
+1. Run `performance_smoke_matrix.json`: six cells, one randomized repeat per
+   cell, 3 s warmup, 4 s baseline, 12 s trigger, 4 s recovery, 20 requests/s per
+   business. These validate measurement and capture coverage, not performance
+   acceptance. Every requested pressure target must have a successful capture;
+   a subset of successful captures cannot validate a concurrent trial.
+2. Calibrate load with A/B controls, runtime warmup, observer cost and dispatch
+   lag. Use a separately reachable load machine for published overhead results.
+   The present 140 guests each use isolated QEMU NAT with the same guest IP;
+   the short campaign uses the explicitly recorded co-located client. An SSH
+   tunnel would add DUT CPU and must not be presented as an independent baseline.
+3. Run `performance_reference_matrix.json` with the default five independent
+   repeats and 60/30/30/30 s windows. At 40 requests/s each 30 s window has 1200
+   intended arrivals, enough for p99 only if the load and response checks pass.
+   This rate is a starting point for calibration, not a proven capacity.
+4. Compare C-B and C-A for residency, D-B and D-A under matched pressure. Report
+   CPU seconds, sampled RSS peak, actual target count/status/entries, target and
+   neighbor throughput and window tails. Retain failed cells and reasons.
+   Agree application-specific throughput/tail and resource budgets before
+   declaring performance acceptance. No universal percentage budget is assumed.
+
+The reference matrix varies one factor against its matching base cell: process
+scale and polling interval, listener scale, one/three pressure targets, runtime,
+container headroom and output/deadline limits. Top-k and timeout cells report
+actual status and truncation; they do not guarantee the fixture will hit the
+limit. A deadline failure is retained and excluded from successful-capture cost
+comparisons. Capacity sweeps and independent-host trials remain separate from
+short-cycle validation.

@@ -1,5 +1,5 @@
 # Copyright 2026 The HuaTuo Authors. Licensed under the Apache License, Version 2.0.
-"""Read-only Linux measurements; child lifetime CPU is a sampled lower bound."""
+"""Read-only Linux measurements; parent and waited-child CPU plus sampled live-worker resources."""
 import json
 import os
 import threading
@@ -14,6 +14,7 @@ def parse_stat(text, ticks):
         raise ProcessLookupError("process exited")
     return dict(identity=[int(prefix.split(" ", 1)[0]), int(fields[19])],
                 cpu_seconds=(int(fields[11])+int(fields[12]))/ticks,
+                waited_children_cpu_seconds=(int(fields[13])+int(fields[14]))/ticks,
                 minor_faults=int(fields[7]), major_faults=int(fields[9]))
 
 
@@ -21,7 +22,9 @@ def process_sample(pid):
     root = Path("/proc")/str(pid)
     row = parse_stat((root/"stat").read_text(), os.sysconf("SC_CLK_TCK"))
     status = dict(line.split(":", 1) for line in (root/"status").read_text().splitlines() if ":" in line)
-    row.update(rss_bytes=int(status.get("VmRSS", "0").split()[0])*1024,
+    if "VmRSS" not in status:
+        raise ProcessLookupError("RSS unavailable during process exit")
+    row.update(rss_bytes=int(status["VmRSS"].split()[0])*1024,
                threads=int(status["Threads"]), fds=len(list((root/"fd").iterdir())),
                voluntary_switches=int(status.get("voluntary_ctxt_switches", 0)),
                involuntary_switches=int(status.get("nonvoluntary_ctxt_switches", 0)))
@@ -127,6 +130,7 @@ def resource_metrics(rows, start, end):
     window = [r for r in rows if start <= r["time"] <= end]
     result = dict(samples=len(window), errors=sum(len(r["errors"]) for r in window))
     peaks, cpu, previous = [], 0, {}
+    parent_cpu, waited_cpu, previous_parent = 0, 0, {}
     for row in window:
         rss = 0
         for key, proc in row["processes"].items():
@@ -138,11 +142,22 @@ def resource_metrics(rows, start, end):
                 cpu += max(0, proc["cpu_seconds"]-previous[ident])
             # Unknown first-seen child lifetime before first sample is omitted.
             previous[ident] = proc["cpu_seconds"]
+        parent = row["processes"].get("agent")
+        if parent:
+            ident = tuple(parent["identity"])
+            current = (parent["cpu_seconds"], parent.get("waited_children_cpu_seconds", 0))
+            if ident in previous_parent:
+                before = previous_parent[ident]
+                parent_cpu += max(0, current[0]-before[0])
+                waited_cpu += max(0, current[1]-before[1])
+            previous_parent[ident] = current
         peaks.append(rss)
-    result.update(cpu_seconds=cpu, cpu_average_cores=cpu/(end-start), sampled_agent_tree_rss_peak_bytes=max(peaks, default=0),
+    result.update(cpu_seconds=parent_cpu+waited_cpu, cpu_average_cores=(parent_cpu+waited_cpu)/(end-start),
+                  agent_self_cpu_seconds=parent_cpu, waited_children_cpu_seconds=waited_cpu,
+                  sampled_tree_cpu_seconds=cpu, sampled_agent_tree_rss_peak_bytes=max(peaks, default=0),
                   agent_fd_peak=max((r["processes"].get("agent", {}).get("fds", 0) for r in window), default=0),
                   agent_thread_peak=max((r["processes"].get("agent", {}).get("threads", 0) for r in window), default=0),
-                  cpu_accounting="sampled delta; excludes child work outside observation")
+                  cpu_accounting="Agent self plus waited-child delta; child CPU attributed at reap, live/unreaped children excluded; sampled tree reported separately, never added")
     result["business"] = {}
     keys = {key for row in window for key in row["processes"] if key != "agent" and not key.startswith("child-")}
     for key in sorted(keys):

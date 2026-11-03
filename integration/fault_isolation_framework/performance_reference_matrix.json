@@ -1,0 +1,127 @@
+[
+  {
+    "name": "burst-idle",
+    "options": {
+      "module": "memburst",
+      "experiment": "idle",
+      "qps": 40
+    }
+  },
+  {
+    "name": "burst-processes-100",
+    "options": {
+      "module": "memburst",
+      "experiment": "idle",
+      "qps": 40,
+      "extra-processes": 100
+    }
+  },
+  {
+    "name": "burst-poll-5",
+    "options": {
+      "module": "memburst",
+      "experiment": "idle",
+      "qps": 40,
+      "poll-interval": 5
+    }
+  },
+  {
+    "name": "threshold-idle",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "idle",
+      "qps": 40
+    }
+  },
+  {
+    "name": "threshold-listeners-3",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "idle",
+      "qps": 40,
+      "copies": 3
+    }
+  },
+  {
+    "name": "burst-one",
+    "options": {
+      "module": "memburst",
+      "experiment": "pulse",
+      "qps": 40
+    }
+  },
+  {
+    "name": "burst-three",
+    "options": {
+      "module": "memburst",
+      "experiment": "pulse",
+      "qps": 40,
+      "pressure-languages": "go,java,python",
+      "pressure-targets": 3
+    }
+  },
+  {
+    "name": "threshold-go",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "qps": 40,
+      "pressure-languages": "go"
+    }
+  },
+  {
+    "name": "threshold-java",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "qps": 40,
+      "pressure-languages": "java"
+    }
+  },
+  {
+    "name": "threshold-python",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "qps": 40,
+      "pressure-languages": "python"
+    }
+  },
+  {
+    "name": "threshold-three",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "qps": 40,
+      "pressure-languages": "go,java,python",
+      "pressure-targets": 3
+    }
+  },
+  {
+    "name": "threshold-headroom-640",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "qps": 40,
+      "memory-limit-mib": 640
+    }
+  },
+  {
+    "name": "threshold-top-k-1",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "qps": 40,
+      "top-k": 1
+    }
+  },
+  {
+    "name": "threshold-timeout-1",
+    "options": {
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "qps": 40,
+      "capture-timeout": 1
+    }
+  }
+]

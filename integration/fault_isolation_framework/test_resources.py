@@ -420,3 +420,41 @@ class VolatileProcessSampleTest(unittest.TestCase):
                 row = monitor.record()
             monitor.stream.close()
             self.assertIn("error", row)
+
+
+class ReapedWorkerPerformanceTest(unittest.TestCase):
+    def test_stat_includes_completed_children_cpu(self):
+        from fault_isolation_framework.environments.performance import parse_stat
+        fields = ["S"] + ["0"] * 49
+        fields[13], fields[14] = "25", "15"
+        self.assertEqual(parse_stat("42 (agent) " + " ".join(fields), 100)["waited_children_cpu_seconds"], .4)
+
+    def test_completed_worker_cpu_is_counted_once_even_if_sampled(self):
+        from fault_isolation_framework.environments.performance import resource_metrics
+        def row(at, own, waited, child=None):
+            processes = {"agent": dict(identity=[1, 1], cpu_seconds=own,
+                waited_children_cpu_seconds=waited, rss_bytes=10, fds=2, threads=1)}
+            if child is not None:
+                processes["child-2"] = dict(identity=[2, 2], cpu_seconds=child, rss_bytes=5)
+            return dict(time=at, errors=[], processes=processes)
+        result = resource_metrics([row(0, 1, 0, .1), row(1, 1.1, 0, .3), row(2, 1.2, .5)], 0, 2)
+        self.assertAlmostEqual(result["cpu_seconds"], .7)
+        self.assertAlmostEqual(result["waited_children_cpu_seconds"], .5)
+        self.assertAlmostEqual(result["sampled_tree_cpu_seconds"], .4)
+
+    def test_unobserved_short_lived_worker_cpu_is_retained(self):
+        from fault_isolation_framework.environments.performance import resource_metrics
+        rows = [dict(time=t, errors=[], processes={"agent": dict(identity=[1, 1],
+            cpu_seconds=1, waited_children_cpu_seconds=w, rss_bytes=10, fds=1, threads=1)})
+            for t, w in [(0, 0), (1, .8)]]
+        self.assertAlmostEqual(resource_metrics(rows, 0, 1)["cpu_seconds"], .8)
+
+
+class PerformanceCaptureCoverageTest(unittest.TestCase):
+    def test_one_success_does_not_validate_three_requested_targets(self):
+        from fault_isolation_framework.adapters.huatuo.performance import captures_cover_targets
+        records = [dict(pid=1, successful=True)]
+        self.assertFalse(captures_cover_targets(records, {1, 2, 3}))
+        self.assertTrue(captures_cover_targets(records, {1}))
+        self.assertFalse(captures_cover_targets(records + [dict(pid=1, successful=False)], {1}))
+        self.assertFalse(captures_cover_targets([], set()))

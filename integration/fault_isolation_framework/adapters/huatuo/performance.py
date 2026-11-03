@@ -47,6 +47,10 @@ def capture_records(module, documents, target_pids, not_before=None, not_after=N
     return result
 
 
+def captures_cover_targets(records, requested):
+    return bool(requested) and {r["pid"] for r in records} == set(requested) and all(r["successful"] for r in records)
+
+
 def select_load_targets(targets, pressured, load_all=False):
     selected = {t["pid"] for t in pressured}
     return [t for t in targets if load_all or t["role"] == "neighbor"
@@ -268,7 +272,7 @@ def execute_trial(args, directory, group, repeat):
                 require(max(peaks, default=0) >= args.pressure_mib*.85*(1<<20), "requested pressure was not observed")
         if group == "D":
             require(not neighbor_selected, "neighbor was selected for collection; cannot claim uncollected-neighbor impact")
-            require(bool(records) and all(r["successful"] for r in records), "no successful matching capture; never score failed capture as cheap success")
+            require(captures_cover_targets(records, {t["pid"] for t in owner.pressured}), "missing or failed requested-target capture; never score incomplete collection as cheap success")
         else:
             require(not documents, "unexpected capture in non-trigger control")
         outcome["valid"] = not outcome["errors"]
@@ -338,7 +342,7 @@ def report(output):
     for comparison in comparisons:
         for key, value in comparison["absolute_delta"].items():
             text.append("| %s−%s | %s | %.6g | %.6g | %.6g | %d |" % (comparison["enabled"], comparison["baseline"], key, value["median"], value["min"], value["max"], value["n"]))
-    text += ["", "CPU is sampled Agent+descendant delta; short-lived child work may be missed.",
+    text += ["", "CPU is Agent self plus waited-child delta; child CPU is attributed at reap. Live/unreaped children at window boundaries are excluded; sampled-tree CPU is separate.",
              "RSS is a sampled simultaneous sum, not unique physical memory or an exact peak.",
              "Raw per-target latency, pressure commands, events, host PSI and cgroup observations are retained per trial.",
              "Failed captures and invalid load runs remain in the report and are excluded from paired conclusions."]

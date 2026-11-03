@@ -1,0 +1,86 @@
+[
+  {
+    "name": "burst-idle",
+    "options": {
+      "repeats": 1,
+      "warmup": 3,
+      "baseline": 4,
+      "hold": 12,
+      "recovery": 4,
+      "qps": 20,
+      "module": "memburst",
+      "experiment": "idle"
+    }
+  },
+  {
+    "name": "threshold-idle",
+    "options": {
+      "repeats": 1,
+      "warmup": 3,
+      "baseline": 4,
+      "hold": 12,
+      "recovery": 4,
+      "qps": 20,
+      "module": "memory_threshold_snapshot",
+      "experiment": "idle"
+    }
+  },
+  {
+    "name": "burst-three",
+    "options": {
+      "repeats": 1,
+      "warmup": 3,
+      "baseline": 4,
+      "hold": 12,
+      "recovery": 4,
+      "qps": 20,
+      "module": "memburst",
+      "experiment": "pulse",
+      "pressure-languages": "go,java,python",
+      "pressure-targets": 3
+    }
+  },
+  {
+    "name": "threshold-java",
+    "options": {
+      "repeats": 1,
+      "warmup": 3,
+      "baseline": 4,
+      "hold": 12,
+      "recovery": 4,
+      "qps": 20,
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "pressure-languages": "java"
+    }
+  },
+  {
+    "name": "threshold-python",
+    "options": {
+      "repeats": 1,
+      "warmup": 3,
+      "baseline": 4,
+      "hold": 12,
+      "recovery": 4,
+      "qps": 20,
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "pressure-languages": "python"
+    }
+  },
+  {
+    "name": "threshold-three",
+    "options": {
+      "repeats": 1,
+      "warmup": 3,
+      "baseline": 4,
+      "hold": 12,
+      "recovery": 4,
+      "qps": 20,
+      "module": "memory_threshold_snapshot",
+      "experiment": "pulse",
+      "pressure-languages": "go,java,python",
+      "pressure-targets": 3
+    }
+  }
+]
