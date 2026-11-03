@@ -1,5 +1,11 @@
 # Fault isolation test framework
 
+For the active real-application snapshot B/C measurement, start with the
+[application performance plan](APPLICATION_PERFORMANCE_PLAN.md). It uses
+etcd, Spring Boot and FastAPI. The fixture acceptance suite below retains
+its original reliability scope. See the
+[first application B/C result](APPLICATION_PERFORMANCE_VALIDATION.md).
+
 This suite asks a bounded question: **do Go, HotSpot and CPython applications
 continue producing correct results and retaining committed state while HuaTuo's
 memory snapshot collection fails?** It exercises the real `huatuo-bamai` daemon:
