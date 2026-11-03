@@ -9,7 +9,7 @@ from ....core.models import Scenario, OperationResult
 from ....core.stability import coverage_errors, resource_errors
 from ....core.util import write_control, require, run, wait_for
 from ....environments.linux import identity, ManagedProcess
-from ....environments.resources import ResourceMonitor
+from ....environments.resources import ResourceMonitor, resource_sample_interval
 from ....workloads.http_probe import request_http
 from ....core.documents import read_documents
 from ..discovery import PodFixture
@@ -97,7 +97,9 @@ class StabilityAdapter(MemsnapshotAdapter):
             )
         self.started = time.monotonic()
         self.observe_workers = worker_enabled(self)
-        self.monitor = ResourceMonitor(self, interval=0.1 if self.observe_workers else 2)
+        self.monitor = ResourceMonitor(
+            self, interval=resource_sample_interval(self.a.profile, self.observe_workers)
+        )
         self.monitor.start()
         self.evidence.register("campaign.json", "campaign", format="json")
         self.evidence.register("cycles.jsonl", "cycles", format="jsonl")

@@ -8,6 +8,11 @@ from .linux import identity
 from ..core.util import Failure
 
 
+def resource_sample_interval(profile, observe_workers):
+    # Keep 72h raw observations manageable; short tests observe brief workers.
+    return .1 if observe_workers and profile != "soak" else 2
+
+
 def inotify_watch_count(fdinfo):
     count = 0
     for path in Path(fdinfo).iterdir():

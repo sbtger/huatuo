@@ -458,3 +458,11 @@ class PerformanceCaptureCoverageTest(unittest.TestCase):
         self.assertTrue(captures_cover_targets(records, {1}))
         self.assertFalse(captures_cover_targets(records + [dict(pid=1, successful=False)], {1}))
         self.assertFalse(captures_cover_targets([], set()))
+
+
+class SoakSamplingTest(unittest.TestCase):
+    def test_long_soak_uses_two_second_resource_sampling(self):
+        from fault_isolation_framework.environments.resources import resource_sample_interval
+        self.assertEqual(resource_sample_interval("soak", True), 2)
+        self.assertEqual(resource_sample_interval("short", True), .1)
+        self.assertEqual(resource_sample_interval("short", False), 2)
