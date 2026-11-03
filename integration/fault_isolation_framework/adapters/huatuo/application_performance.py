@@ -154,7 +154,7 @@ def execute(args,directory,group,pressure,fill_plan,rate,probe=False,diagnostic=
         for _,name,seconds in windows:
             end=begin+seconds;resources=resource_metrics(sampler.rows,begin,end);helper=helper_resources(sampler.rows,begin,end);memory=memory_window(sampler.rows,begin,end,target['id'])
             samples=[row['business_memory'][target['id']]['current_bytes'] for row in sampler.rows if begin<=row['time']<end]
-            outcome['windows'][name]=dict(begin=begin,end=end,load=loads[name],resources=resources,helper_resources=helper,memory=memory,
+            outcome['windows'][name]=dict(role='UNMEASURED_PROBE_PADDING' if probe and name!='baseline' else 'MEASURED_BUSINESS_PHASE',begin=begin,end=end,load=loads[name],resources=resources,helper_resources=helper,memory=memory,
                                          pressure=dict(min_percent=min(samples)*100/fill_plan['limit_bytes'],max_percent=max(samples)*100/fill_plan['limit_bytes']))
             prefix=name+'.';outcome['metrics'].update({prefix+'rps':loads[name]['success_rps'],prefix+'p99_ms':loads[name]['scheduled_latency']['p99_ms'],prefix+'p999_ms':loads[name]['scheduled_latency']['p999_ms'],prefix+'business_peak_bytes':memory['business']['sampled_peak_bytes'],prefix+'business_peak_above_baseline_bytes':memory['business']['peak_above_baseline_bytes'],prefix+'collector_peak_bytes':memory['collector_simultaneous_sampled_peak_bytes'],prefix+'collector_peak_above_baseline_bytes':memory['collector_peak_above_baseline_bytes'],prefix+'collector_cpu_seconds':helper['cpu_seconds'],prefix+'collector_total_cpu_seconds':helper['cpu_seconds']+resources['cpu_seconds'],prefix+'agent_cpu_seconds':resources['cpu_seconds']})
             for scope in ('agent','helper','worker-0','worker-1'):
@@ -167,10 +167,10 @@ def execute(args,directory,group,pressure,fill_plan,rate,probe=False,diagnostic=
         width=baseline/3
         first=subwindow(native,warmup,warmup+width,'latency');last=subwindow(native,warmup+baseline-width,warmup+baseline,'latency')
         first_lag=subwindow(native,warmup,warmup+width,'lag');last_lag=subwindow(native,warmup+baseline-width,warmup+baseline,'lag')
-        counters=native.get('counters',{});transport=sum(counters.get(key,0) for key in ('timeouts','connect_errors','read_errors','write_errors','status_errors'))
+        counters=native.get('counters',{});whole_job_errors=sum(counters.get(key,0) for key in ('timeouts','connect_errors','read_errors','write_errors','status_errors','body_errors','queue_full','rpc_errors','protocol_errors','cancelled'))
         client_meta=json.loads((trial_out/'remote-load.json').read_text())
-        probe_summary=dict(offered_rps=rate,success_rps=loads['baseline']['success_rps'],errors=loads['baseline']['response_errors']+transport+sum(bool(row.get('error')) for row in native.get('maintenance',[])),timeouts=counters.get('timeouts',0),body_errors=counters.get('body_errors',0),trace_overflow=counters.get('trace_overflow',0),client_cpu_cores=(native['process']['cpu_seconds']+client_meta.get('cpu_seconds',0))/duration,client_cores=min(native['generator_parallelism'],client_meta['clock_before']['health']['cpu_count']),initial_p99_ms=first['p99_ms'],final_p99_ms=last['p99_ms'],initial_backlog_ms=first_lag['p99_ms'],final_backlog_ms=last_lag['p99_ms'])
-        outcome['capacity_probe']=dict(probe_summary,decision=capacity_state(probe_summary),scope='baseline response histograms; transport/body failures conservatively whole job; clientCPU whole job inclnative child')
+        probe_summary=dict(offered_rps=rate,success_rps=loads['baseline']['success_rps'],errors=max(loads['baseline']['response_errors'],whole_job_errors)+sum(bool(row.get('error')) for row in native.get('maintenance',[])),timeouts=counters.get('timeouts',0),body_errors=counters.get('body_errors',0),trace_overflow=counters.get('trace_overflow',0),client_cpu_cores=(native['process']['cpu_seconds']+client_meta.get('cpu_seconds',0))/duration,client_cores=min(native['generator_parallelism'],client_meta['clock_before']['health']['cpu_count']),initial_p99_ms=first['p99_ms'],final_p99_ms=last['p99_ms'],initial_backlog_ms=first_lag['p99_ms'],final_backlog_ms=last_lag['p99_ms'])
+        outcome['capacity_probe']=dict(probe_summary,decision=capacity_state(probe_summary),scope='baseline60s throughput/tails only; all-job errors gate, raw categories authoritative (HTTP events may overlap); clientCPU whole job inclnative child')
         rows=read_timeline(trial_out,native,remote.clock['offset']);outcome['timeline_scope']='complete records near planned capture±timeout margin plus every error; all-response HDR elsewhere'
         for name,window in outcome['windows'].items():
             window['load']['transport_error_events']={}
@@ -195,7 +195,7 @@ def execute(args,directory,group,pressure,fill_plan,rate,probe=False,diagnostic=
             (trial_out/'active-capture-requests.jsonl').write_text(''.join(json.dumps(row)+'\n' for row in possible))
         outcome['measurement_protocol_valid']=not outcome['errors']
         outcome['capture_quality_errors']=validate_captures(outcome['captures'],target,1 if capturing else 0)
-        outcome['business_quality']=business_quality(native,loads)
+        outcome['business_quality']=business_quality(native,loads,throughput_windows={'baseline'} if probe else None)
         outcome['errors']+=outcome['capture_quality_errors']+['business quality: '+error for error in outcome['business_quality']['errors']]
         outcome['valid']=not outcome['errors']
         if existing is None:owner.kv.allow_db_cleanup=outcome['valid']

@@ -264,3 +264,11 @@ Transparent transport retries remain possible per [gRPC1.71.1 API](https://pkg.g
 Latency/count/error scope is one logical SDK invocation; wire attempts are not
 measured and are null, never claimed to be one wire RPC. The effective policy is
 available through `etcd-load-tool --mode=config --endpoint=http://127.0.0.1:1`.
+
+
+Probe scope: capacity/pressure preflights measure the60s baseline only. The5s
+trailing interval exists for timed pressure samples and is explicitly unmeasured
+for throughput; native per-connection pacing can yield512arrivals in5s at100RPS
+without a business error. Every phase still checks response errors, and whole-job
+body/transport/SDK-queue/RPC failures still reject the probe. Primary B/C keeps
+the original throughput checks on every60s measured phase.

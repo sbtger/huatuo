@@ -359,3 +359,16 @@ class ApplicationReviewRegressionTest(unittest.TestCase):
         self.assertTrue(config['configured_grpc_retry_disabled'])
         self.assertTrue(config['transparent_transport_retries_possible'])
         self.assertIsNone(config['wire_attempts_measured'])
+
+class ApplicationProbeWindowTest(unittest.TestCase):
+    def test_five_second_padding_does_not_gate_rate_but_still_detects_every_error(self):
+        from fault_isolation_framework.workloads.application_tools import business_quality
+        windows={'baseline':dict(requests=5984,response_errors=0,success_rps=5984/60,offered_rps=100),
+                 'capture':dict(requests=512,response_errors=0,success_rps=512/5,offered_rps=100)}
+        self.assertFalse(business_quality({'counters':{}},windows)['valid'])
+        self.assertTrue(business_quality({'counters':{}},windows,throughput_windows={'baseline'})['valid'])
+        for key in ('body_errors','timeouts','connect_errors','read_errors','write_errors','status_errors','queue_full','rpc_errors','protocol_errors','cancelled'):
+            with self.subTest(error=key):
+                self.assertFalse(business_quality({'counters':{key:1}},windows,throughput_windows={'baseline'})['valid'])
+        bad=dict(windows,capture=dict(windows['capture'],response_errors=1))
+        self.assertFalse(business_quality({'counters':{}},bad,throughput_windows={'baseline'})['valid'])

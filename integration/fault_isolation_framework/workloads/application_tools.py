@@ -133,7 +133,9 @@ def run_application(spec,root,stop,tools):
     return result
 
 
-def business_quality(native,windows,throughput_tolerance=.02):
+def business_quality(native,windows,throughput_tolerance=.02,throughput_windows=None):
+    checked=set(windows) if throughput_windows is None else set(throughput_windows)
+    if not checked or checked-set(windows):raise ValueError('throughput windows must name measured load windows')
     errors=[];counters=native.get('counters',{})
     for key in ('body_errors','timeouts','connect_errors','read_errors','write_errors','status_errors','queue_full','rpc_errors','protocol_errors','cancelled'):
         if counters.get(key,0):errors.append('%s=%d (whole native job)'%(key,counters[key]))
@@ -141,11 +143,11 @@ def business_quality(native,windows,throughput_tolerance=.02):
     if maintenance_errors:errors.append('MVCCmaintenance_errors=%d'%maintenance_errors)
     for name,window in windows.items():
         if window['response_errors']:errors.append('%s response_errors=%d'%(name,window['response_errors']))
-        if not window['requests']:errors.append(name+' has no response samples')
-        if abs(window['success_rps']/window['offered_rps']-1)>throughput_tolerance:
+        if name in checked and not window['requests']:errors.append(name+' has no response samples')
+        if name in checked and abs(window['success_rps']/window['offered_rps']-1)>throughput_tolerance:
             errors.append(name+' actual success throughput differs from fixed offered rate')
     return dict(valid=not errors,errors=errors,scope='business quality, separate from measurement protocol/capture validity',
-                throughput_tolerance=throughput_tolerance)
+                throughput_tolerance=throughput_tolerance,throughput_windows=sorted(checked),error_scope='every phase plus whole native job; unmeasured probe padding excluded only from throughput gating')
 
 
 def validate_sdk_result(result,expected):
