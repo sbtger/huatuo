@@ -1,9 +1,65 @@
-# Reliability failure diagnosis — 2026-11-02
+# Reliability failure diagnosis — 2026-11-02–03
 
-These findings concern the current short VM campaign, not a 72-hour soak or a
-performance evaluation. No shipping source was changed during this investigation.
-Original failures remain failures. The original 22-run campaign has completed; optimization follow-ups are
-recorded separately in RELIABILITY_VALIDATION.md.
+The historical 2026-11-02 findings concern a short VM campaign, rather than
+a 72-hour soak or performance evaluation. Shipping source was unchanged during
+that original investigation. Original failures retain their outcomes. Its
+22-run campaign completed; optimization follow-ups are recorded separately in
+RELIABILITY_VALIDATION.md. The 2026-11-03 threshold investigation and production
+repair are described separately below.
+
+
+## 2026-11-03: v1 threshold crossing lost during a brief usage dip
+
+This separate investigation concerns the dedicated Linux 6.8 / cgroup v1
+threshold soak. The original soak stopped at its first limit-change phase.
+Its failure and evidence remain unchanged.
+
+The failed target stayed above the 420 MiB threshold, but no new capture
+arrived within 45 seconds. Restoring the limit immediately produced a snapshot,
+which ruled out a permanently blocked collector or unavailable event storage.
+
+A logging-only Go overlay then reproduced the failure after 16 successful
+limit-change captures. The kernel delivered an eventfd notification, but the
+immediate userspace read returned 440,180,736 bytes: 216 KiB below the
+440,401,920-byte threshold. The watcher discarded that observation. Usage then
+remained around 570 MiB without a further notification. The previous capture
+was already beyond the configured cooldown, so cooldown admission did not
+explain this lost event.
+
+The kernel threshold notification and the later userspace usage read describe
+different instants. A brief dip can consume the crossing notification while
+leaving the native crossing baseline unsuitable for the later userspace state.
+Changing the limit resets that registration and explains the immediate recovery.
+
+The repair re-registers a v1 threshold when a usage notification is observed
+below the threshold, then re-reads usage after registration. This both resets
+the native baseline and covers a rise during registration. It does not publish
+a below-threshold pressure event, add idle polling, alter cooldown policy or
+change cgroup v2 behavior.
+
+Validation before the replacement soak:
+
+- The deterministic below-read / above-read regression failed before the
+  repair and passed afterward; it also asserts a fresh registration token.
+- A logging-overlay Agent containing the repair completed 20 of 20 native
+  limit-change captures in the same VM. All 2,648 observed business work and
+  transaction checks passed.
+- Across 66 observed native registrations, elapsed time was 3.83 ms minimum,
+  7.79 ms median and 27.44 ms maximum. These include initial registrations and
+  limit changes, rather than only the newly added reconciliation path.
+- The regular-file microbenchmark changed from approximately 24.35 to
+  52.07 microseconds per below-threshold observation. It isolates userspace
+  work and does not include native registration or RCU latency.
+
+Ordinary falling crossings also re-register. Linux 6.8 registration can wait
+for an RCU grace period on the watcher owner loop; the measured native timings
+are observations, not a worst-case latency guarantee. The fresh uninstrumented
+short validation and replacement 72-hour soak are separate acceptance stages.
+
+Native diagnostic evidence:
+`diagnostic-change-01` (reproduction) and
+`diagnostic-change-fixed-01` (20-cycle repair check), retained under the failed
+soak root. The original frozen source and binaries were not overwritten.
 
 ## Cross-target capture isolation
 

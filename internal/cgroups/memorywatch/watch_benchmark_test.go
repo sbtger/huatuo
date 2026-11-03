@@ -17,7 +17,12 @@ package memorywatch
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/ccfos/huatuo/internal/cgroups"
+	"github.com/ccfos/huatuo/internal/cgroups/stats"
 )
 
 // Exclude cgroup I/O and snapshot work to measure delivery to a separate consumer.
@@ -83,5 +88,40 @@ func BenchmarkMemoryWatchHandoff(b *testing.B) {
 			}
 			b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*count), "ns/event")
 		})
+	}
+}
+
+// Regular cgroup files isolate userspace syscall cost; kernel threshold update
+// and RCU grace-period time still require live cgroup validation.
+func BenchmarkMemoryWatchV1BelowThresholdObserve(b *testing.B) {
+	root := b.TempDir()
+	dir := filepath.Join(root, "a")
+	if err := os.Mkdir(dir, 0o700); err != nil {
+		b.Fatal(err)
+	}
+	for name, value := range map[string]string{"memory.usage_in_bytes": "80", "memory.limit_in_bytes": "100", "cgroup.event_control": ""} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(value), 0o600); err != nil {
+			b.Fatal(err)
+		}
+	}
+	w, err := openWatcher(Options{ThresholdPercent: 90}, cgroups.Legacy, root,
+		func(string) (*stats.MemoryUsage, error) { return &stats.MemoryUsage{Usage: 80, MaxLimited: 100}, nil })
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Cleanup(func() { _ = w.Close() })
+	info, err := os.Stat(dir)
+	if err != nil {
+		b.Fatal(err)
+	}
+	id, err := w.Add(b.Context(), "/a", info)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	for b.Loop() {
+		if _, err := w.submit(b.Context(), func() (TargetID, error) { return id, w.observe(w.targets[id], usageChanged) }); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

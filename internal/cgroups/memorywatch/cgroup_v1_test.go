@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ccfos/huatuo/internal/cgroups"
 	"github.com/ccfos/huatuo/internal/cgroups/stats"
@@ -110,5 +111,48 @@ func TestWatcherV1ChecksUsageAfterRegistration(t *testing.T) {
 	// No eventfd signal: the registration baseline can already be above threshold.
 	if event := readWatchEvent(t, w, ThresholdObserved); event.TargetID != id || event.UsageBytes != 95 {
 		t.Fatalf("post-registration observation = %+v", event)
+	}
+}
+
+// The kernel crossing can precede a short usage dip; the next read must not
+// leave the kernel crossing baseline above a now-below threshold indefinitely.
+func TestWatcherV1ReconcilesBelowThresholdNotification(t *testing.T) {
+	f := &watchFixture{root: t.TempDir(), mode: cgroups.Legacy}
+	f.create(t, "/a", 80, 100)
+	reads := 0
+	w, err := openWatcher(Options{ThresholdPercent: 90}, cgroups.Legacy, f.root,
+		func(string) (*stats.MemoryUsage, error) {
+			reads++
+			value := uint64(80)
+			if reads == 3 {
+				value = 89
+			}
+			if reads >= 4 {
+				value = 95
+			}
+			return &stats.MemoryUsage{Usage: value, MaxLimited: 100}, nil
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = w.Close() })
+	id, err := w.Add(t.Context(), "/a", f.stat(t, "/a"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry := w.targets[id]
+	previousToken := entry.eventToken
+	signalEventFD(entry.eventFD)
+	select {
+	case <-w.Notify():
+		if entry.eventToken == previousToken {
+			t.Fatal("native crossing baseline was not replaced")
+		}
+		events, err := w.DrainEvents()
+		if err != nil || len(events) != 1 || events[0].Kind != ThresholdObserved || events[0].UsageBytes != 95 {
+			t.Fatalf("reconciled event = %+v, error %v", events, err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("native notification lost when the first usage read dipped below threshold")
 	}
 }

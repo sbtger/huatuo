@@ -161,7 +161,16 @@ func (w *Watcher) observe(entry *target, change changeFlags) error {
 	if err != nil {
 		return err
 	}
-	if w.mode != cgroups.Unified && change&(limitChanged|watchLost) != 0 {
+	// A crossing notification can race with a brief usage dip. Reset the
+	// kernel crossing baseline before discarding it, then cover a rise during
+	// registration with the same post-registration read used for limit changes.
+	rearm := change&(limitChanged|watchLost) != 0
+	if w.mode != cgroups.Unified && change&usageChanged != 0 && usage != nil &&
+		!cgroups.IsMemoryLimitUnlimited(usage.MaxLimited) &&
+		usage.Usage < thresholdBytes(usage.MaxLimited, w.options.ThresholdPercent) {
+		rearm = true
+	}
+	if w.mode != cgroups.Unified && rearm {
 		if err := w.rearmV1(entry, usage); err != nil {
 			return err
 		}
