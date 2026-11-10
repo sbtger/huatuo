@@ -6,7 +6,17 @@
 
 char __license[] SEC("license") = "GPL";
 
-DEFINE_PROFILER_PAGE_TRACKING_MAP();
+struct tracked_page {
+	struct profiler_event_base event;
+	u64 owner_mm;
+};
+
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__uint(max_entries, 1 << 20);
+	__type(key, u64);
+	__type(value, struct tracked_page);
+} page_to_stackid SEC(".maps");
 DEFINE_PROFILER_MAPS(struct profiler_event_base);
 
 #define COMPAT_PG_HEAD_BIT 6
@@ -18,6 +28,7 @@ struct folio___compat {
 } __attribute__((preserve_access_index));
 
 volatile const bool profiler_folio_npages = false;
+volatile const u32 profiler_rmap_vma_arg = 0;
 
 static __always_inline s64 profiler_folio_nr_pages(struct folio___compat *folio)
 {
@@ -60,7 +71,7 @@ static __always_inline s64 profiler_folio_nr_pages(struct folio___compat *folio)
 }
 
 SEC("kprobe/page_add_new_anon_rmap")
-int BPF_KPROBE(trace_page_alloc, void *page_or_folio)
+int BPF_KPROBE(trace_page_alloc, void *page_or_folio, struct vm_area_struct *vma)
 {
 	u64 *transfer_count_ptr;
 	u64 *sample_count_ptrs[2];
@@ -101,12 +112,42 @@ int BPF_KPROBE(trace_page_alloc, void *page_or_folio)
 	 * The hash map stores a value copy, so later event_buf reuse does not
 	 * overwrite the allocation stack saved for this page address.
 	 */
-	bpf_map_update_elem(&page_to_stackid, &page_addr, event, COMPAT_BPF_ANY);
+	struct tracked_page tracked = { .event = *event };
+	if (profiler_rmap_vma_arg)
+		tracked.owner_mm = (u64)BPF_CORE_READ(vma, vm_mm);
+	bpf_map_update_elem(&page_to_stackid, &page_addr, &tracked, COMPAT_BPF_ANY);
 
 	profiler_emit_event(ctx, select_profiler_output,
 	                    select_profiler_sample_count_ptr, event, sizeof(*event));
 
 	return 0;
+}
+
+static __always_inline bool current_task_matches(void)
+{
+	u64 mem_css = 0;
+	if (profiler_filter_css != 0)
+		mem_css = current_task_memory_css_addr();
+	return profiler_should_trace(bpf_get_current_pid_tgid(), mem_css);
+}
+
+/*
+ * Reclaim may run in another task. Use the address space that owns the
+ * mapping, and keep the PID and stack saved at allocation.
+ */
+static __always_inline u64 rmap_owner_mm(struct pt_regs *ctx)
+{
+	struct vm_area_struct *vma;
+
+	/* Keep each context load at a fixed offset for the verifier. */
+	if (profiler_rmap_vma_arg == 4) {
+		vma = (void *)PT_REGS_PARM4(ctx);
+		asm volatile("" : "+r"(vma));
+	} else {
+		vma = (void *)PT_REGS_PARM2(ctx);
+		asm volatile("" : "+r"(vma));
+	}
+	return (u64)BPF_CORE_READ(vma, vm_mm);
 }
 
 SEC("kprobe/page_remove_rmap")
@@ -121,18 +162,22 @@ int BPF_KPROBE(trace_page_free, void *page_or_folio)
 	if (!profiler_init_state(&profiler_state_map, &transfer_count_ptr, sample_count_ptrs))
 		return 0;
 
-	u64 pid_tgid = bpf_get_current_pid_tgid();
-	u64 mem_css = 0;
-	if (profiler_filter_css != 0)
-		mem_css = current_task_memory_css_addr();
-	if (!profiler_should_trace(pid_tgid, mem_css))
+	if (!profiler_rmap_vma_arg && !current_task_matches())
 		return 0;
 
 	u64 page_addr = (u64)page_or_folio;
-	struct profiler_event_base *stack_info =
-		bpf_map_lookup_elem(&page_to_stackid, &page_addr);
-	if (!stack_info)
+	struct tracked_page *tracked = bpf_map_lookup_elem(&page_to_stackid, &page_addr);
+	if (!tracked)
 		return 0;
+
+	if (profiler_rmap_vma_arg) {
+		if (tracked->owner_mm) {
+			if (rmap_owner_mm(ctx) != tracked->owner_mm)
+				return 0;
+		} else if (!current_task_matches()) {
+			return 0;
+		}
+	}
 
 	u32 idx = 0;
 	struct profiler_event_base *event = bpf_map_lookup_elem(&event_buf, &idx);
@@ -141,9 +186,9 @@ int BPF_KPROBE(trace_page_free, void *page_or_folio)
 
 	__builtin_memset(event, 0, sizeof(*event));
 
-	profiler_copy_event_base(event, stack_info);
+	profiler_copy_event_base(event, &tracked->event);
 	if (profiler_folio_npages) {
-		s64 remaining_pages = stack_info->value;
+		s64 remaining_pages = tracked->event.value;
 		s64 nr_pages = (s32)PT_REGS_PARM3(ctx);
 
 		remaining_pages -= nr_pages;
@@ -155,8 +200,9 @@ int BPF_KPROBE(trace_page_free, void *page_or_folio)
 			event->value = -nr_pages;
 			bpf_map_delete_elem(&page_to_stackid, &page_addr);
 		} else {
-			event->value = remaining_pages;
-			bpf_map_update_elem(&page_to_stackid, &page_addr, event, COMPAT_BPF_ANY);
+			struct tracked_page remainder = *tracked;
+			remainder.event.value = remaining_pages;
+			bpf_map_update_elem(&page_to_stackid, &page_addr, &remainder, COMPAT_BPF_ANY);
 			event->value = -nr_pages;
 		}
 	} else {

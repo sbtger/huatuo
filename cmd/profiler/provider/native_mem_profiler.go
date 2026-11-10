@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/cilium/ebpf/btf"
+
 	"github.com/ccfos/huatuo/internal/profiling/pipeline"
 
 	"github.com/ccfos/huatuo/internal/bpf"
@@ -134,6 +136,15 @@ func (p *memNativeProfiler) Start(ctx context.Context) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	if p.internalMode == profiling.ModePhysicalUsage {
+		for _, opt := range loadConfig.AttachOpts {
+			if opt.ProgramName == programTracePageFree {
+				loadConfig.Constants["profiler_rmap_vma_arg"] = physicalUsageVMAArg(opt.Symbol)
+				break
+			}
+		}
 	}
 
 	dbg := bpf.NewDbg(cfg.LogBpfDebug)
@@ -259,6 +270,34 @@ func newPhysicalAllocAttachOption() (bpf.AttachOption, error) {
 
 	return bpf.AttachOption{}, fmt.Errorf("no supported physical alloc kprobe found: tried %s, %s",
 		symbolPageAddNewAnonRmap, symbolFolioAddNewAnonRmap)
+}
+
+// Older page_remove_rmap variants have no VMA parameter.
+func physicalUsageVMAArg(symbol string) uint32 {
+	if symbol == symbolFolioRemoveRmapPtes {
+		return 4
+	}
+	spec, err := btf.LoadKernelSpec()
+	if err != nil {
+		return 0
+	}
+	var fn *btf.Func
+	if err := spec.TypeByName(symbol, &fn); err != nil {
+		return 0
+	}
+	proto, ok := fn.Type.(*btf.FuncProto)
+	if !ok || len(proto.Params) < 2 {
+		return 0
+	}
+	ptr, ok := btf.UnderlyingType(proto.Params[1].Type).(*btf.Pointer)
+	if !ok {
+		return 0
+	}
+	vma, ok := btf.UnderlyingType(ptr.Target).(*btf.Struct)
+	if ok && vma.Name == "vm_area_struct" {
+		return 2
+	}
+	return 0
 }
 
 func newPhysicalUsageAttachConfig() (physicalUsageAttachConfig, error) {
